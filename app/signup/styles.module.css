@@ -1,0 +1,115 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: linear-gradient(180deg, #f6f8ff 0%, #ffffff 100%);
+}
+.card {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(20, 30, 60, 0.08);
+  background: #fff;
+}
+.left {
+  flex: 1.05;
+  position: relative;
+  min-height: 460px;
+  background: #000;
+}
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(6,21,43,0.65), rgba(37,117,252,0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  padding: 28px;
+  text-align: center;
+}
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.05;
+  animation: slideIn 700ms ease-out both;
+}
+.subtitle {
+  margin-top: 10px;
+  font-size: 14px;
+  opacity: 0.95;
+}
+.right {
+  flex: 0.95;
+  padding: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+}
+.form {
+  width: 100%;
+  max-width: 420px;
+}
+.heading {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.sub {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 1px solid #e6e9ef;
+  font-size: 14px;
+  outline: none;
+}
+.input:focus {
+  box-shadow: 0 6px 20px rgba(37,117,252,0.08);
+  border-color: rgba(37,117,252,0.6);
+}
+.btn {
+  width: 100%;
+  padding: 12px 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: 0;
+  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.btn:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(37,117,252,0.18); }
+.muted {
+  color: #8b93a7;
+  font-size: 13px;
+  margin-top: 10px;
+}
+.msgError { color: #ef4444; margin-top: 10px; font-size: 13px; }
+.msgSuccess { color: #10b981; margin-top: 10px; font-size: 13px; }
+@keyframes slideIn {
+  from { transform: translateY(18px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+}
+@media (max-width: 900px) {
+  .card { flex-direction: column; }
+  .left { min-height: 260px; }
+  .right { padding: 28px; }
+}

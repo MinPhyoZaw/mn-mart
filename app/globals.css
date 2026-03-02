@@ -1,26 +1,25 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+
+
+.perspective {
+  perspective: 1200px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.flip-card {
+  transform-style: preserve-3d;
+  transition: transform 0.7s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.group:hover .flip-card {
+  transform: rotateY(180deg);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.flip-front,
+.flip-back {
+  backface-visibility: hidden;
+}
+
+.flip-back {
+  transform: rotateY(180deg);
 }
