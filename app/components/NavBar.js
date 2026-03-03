@@ -15,7 +15,7 @@ export default function Navbar() {
         const res = await fetch("/api/auth/me");
         const data = await res.json();
         setUser(data.user);
-      } catch (err) {
+      } catch {
         setUser(null);
       }
     };

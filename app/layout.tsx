@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className={`${raleway.className} ${inter.className}`}>
         <Navbar />
         <main className="min-h-screen bg-gray-50">
           {children}

@@ -1,9 +1,10 @@
+import dynamic from 'next/dynamic';
 import PromoBanner from './components/PromoBanner';
-import Catgories from './components/Categories';
-import TopShops from './components/TopShops';
 import Categories from './components/Categories';
-import ImageGridComponent from './components/ImageGridComponent';
-import MobileBottomBar from './components/MobileBottomBar';
+
+const TopShops = dynamic(() => import('./components/TopShops'));
+const ImageGridComponent = dynamic(() => import('./components/ImageGridComponent'));
+
 export default function HomePage() {
   return (
      <div className='w-[90%] mx-auto'>
@@ -11,7 +12,6 @@ export default function HomePage() {
       <TopShops/>
       <Categories/>
       <ImageGridComponent/> 
-      <MobileBottomBar/>
     </div>
   );
 }

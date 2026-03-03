@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -63,11 +64,13 @@ export default function TopShops() {
             <div className="flex flex-col items-start group">
               
               {/* Image */}
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-md overflow-hidden shadow-md">
-                <img
+              <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-md overflow-hidden shadow-md">
+                <Image
                   src={shop.image}
                   alt={shop.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  fill
+                  sizes="(max-width: 768px) 128px, 160px"
+                  className="object-cover group-hover:scale-105 transition duration-300"
                 />
               </div>
 

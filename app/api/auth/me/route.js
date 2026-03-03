@@ -17,7 +17,7 @@ export async function GET(req) {
     const user = await User.findById(decoded.userId).select("-password");
 
     return NextResponse.json({ user });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ user: null });
   }
 }
