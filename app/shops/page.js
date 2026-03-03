@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import NavBar from "../components/NavBar";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function ShopsPage() {
@@ -53,11 +53,15 @@ export default function ShopsPage() {
                 className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition"
               >
                 {/* Shop Image */}
-                <img
-                  src={shop.image}
-                  alt={shop.name}
-                  className="w-full h-32 md:h-40 object-cover"
-                />
+                <div className="relative w-full h-32 md:h-40">
+                  <Image
+                    src={shop.image}
+                    alt={shop.name}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                    className="object-cover"
+                  />
+                </div>
 
                 {/* Shop Info */}
                 <div className="p-4">

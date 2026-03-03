@@ -3,16 +3,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function CartDrawer() {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    // open animation after mount
-    setOpen(true);
-  }, []);
+  const [open, setOpen] = useState(true);
 
   const handleClose = () => {
     setOpen(false);
