@@ -65,12 +65,21 @@ export default function Navbar() {
             {/* If Logged In */}
             {user && (
               <>
+                {user.role === "admin" && (
+                  <Link
+                    href="/admindashboard"
+                    className="text-sm font-medium text-gray-700 hover:text-yellow-600 transition"
+                  >
+                    Admin
+                  </Link>
+                )}
+
                 {/* Account Icon */}
                 <Link
                   href="/account"
                   className="p-2 rounded-full hover:bg-gray-100 transition"
                 >
-                  <User size={22} className="text-gray-700" />
+                  <User size={22} className="text-gray-700 rounded-full" />
                 </Link>
 
                 {/* Logout */}

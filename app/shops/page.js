@@ -10,9 +10,9 @@ export default function ShopsPage() {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const res = await fetch("/api/getShops");
+        const res = await fetch("/api/shops");
         const data = await res.json();
-        setShops(data.shops);
+        setShops(data.data || []);
       } catch (error) {
         console.error("Failed to fetch shops:", error);
       }

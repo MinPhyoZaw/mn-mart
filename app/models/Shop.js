@@ -9,7 +9,10 @@ const shopSchema = new mongoose.Schema({
     required: true
   },
 
-  name: { type: String, required: true },
+  name: { 
+    type: String, 
+    required: true 
+  },
 
   category: {
     type: String,
@@ -20,6 +23,19 @@ const shopSchema = new mongoose.Schema({
   phone: String,
   address: String,
   description: String,
+
+  // ⭐ Rating System
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+
+  totalReviews: {
+    type: Number,
+    default: 0
+  },
 
   isActive: {
     type: Boolean,

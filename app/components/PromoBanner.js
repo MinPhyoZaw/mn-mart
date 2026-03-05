@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function PromoBanner() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Example: check login status from localStorage or an auth context
+  useEffect(() => {
+    const token = localStorage.getItem("authToken"); // replace with your auth logic
+    setIsLoggedIn(!!token);
+  }, []);
+
   return (
     <div className="w-full flex justify-center mt-8">
       <div className="relative w-[95%] lg:w-[90%] h-[260px] sm:h-[320px] md:h-[380px] lg:h-[420px] rounded-2xl overflow-hidden shadow-xl">
@@ -34,16 +43,25 @@ export default function PromoBanner() {
 
             {/* Description */}
             <p className="text-sm sm:text-base mb-5 text-white/90">
-              Support local businesses and explore amazing shops near you.
+              Start your vendor journey with us today and connect with your community like never before.
             </p>
 
             {/* Button */}
-            <Link
-              href="/shops"
-              className="inline-block bg-green-500 hover:bg-green-600 transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
-            >
-              Explore Now
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/vendorForm"
+                className="inline-block bg-green-500 hover:bg-green-600 transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
+              >
+                Become a Vendor
+              </Link>
+            ) : (
+              <button
+                disabled
+                className="inline-block bg-green-500/50 cursor-not-allowed transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
+              >
+                Become a Vendor
+              </button>
+            )}
           </div>
         </div>
       </div>

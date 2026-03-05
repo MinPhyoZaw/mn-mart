@@ -1,0 +1,20 @@
+import mongoose from "mongoose";
+
+const vendorRequestSchema = new mongoose.Schema(
+  {
+    businessName: { type: String, required: true, trim: true },
+    vendorType: { type: String, enum: ["shopping", "transportation", "hotel", "spa"] },
+    phone: String,
+    address: String,
+    description: String,
+    contactPerson: String,
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.VendorRequest || mongoose.model("VendorRequest", vendorRequestSchema);
