@@ -1,22 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import { CheckCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PromoBanner() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    setIsLoggedIn(!!token);
-  }, []);
-
-  const handleClick = () => {
-    if (!isLoggedIn) {
-      setShowAuthModal(true);
+  const handleBecomeVendor = async () => {
+    try {
+      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      const data = await res.json();
+      if (data?.user) {
+        router.push("/vendorForm");
+        return;
+      }
+    } catch {
+      // If auth check fails, safely continue to signup flow.
     }
+
+    router.push("/signup?vendor=true");
   };
 
   return (
@@ -50,64 +52,15 @@ export default function PromoBanner() {
             </p>
 
             {/* Button */}
-            {isLoggedIn ? (
-              <Link
-                href="/vendorForm"
-                className="inline-block bg-green-500 hover:bg-green-600 transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
-              >
-                Become a Vendor
-              </Link>
-            ) : (
-              <button
-                onClick={handleClick}
-                className="inline-block bg-green-500 hover:bg-green-600 transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
-              >
-                Become a Vendor
-              </button>
-            )}
+            <button
+              onClick={handleBecomeVendor}
+              className="inline-block bg-green-500 hover:bg-green-600 transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
+            >
+              Become a Vendor
+            </button>
           </div>
         </div>
       </div>
-
-      {/* 🔥 Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg">
-            
-            <h3 className="text-lg font-semibold mb-3">
-              You must sign in to become a vendor
-            </h3>
-
-            <p className="text-sm text-gray-600 mb-5">
-              Please login or create an account to continue.
-            </p>
-
-            <div className="flex gap-3 justify-center">
-              <Link
-                href="/login"
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-              >
-                Login
-              </Link>
-
-              <Link
-                href="/signup"
-                className="bg-green-500 text-white px-4 py-2 rounded-lg"
-              >
-                Sign Up
-              </Link>
-            </div>
-
-            <button
-              onClick={() => setShowAuthModal(false)}
-              className="mt-4 text-sm text-gray-500 hover:underline"
-            >
-              Cancel
-            </button>
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }
