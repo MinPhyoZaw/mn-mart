@@ -20,9 +20,32 @@ const shopSchema = new mongoose.Schema({
     required: true
   },
 
-  phone: String,
-  address: String,
-  description: String,
+  phone: {
+    type: String,
+    default: null
+  },
+
+  address: {
+    type: String,
+    default: null
+  },
+
+  description: {
+    type: String,
+    default: null
+  },
+
+  // ✅ Main Image (single)
+  image: {
+    type: String,
+    default: null // IMPORTANT: avoid ""
+  },
+
+  // ✅ Optional: Multiple Images (for future gallery feature)
+  // images: {
+  //   type: [String],
+  //   default: []
+  // },
 
   // ⭐ Rating System
   averageRating: {

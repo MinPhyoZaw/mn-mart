@@ -6,12 +6,18 @@ import { useState, useEffect } from "react";
 
 export default function PromoBanner() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Example: check login status from localStorage or an auth context
   useEffect(() => {
-    const token = localStorage.getItem("authToken"); // replace with your auth logic
+    const token = localStorage.getItem("authToken");
     setIsLoggedIn(!!token);
   }, []);
+
+  const handleClick = () => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+    }
+  };
 
   return (
     <div className="w-full flex justify-center mt-8">
@@ -30,18 +36,15 @@ export default function PromoBanner() {
         <div className="relative h-full flex items-center px-6 md:px-16">
           <div className="max-w-md text-left text-white">
             
-            {/* MN Mart with Check Icon */}
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="text-green-400 w-6 h-6" />
               <span className="text-xl font-bold">MN Mart</span>
             </div>
 
-            {/* Main Title */}
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 font-['Raleway']">
               Discover Local Vendors
             </h2>
 
-            {/* Description */}
             <p className="text-sm sm:text-base mb-5 text-white/90">
               Start your vendor journey with us today and connect with your community like never before.
             </p>
@@ -56,8 +59,8 @@ export default function PromoBanner() {
               </Link>
             ) : (
               <button
-                disabled
-                className="inline-block bg-green-500/50 cursor-not-allowed transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
+                onClick={handleClick}
+                className="inline-block bg-green-500 hover:bg-green-600 transition px-5 py-2.5 rounded-lg font-semibold shadow-md text-sm sm:text-base"
               >
                 Become a Vendor
               </button>
@@ -65,6 +68,46 @@ export default function PromoBanner() {
           </div>
         </div>
       </div>
+
+      {/* 🔥 Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm text-center shadow-lg">
+            
+            <h3 className="text-lg font-semibold mb-3">
+              You must sign in to become a vendor
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-5">
+              Please login or create an account to continue.
+            </p>
+
+            <div className="flex gap-3 justify-center">
+              <Link
+                href="/login"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+              >
+                Login
+              </Link>
+
+              <Link
+                href="/signup"
+                className="bg-green-500 text-white px-4 py-2 rounded-lg"
+              >
+                Sign Up
+              </Link>
+            </div>
+
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="mt-4 text-sm text-gray-500 hover:underline"
+            >
+              Cancel
+            </button>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
