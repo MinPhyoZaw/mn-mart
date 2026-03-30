@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
 
 export default function SignupPage() {
@@ -13,6 +13,8 @@ export default function SignupPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isVendorSignup = searchParams.get("vendor") === "true";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -64,6 +66,11 @@ export default function SignupPage() {
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.heading}>Create your account</div>
             <div className={styles.sub}>Sign up and start adding shops & products</div>
+            {isVendorSignup && (
+              <div className={styles.msgSuccess}>
+                You need to sign up to become a vendor.
+              </div>
+            )}
 
             <input
               className={styles.input}

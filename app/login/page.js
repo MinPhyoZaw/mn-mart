@@ -27,7 +27,9 @@ export default function LoginPage() {
       if (!data.success) {
         setError(data.message || "Login failed");
       } else {
+        window.dispatchEvent(new Event("auth-changed"));
         router.push("/");
+        router.refresh();
       }
     } catch (err) {
       setError("Server error");

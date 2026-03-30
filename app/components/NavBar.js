@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { ShoppingCart, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("/api/auth/me");
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
         const data = await res.json();
         setUser(data.user);
       } catch {
@@ -21,11 +22,19 @@ export default function Navbar() {
     };
 
     fetchUser();
-  }, []);
+
+    const syncAuth = () => {
+      fetchUser();
+    };
+
+    window.addEventListener("auth-changed", syncAuth);
+    return () => window.removeEventListener("auth-changed", syncAuth);
+  }, [pathname]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
+    window.dispatchEvent(new Event("auth-changed"));
     router.push("/");
   };
 
