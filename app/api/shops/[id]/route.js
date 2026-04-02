@@ -5,7 +5,7 @@ import Shop from "../../../models/Shop";
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } =await params;
     const shop = await Shop.findById(id).lean();
     if (!shop) return NextResponse.json({ success: false, message: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: shop }, { status: 200 });
