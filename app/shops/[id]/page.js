@@ -9,11 +9,17 @@ async function getShop(id) {
     throw new Error("Failed to fetch shop");
   }
 
-  return res.json();
+  const result = await res.json();
+  return result?.data ?? null;
 }
 
 export default async function ShopDetailPage({ params }) {
-  const shop = await getShop(params.id);
+  const { id } = await params;
+  const shop = await getShop(id);
+
+  if (!shop) {
+    throw new Error("Shop not found");
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-6">
