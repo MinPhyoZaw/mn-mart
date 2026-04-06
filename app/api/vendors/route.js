@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "../../lib/mongodb";
 import Vendor from "../../models/Vendor";
+import { requireAuth } from "../../lib/routeAuth";
 
 export async function GET() {
   try {
@@ -15,6 +16,9 @@ export async function GET() {
 
 export async function POST(req) {
   try {
+    const auth = requireAuth(req, ["admin"]);
+    if (!auth.ok) return auth.response;
+
     await connectDB();
     const body = await req.json();
 

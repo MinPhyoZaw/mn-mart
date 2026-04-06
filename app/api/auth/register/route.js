@@ -8,7 +8,7 @@ import connectDB from "../../../lib/mongodb";
 export async function POST(req) {
   try {
     await connectDB();
-    const { name, email, password, role } = await req.json();
+    const { name, email, password, phone } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -31,7 +31,8 @@ export async function POST(req) {
       name,
       email,
       password: hashedPassword,
-      role: role || "customer",
+      phone: phone || "",
+      role: "customer",
     });
 
     const userObj = user.toObject ? user.toObject() : user;
