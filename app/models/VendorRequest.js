@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const vendorRequestSchema = new mongoose.Schema(
   {
+    vendorName: { type: String, required: true, trim: true },
     businessName: { type: String, required: true, trim: true },
     vendorType: { type: String, enum: ["shopping", "transportation", "hotel", "spa"] },
     phone: String,
