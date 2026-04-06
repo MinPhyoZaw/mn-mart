@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "../../lib/mongodb";
 import Item from "../../models/Item";
+import Shop from "../../models/Shop";
+import Vendor from "../../models/Vendor";
+import { requireAuth } from "../../lib/routeAuth";
 
 const REQUIRED_FIELDS = ["shopId", "name", "price", "type"];
 
 export async function POST(req) {
   try {
+    const auth = requireAuth(req, ["vendor", "admin"]);
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
 
     const missingFields = REQUIRED_FIELDS.filter((field) => {
@@ -32,6 +38,18 @@ export async function POST(req) {
     }
 
     await connectDB();
+
+    if (auth.user.role === "vendor") {
+      const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
+      if (!vendor) {
+        return NextResponse.json({ success: false, message: "Vendor profile not found" }, { status: 404 });
+      }
+
+      const ownShop = await Shop.findOne({ _id: body.shopId, vendorId: vendor._id }).lean();
+      if (!ownShop) {
+        return NextResponse.json({ success: false, message: "You can only create services for your own shop" }, { status: 403 });
+      }
+    }
 
     const createdItem = await Item.create({
       shopId: body.shopId,
