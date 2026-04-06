@@ -41,7 +41,17 @@ export default async function AdminDashboardPage() {
   const vendorRequests = vendorRequestsRaw.map((r) => ({
     ...r,
     _id: String(r._id),
+    userId: r.userId ? String(r.userId) : null,
+    decidedBy: r.decidedBy ? String(r.decidedBy) : null,
     createdAt: r.createdAt ? r.createdAt.toISOString() : null,
+    updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
+    reviewedAt: r.reviewedAt ? new Date(r.reviewedAt).toISOString() : null,
+  }));
+  const users = usersRaw.map((u) => ({
+    ...u,
+    _id: String(u._id),
+    createdAt: u.createdAt ? u.createdAt.toISOString() : null,
+    updatedAt: u.updatedAt ? u.updatedAt.toISOString() : null,
   }));
   const users = usersRaw.map((u) => ({
     ...u,
