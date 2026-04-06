@@ -25,7 +25,7 @@ export async function PATCH(req, context) {
       const requestUser = vr.userId ? await User.findById(vr.userId) : null;
       const vendorName = vr.businessName || "Unnamed Vendor";
       const serviceType = vr.vendorType || "shopping";
-      const contactPerson = requestUser?.name || vr.businessName || "Owner";
+      const contactPerson = vr.vendorName || requestUser?.name || vr.businessName || "Owner";
       const phone = vr.phone || "N/A";
       const address = vr.address || "N/A";
       const email =

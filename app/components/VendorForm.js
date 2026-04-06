@@ -7,6 +7,7 @@ export default function VendorForm() {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
+    vendorName: "",
     businessName: "",
     vendorType: "",
     phone: "",
@@ -23,14 +24,18 @@ export default function VendorForm() {
         try {
           const res = await fetch('/api/auth/me');
           const data = await res.json();
-          setUser(data.user || null);
-        } catch (err) {
+          const signedInUser = data.user || null;
+          setUser(signedInUser);
+          setFormData((prev) => ({
+            ...prev,
+            vendorName: signedInUser?.name || "",
+          }));
+        } catch {
           setUser(null);
         }
       };
 
       fetchUser();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
   const handleChange = (e) => {
@@ -46,10 +51,8 @@ export default function VendorForm() {
     setMessage("");
 
     try {
-        // include contactPerson and userId when available
         const payload = {
           ...formData,
-          contactPerson: user?.name || undefined,
           userId: user?._id || undefined,
         };
 
@@ -69,7 +72,7 @@ export default function VendorForm() {
         setMessage("Vendor request submitted successfully!");
         setTimeout(() => router.push("/"), 1500);
       }
-    } catch (error) {
+    } catch {
       setMessage("Server error. Please try again.");
     } finally {
       setLoading(false);
@@ -91,6 +94,22 @@ export default function VendorForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Vendor Name (from signed-in account) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Vendor Name
+            </label>
+            <input
+              type="text"
+              name="vendorName"
+              readOnly
+              value={formData.vendorName}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Auto-filled from your sign-in profile for consistent vendor verification.
+            </p>
+          </div>
           
           {/* Business Name */}
           <div>

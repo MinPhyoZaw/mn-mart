@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "../../lib/mongodb";
 import VendorRequest from "../../models/VendorRequest";
+import User from "../../models/User";
 import { requireAuth } from "../../lib/routeAuth";
 
 export async function POST(req) {
@@ -11,8 +12,10 @@ export async function POST(req) {
     await connectDB();
     const body = await req.json();
     const { businessName, vendorType, phone, address, description } = body;
+    const requestUser = await User.findById(auth.user.userId).lean();
+    const vendorName = requestUser?.name?.trim();
 
-    if (!businessName || !vendorType) {
+    if (!businessName || !vendorType || !vendorName) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
     }
 
@@ -28,6 +31,7 @@ export async function POST(req) {
     }
 
     const saved = await VendorRequest.create({
+      vendorName,
       businessName,
       vendorType,
       phone: phone || "",
