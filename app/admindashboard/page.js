@@ -47,11 +47,15 @@ export default async function AdminDashboardPage() {
     updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
     reviewedAt: r.reviewedAt ? new Date(r.reviewedAt).toISOString() : null,
   }));
-  const serializedUsers = usersRaw.map((u) => ({
+  const users = usersRaw.map((u) => ({
     ...u,
     _id: String(u._id),
     createdAt: u.createdAt ? u.createdAt.toISOString() : null,
     updatedAt: u.updatedAt ? u.updatedAt.toISOString() : null,
+  }));
+  const users = usersRaw.map((u) => ({
+    ...u,
+    _id: String(u._id),
   }));
   const pendingRequests = vendorRequests.filter((r) => r.status === "pending");
 
@@ -128,7 +132,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section className="mt-8">
-        <AdminUserRoles initialUsers={serializedUsers} />
+        <AdminUserRoles initialUsers={users} />
       </section>
     </div>
   );
