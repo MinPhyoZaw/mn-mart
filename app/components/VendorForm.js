@@ -177,7 +177,7 @@ export default function VendorForm() {
             )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !user}
             className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-200 shadow-md"
           >
             {loading ? "Submitting..." : "Submit Request"}
