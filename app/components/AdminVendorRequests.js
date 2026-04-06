@@ -36,6 +36,7 @@ export default function AdminVendorRequests({ initialRequests }) {
           <div className="flex justify-between items-start">
             <div>
               <h3 className="font-semibold">{r.businessName}</h3>
+              <p className="text-xs text-gray-500">Vendor: {r.vendorName || "N/A"}</p>
               <p className="text-sm text-gray-500">{r.vendorType} • {r.phone}</p>
             </div>
             <div className="text-sm text-gray-400">{r.status}</div>

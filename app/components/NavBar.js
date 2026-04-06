@@ -79,6 +79,15 @@ export default function Navbar() {
                   </Link>
                 )}
 
+                {user.role === "vendor" && (
+                  <Link
+                    href="/vendordashboard"
+                    className="text-sm font-medium text-gray-700 hover:text-yellow-600 transition"
+                  >
+                    Vendor Dashboard
+                  </Link>
+                )}
+
                 <Link
                   href="/account"
                   className="p-2 rounded-full hover:bg-gray-100 transition"
