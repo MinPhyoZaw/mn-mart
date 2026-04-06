@@ -3,6 +3,13 @@ import mongoose from "mongoose";
 
 const vendorSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      unique: true,
+      sparse: true,
+    },
+
     // Business Info
     vendorName: {
       type: String,
