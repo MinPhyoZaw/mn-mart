@@ -3,25 +3,57 @@ import Shop from "../models/Shop";
 import Vendor from "../models/Vendor";
 import Product from "../models/Product";
 import VendorRequest from "../models/VendorRequest";
+import User from "../models/User";
 import AdminVendorRequests from "../components/AdminVendorRequests";
+import AdminUserRoles from "../components/AdminUserRoles";
 import { ShoppingCartIcon, UserGroupIcon, CubeIcon, BellIcon } from "@heroicons/react/24/outline";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyToken } from "../lib/jwt";
 
 export default async function AdminDashboardPage() {
-  await connectDB();
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) redirect("/login");
 
-  const [shops, vendors, products, vendorRequestsRaw] = await Promise.all([
+  let decoded = null;
+  try {
+    decoded = verifyToken(token);
+  } catch {
+    redirect("/login");
+  }
+
+  await connectDB();
+  const currentUser = decoded?.userId ? await User.findById(decoded.userId).lean() : null;
+  if (!currentUser || currentUser.role !== "admin") {
+    redirect("/");
+  }
+
+  const [shops, vendors, products, vendorRequestsRaw, usersRaw] = await Promise.all([
     Shop.find({}).lean(),
     Vendor.find({}).lean(),
     Product.find({}).lean(),
-    VendorRequest.find({}).lean(),
+    VendorRequest.find({}).sort({ createdAt: -1 }).lean(),
+    User.find({}).select("-password").sort({ createdAt: -1 }).lean(),
   ]);
 
   // serialize for client component
   const vendorRequests = vendorRequestsRaw.map((r) => ({
     ...r,
     _id: String(r._id),
+    userId: r.userId ? String(r.userId) : null,
+    decidedBy: r.decidedBy ? String(r.decidedBy) : null,
     createdAt: r.createdAt ? r.createdAt.toISOString() : null,
+    updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
+    reviewedAt: r.reviewedAt ? new Date(r.reviewedAt).toISOString() : null,
   }));
+  const users = usersRaw.map((u) => ({
+    ...u,
+    _id: String(u._id),
+    createdAt: u.createdAt ? u.createdAt.toISOString() : null,
+    updatedAt: u.updatedAt ? u.updatedAt.toISOString() : null,
+  }));
+  const pendingRequests = vendorRequests.filter((r) => r.status === "pending");
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -30,7 +62,7 @@ export default async function AdminDashboardPage() {
         {/* Notification */}
         <div className="flex items-center space-x-2 cursor-pointer">
           <BellIcon className="w-6 h-6 text-gray-700" />
-          <span className="text-gray-700 font-medium">{vendorRequests.length} Vendor Requests</span>
+          <span className="text-gray-700 font-medium">{pendingRequests.length} Pending Requests</span>
         </div>
       </header>
 
@@ -68,7 +100,7 @@ export default async function AdminDashboardPage() {
           <BellIcon className="w-10 h-10 text-yellow-500 mr-4" />
           <div>
             <p className="text-gray-500 text-sm">Pending Requests</p>
-            <p className="text-2xl font-bold">{vendorRequests.length}</p>
+            <p className="text-2xl font-bold">{pendingRequests.length}</p>
           </div>
         </div>
       </div>
@@ -91,9 +123,12 @@ export default async function AdminDashboardPage() {
         <h2 className="text-xl font-semibold mb-3">Vendor Requests</h2>
         {/* AdminVendorRequests is a client component to handle actions */}
         <div>
-          {/* eslint-disable-next-line @next/next/no-async-client-component */}
           <AdminVendorRequests initialRequests={vendorRequests} />
         </div>
+      </section>
+
+      <section className="mt-8">
+        <AdminUserRoles initialUsers={users} />
       </section>
     </div>
   );
