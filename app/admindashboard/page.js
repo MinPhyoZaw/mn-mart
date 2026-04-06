@@ -53,10 +53,6 @@ export default async function AdminDashboardPage() {
     createdAt: u.createdAt ? u.createdAt.toISOString() : null,
     updatedAt: u.updatedAt ? u.updatedAt.toISOString() : null,
   }));
-  const users = usersRaw.map((u) => ({
-    ...u,
-    _id: String(u._id),
-  }));
   const pendingRequests = vendorRequests.filter((r) => r.status === "pending");
 
   return (
