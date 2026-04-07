@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, ShoppingCart, Plane, Briefcase, User } from "lucide-react";
+import { Home, ShoppingCart, Plane, Briefcase,Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,9 +10,10 @@ export default function MobileBottomBar() {
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
     { icon: ShoppingCart, label: "Shop", href: "/shops" },
-    { icon: Plane, label: "Travel", href: "/travel" },
-    { icon: Briefcase, label: "Services", href: "/services" },
-    { icon: User, label: "Account", href: "/account" },
+    { icon: Plane, label: "Travel", href: "/transportation" },
+    { icon: Briefcase, label: "Hotel", href: "/hotel" },
+    { icon: Sparkles, label: "Spa", href: "/spa" },
+    
   ];
 
   return (
