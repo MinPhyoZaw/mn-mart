@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User } from "lucide-react";
+import { Menu, ShoppingCart, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { totalItems, toggleCart } = useCart();
@@ -33,47 +34,51 @@ export default function Navbar() {
     return () => window.removeEventListener("auth-changed", syncAuth);
   }, [pathname]);
 
+
+  const closeMenu = () => setIsMenuOpen(false);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     window.dispatchEvent(new Event("auth-changed"));
+    setIsMenuOpen(false);
     router.push("/");
   };
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="text-3xl font-extrabold tracking-tight">
-            <span className="text-green-500 font-['Raleway']">MN</span>
-            <span className="text-red-500 font-['Raleway']">Mart</span>
+    <nav className="sticky top-0 z-50 border-b border-gray-100/80 bg-white/95 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between">
+          <Link href="/" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <span className="font-[var(--font-raleway)] text-green-600">MN</span>
+            <span className="font-[var(--font-raleway)] text-red-500">Mart</span>
           </Link>
 
-          <div className="flex items-center gap-4">
-            {!user && (
+          <div className="hidden items-center gap-2 md:flex">
+            {!user ? (
               <>
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-gray-700 hover:text-yellow-600 transition"
+                  onClick={closeMenu}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
                 >
                   Login
                 </Link>
-
                 <Link
                   href="/signup"
-                  className="bg-green-500 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-green-600 transition shadow-sm"
+                  onClick={closeMenu}
+                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
                 >
                   Sign Up
                 </Link>
               </>
-            )}
-
-            {user && (
+            ) : (
               <>
                 {user.role === "admin" && (
                   <Link
                     href="/admindashboard"
-                    className="text-sm font-medium text-gray-700 hover:text-yellow-600 transition"
+                    onClick={closeMenu}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
                   >
                     Admin
                   </Link>
@@ -82,7 +87,8 @@ export default function Navbar() {
                 {user.role === "vendor" && (
                   <Link
                     href="/vendordashboard"
-                    className="text-sm font-medium text-gray-700 hover:text-yellow-600 transition"
+                    onClick={closeMenu}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
                   >
                     Vendor Dashboard
                   </Link>
@@ -90,33 +96,124 @@ export default function Navbar() {
 
                 <Link
                   href="/account"
-                  className="p-2 rounded-full hover:bg-gray-100 transition"
+                  onClick={closeMenu}
+                  className="rounded-full p-2 text-gray-700 transition hover:bg-gray-100"
+                  aria-label="Open account"
                 >
-                  <User size={22} className="text-gray-700 rounded-full" />
+                  <User size={21} className="rounded-full" />
                 </Link>
 
                 <button
+                  onClick={() => {
+                    toggleCart();
+                    closeMenu();
+                  }}
+                  className="relative rounded-full p-2 text-gray-700 transition hover:bg-gray-100"
+                  aria-label="Open shopping cart"
+                >
+                  <ShoppingCart size={21} />
+                  <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-green-600 px-1.5 py-0.5 text-center text-xs font-bold text-white">
+                    {totalItems}
+                  </span>
+                </button>
+
+                <button
                   onClick={handleLogout}
-                  className="text-sm font-medium text-red-500 hover:text-red-600 transition"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-600"
                 >
                   Logout
                 </button>
               </>
             )}
-
-            <button
-              onClick={toggleCart}
-              className="relative p-2 rounded-full hover:bg-gray-100 transition"
-              aria-label="Open shopping cart"
-            >
-              <ShoppingCart size={22} className="text-gray-700" />
-              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center">
-                {totalItems}
-              </span>
-            </button>
           </div>
+
+          <button
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            className="rounded-lg p-2 text-gray-700 transition hover:bg-gray-100 md:hidden"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </div>
+
+      {isMenuOpen && (
+        <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-3 shadow-sm md:hidden">
+          <div className="flex flex-col gap-2">
+            {!user ? (
+              <>
+                <Link
+                  href="/login"
+                  onClick={closeMenu}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={closeMenu}
+                  className="rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-green-700"
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <>
+                {user.role === "admin" && (
+                  <Link
+                    href="/admindashboard"
+                    onClick={closeMenu}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
+                  >
+                    Admin
+                  </Link>
+                )}
+
+                {user.role === "vendor" && (
+                  <Link
+                    href="/vendordashboard"
+                    onClick={closeMenu}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
+                  >
+                    Vendor Dashboard
+                  </Link>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href="/account"
+                    onClick={closeMenu}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
+                  >
+                    <User size={18} /> Account
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                    toggleCart();
+                    closeMenu();
+                  }}
+                    className="relative flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
+                    aria-label="Open shopping cart"
+                  >
+                    <ShoppingCart size={18} /> Cart
+                    <span className="absolute right-2 top-1 min-w-5 rounded-full bg-green-600 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                      {totalItems}
+                    </span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-600"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

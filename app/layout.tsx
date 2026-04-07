@@ -5,8 +5,17 @@ import CartDrawer from "./components/CartDrawer";
 import { CartProvider } from "./context/CartContext";
 import { Raleway, Inter } from "next/font/google";
 
-const raleway = Raleway({ subsets: ["latin"], weight: ["400", "700"] });
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"] });
+const raleway = Raleway({
+  subsets: ["latin"],
+  weight: ["700", "800"],
+  variable: "--font-raleway",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+});
 
 export const metadata = {
   title: "LocalMart",
@@ -20,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${raleway.className} ${inter.className}`}>
+      <body className={`${inter.variable} ${raleway.variable} font-[var(--font-inter)]`}>
         <CartProvider>
           <Navbar />
           <main className="min-h-screen bg-gray-50">{children}</main>
