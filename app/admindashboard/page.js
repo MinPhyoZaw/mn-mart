@@ -29,7 +29,7 @@ export default async function AdminDashboardPage() {
     redirect("/");
   }
 
-  const requestPageSize = 5;
+  const requestPageSize = 20;
   const [shops, vendors, products, vendorRequestsRaw, usersRaw, pendingRequestsCount, totalRequestsCount] = await Promise.all([
     Shop.find({}).lean(),
     Vendor.find({}).lean(),
@@ -128,7 +128,6 @@ export default async function AdminDashboardPage() {
             initialRequests={vendorRequests}
             initialPageSize={requestPageSize}
             initialTotal={totalRequestsCount}
-            initialHasMore={totalRequestsCount > requestPageSize}
           />
         </div>
       </section>
