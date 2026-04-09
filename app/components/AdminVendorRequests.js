@@ -53,8 +53,13 @@ export default function AdminVendorRequests({ initialRequests, initialPageSize =
       });
       const data = await res.json();
       if (data.success) {
-        // update local state
-        setRequests((r) => r.map((it) => (it._id === id ? { ...it, status: data.request?.status || (action === 'approve' ? 'approved' : 'rejected') } : it)));
+        setRequests((r) =>
+          r.map((it) =>
+            it._id === id
+              ? { ...it, status: data.request?.status || (action === "approve" ? "approved" : "rejected") }
+              : it
+          )
+        );
       } else {
         alert(data.message || "Action failed");
       }
@@ -67,28 +72,49 @@ export default function AdminVendorRequests({ initialRequests, initialPageSize =
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {requests.map((r) => (
-        <div key={r._id} className="p-4 bg-white rounded-lg shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold">{r.businessName}</h3>
-              <p className="text-xs text-gray-500">Vendor: {r.vendorName || "N/A"}</p>
-              <p className="text-sm text-gray-500">{r.vendorType} • {r.phone}</p>
-            </div>
-            <div className="text-sm text-gray-400">{r.status}</div>
-          </div>
-          <p className="text-sm mt-2 text-gray-700">{r.description}</p>
-          <p className="text-xs text-gray-400 mt-2">Submitted: {new Date(r.createdAt).toLocaleString()}</p>
+    <div>
+      <div className="mb-4 flex items-center gap-2">
+        <label htmlFor="request-filter" className="text-sm text-gray-600">Filter:</label>
+        <select
+          id="request-filter"
+          value={filter}
+          onChange={(e) => {
+            const nextFilter = e.target.value;
+            setFilter(nextFilter);
+            fetchFirstPage(nextFilter);
+          }}
+          className="border rounded px-2 py-1 text-sm bg-white"
+        >
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <span className="text-xs text-gray-500">{total} total</span>
+      </div>
 
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={() => updateRequest(r._id, "approve")}
-              disabled={loadingId === r._id || r.status !== "pending"}
-              className="bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50"
-            >
-              {loadingId === r._id ? "Processing..." : "Approve"}
-            </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {requests.map((r) => (
+          <div key={r._id} className="p-4 bg-white rounded-lg shadow">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-semibold">{r.businessName}</h3>
+                <p className="text-xs text-gray-500">Vendor: {r.vendorName || "N/A"}</p>
+                <p className="text-sm text-gray-500">{r.vendorType} • {r.phone}</p>
+              </div>
+              <div className="text-sm text-gray-400">{r.status}</div>
+            </div>
+            <p className="text-sm mt-2 text-gray-700">{r.description}</p>
+            <p className="text-xs text-gray-400 mt-2">Submitted: {new Date(r.createdAt).toLocaleString()}</p>
+
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => updateRequest(r._id, "approve")}
+                disabled={loadingId === r._id || r.status !== "pending"}
+                className="bg-green-600 text-white px-3 py-1 rounded disabled:opacity-50"
+              >
+                {loadingId === r._id ? "Processing..." : "Approve"}
+              </button>
 
             <button
               onClick={() => updateRequest(r._id, "reject")}
