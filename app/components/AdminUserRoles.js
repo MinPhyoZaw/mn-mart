@@ -8,6 +8,9 @@ export default function AdminUserRoles({ initialUsers = [] }) {
   const [users, setUsers] = useState(initialUsers);
   const [loadingId, setLoadingId] = useState(null);
   const [message, setMessage] = useState("");
+  const [showAll, setShowAll] = useState(false);
+
+  const visibleUsers = showAll ? users : users.slice(0, 7);
 
   const handleRoleChange = async (userId, role) => {
     setLoadingId(userId);
@@ -41,29 +44,44 @@ export default function AdminUserRoles({ initialUsers = [] }) {
 
       {message && <p className="text-sm mb-3 text-gray-600">{message}</p>}
 
-      <div className="space-y-3">
-        {users.map((u) => (
-          <div key={u._id} className="flex items-center justify-between border rounded p-3">
-            <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {visibleUsers.map((u) => (
+          <div key={u._id} className="border rounded p-3 bg-gray-50 shadow-sm">
+            <div className="mb-3">
               <p className="font-medium">{u.name}</p>
-              <p className="text-xs text-gray-500">{u.email}</p>
+              <p className="text-xs text-gray-500 break-all">{u.email}</p>
             </div>
 
-            <select
-              value={u.role}
-              disabled={loadingId === u._id}
-              onChange={(e) => handleRoleChange(u._id, e.target.value)}
-              className="border rounded px-2 py-1 text-sm"
-            >
-              {ROLE_OPTIONS.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-500">Role</span>
+              <select
+                value={u.role}
+                disabled={loadingId === u._id}
+                onChange={(e) => handleRoleChange(u._id, e.target.value)}
+                className="border rounded px-2 py-1 text-sm bg-white"
+              >
+                {ROLE_OPTIONS.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         ))}
       </div>
+
+      {users.length > 7 && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            className="px-4 py-2 bg-gray-800 text-white rounded"
+          >
+            {showAll ? "Show less" : "See more"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

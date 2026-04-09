@@ -19,17 +19,6 @@ export async function POST(req) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
     }
 
-    const existingPending = await VendorRequest.findOne({
-      userId: auth.user.userId,
-      status: "pending",
-    });
-    if (existingPending) {
-      return NextResponse.json(
-        { success: false, message: "You already have a pending request" },
-        { status: 400 }
-      );
-    }
-
     const saved = await VendorRequest.create({
       vendorName,
       businessName,
