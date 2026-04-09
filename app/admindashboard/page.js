@@ -29,12 +29,15 @@ export default async function AdminDashboardPage() {
     redirect("/");
   }
 
-  const [shops, vendors, products, vendorRequestsRaw, usersRaw] = await Promise.all([
+  const requestPageSize = 20;
+  const [shops, vendors, products, vendorRequestsRaw, usersRaw, pendingRequestsCount, totalRequestsCount] = await Promise.all([
     Shop.find({}).lean(),
     Vendor.find({}).lean(),
     Product.find({}).lean(),
-    VendorRequest.find({}).sort({ createdAt: -1 }).lean(),
+    VendorRequest.find({}).sort({ createdAt: -1 }).limit(requestPageSize).lean(),
     User.find({}).select("-password").sort({ createdAt: -1 }).lean(),
+    VendorRequest.countDocuments({ status: "pending" }),
+    VendorRequest.countDocuments({}),
   ]);
 
   // serialize for client component
@@ -53,8 +56,6 @@ export default async function AdminDashboardPage() {
     createdAt: u.createdAt ? u.createdAt.toISOString() : null,
     updatedAt: u.updatedAt ? u.updatedAt.toISOString() : null,
   }));
-  const pendingRequests = vendorRequests.filter((r) => r.status === "pending");
-
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <header className="flex items-center justify-between mb-8">
@@ -62,7 +63,7 @@ export default async function AdminDashboardPage() {
         {/* Notification */}
         <div className="flex items-center space-x-2 cursor-pointer">
           <BellIcon className="w-6 h-6 text-gray-700" />
-          <span className="text-gray-700 font-medium">{pendingRequests.length} Pending Requests</span>
+          <span className="text-gray-700 font-medium">{pendingRequestsCount} Pending Requests</span>
         </div>
       </header>
 
@@ -100,7 +101,7 @@ export default async function AdminDashboardPage() {
           <BellIcon className="w-10 h-10 text-yellow-500 mr-4" />
           <div>
             <p className="text-gray-500 text-sm">Pending Requests</p>
-            <p className="text-2xl font-bold">{pendingRequests.length}</p>
+            <p className="text-2xl font-bold">{pendingRequestsCount}</p>
           </div>
         </div>
       </div>
@@ -123,7 +124,11 @@ export default async function AdminDashboardPage() {
         <h2 className="text-xl font-semibold mb-3">Vendor Requests</h2>
         {/* AdminVendorRequests is a client component to handle actions */}
         <div>
-          <AdminVendorRequests initialRequests={vendorRequests} />
+          <AdminVendorRequests
+            initialRequests={vendorRequests}
+            initialPageSize={requestPageSize}
+            initialTotal={totalRequestsCount}
+          />
         </div>
       </section>
 
