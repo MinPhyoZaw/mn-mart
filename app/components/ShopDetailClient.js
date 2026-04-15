@@ -30,7 +30,7 @@ export default function ShopDetailClient({ shop, items }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto px-4 py-5 sm:p-6">
       <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden shadow-lg">
         <Image
           src={shop.image || "/images/default-shop.png"}
@@ -41,18 +41,18 @@ export default function ShopDetailClient({ shop, items }) {
       </div>
 
       <div className="mt-6">
-        <h1 className="text-3xl font-bold text-yellow-600">{shop.name}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-yellow-600 break-words">{shop.name}</h1>
 
-        <p className="text-gray-600 mt-2">{shop.description || "No description available"}</p>
+        <p className="text-gray-600 mt-2 break-words">{shop.description || "No description available"}</p>
 
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Phone</p>
-            <p className="mt-1 font-medium text-gray-800">{shop.phone || "N/A"}</p>
+            <p className="mt-1 font-medium text-gray-800 break-all">{shop.phone || "N/A"}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Address</p>
-            <p className="mt-1 font-medium text-gray-800">{shop.address || "N/A"}</p>
+            <p className="mt-1 font-medium text-gray-800 break-words">{shop.address || "N/A"}</p>
           </div>
         </div>
 
@@ -60,11 +60,14 @@ export default function ShopDetailClient({ shop, items }) {
           <h2 className="text-xl font-semibold mb-3">{isHotel ? "Available Room" : "Available Items"}</h2>
 
           {items?.length ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((item) => {
                 const amenityList = getAmenityList(item);
                 return (
-                  <div key={item._id} className="border bg-white rounded-xl overflow-hidden shadow-sm">
+                  <div
+                    key={item._id}
+                    className="border bg-white rounded-xl overflow-hidden shadow-sm h-full flex flex-col"
+                  >
                     <div className="relative w-full h-40 bg-gray-100">
                       {item.image ? (
                         <Image
@@ -77,13 +80,13 @@ export default function ShopDetailClient({ shop, items }) {
                       ) : null}
                     </div>
 
-                    <div className="p-3">
-                      <h3 className="font-semibold leading-tight">{item.name}</h3>
+                    <div className="p-3 flex flex-col flex-1">
+                      <h3 className="font-semibold leading-tight break-words">{item.name}</h3>
 
                       {isRoom(item) && (
                         <p className="mt-1 text-sm text-gray-600">
                           <span className="font-medium">Room Type :</span>{" "}
-                          {item?.extra?.roomType || item.name}
+                          <span className="break-words">{item?.extra?.roomType || item.name}</span>
                         </p>
                       )}
 
@@ -95,14 +98,14 @@ export default function ShopDetailClient({ shop, items }) {
                       )}
 
                       {isRoom(item) && (
-                        <div className="mt-3">
+                        <div className="mt-3 min-h-[86px]">
                           <p className="text-sm font-semibold text-gray-700">Amenities</p>
                           {amenityList.length ? (
                             <div className="mt-2 flex flex-wrap gap-2">
                               {amenityList.map((amenity) => (
                                 <span
                                   key={amenity.label}
-                                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700"
+                                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700 break-words"
                                 >
                                   <span>{amenity.icon}</span>
                                   <span>{amenity.label}</span>
@@ -115,21 +118,23 @@ export default function ShopDetailClient({ shop, items }) {
                         </div>
                       )}
 
-                      <p className="mt-2 text-sm text-gray-500 line-clamp-2">{item.description || ""}</p>
+                      <p className="mt-2 text-sm text-gray-500 line-clamp-2 break-words">
+                        {item.description || ""}
+                      </p>
 
-                      <div className="mt-3 flex items-center justify-between gap-2">
+                      <div className="mt-3 flex items-center justify-between gap-2 mt-auto">
                         <span className="font-semibold text-yellow-600">${Number(item.price).toFixed(2)}</span>
                         {isHotel ? (
                           <a
                             href={shop.phone ? `tel:${shop.phone}` : "#"}
-                            className="text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                            className="text-xs sm:text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md whitespace-nowrap"
                           >
                             Call for booking
                           </a>
                         ) : (
                           <button
                             onClick={() => handleAddToCart(item)}
-                            className="text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                            className="text-xs sm:text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md whitespace-nowrap"
                           >
                             Add to cart
                           </button>
