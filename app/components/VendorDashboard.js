@@ -2,6 +2,38 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+const MAX_IMAGE_SIDE = 1280;
+const OUTPUT_QUALITY = 0.8;
+
+const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(new Error("Unable to read the image file."));
+  reader.readAsDataURL(file);
+});
+
+const loadImageElement = (src) => new Promise((resolve, reject) => {
+  const img = new window.Image();
+  img.onload = () => resolve(img);
+  img.onerror = () => reject(new Error("Unable to load selected image."));
+  img.src = src;
+});
+
+const compressItemImage = async (file) => {
+  const sourceDataUrl = await fileToDataUrl(file);
+  const image = await loadImageElement(sourceDataUrl);
+
+  const scale = Math.min(MAX_IMAGE_SIDE / image.width, MAX_IMAGE_SIDE / image.height, 1);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+
+  const ctx = canvas.getContext("2d", { alpha: false });
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  return canvas.toDataURL("image/webp", OUTPUT_QUALITY);
+};
+
 const TYPE_MAP = {
   shopping: "product",
   spa: "service",
@@ -213,29 +245,22 @@ export default function VendorDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith("image/")) {
+      setMessage("Please upload a valid image file.");
+      return;
+    }
+
     setUploadingImage(true);
     setMessage("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setMessage(data?.error || "Image upload failed");
-        return;
-      }
-
-      setForm((prev) => ({ ...prev, image: data.url }));
-    } catch {
-      setMessage("Image upload failed");
+      const image = await compressItemImage(file);
+      setForm((prev) => ({ ...prev, image }));
+    } catch (error) {
+      setMessage(error.message || "Image upload failed");
     } finally {
       setUploadingImage(false);
+      e.target.value = "";
     }
   };
 
