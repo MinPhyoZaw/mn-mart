@@ -11,6 +11,8 @@ export default function ShopDetailClient({ shop, items }) {
     openCart();
   };
 
+  const isRoom = (item) => item.type === "room";
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden shadow-lg">
@@ -60,6 +62,12 @@ export default function ShopDetailClient({ shop, items }) {
 
                   <div className="flex-1">
                     <h3 className="font-semibold leading-tight">{item.name}</h3>
+                    {isRoom(item) && item.isAvailable && (
+                      <p className="mt-1 flex items-center gap-2 text-sm text-green-600">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
+                        Available
+                      </p>
+                    )}
                     <p className="text-sm text-gray-500 line-clamp-2">{item.description || ""}</p>
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <span className="font-semibold text-yellow-600">${Number(item.price).toFixed(2)}</span>
