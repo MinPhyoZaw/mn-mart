@@ -1,12 +1,18 @@
 import connectDB from "../lib/mongodb";
 import Shop from "../models/Shop";
 import Vendor from "../models/Vendor";
-import Product from "../models/Product";
 import VendorRequest from "../models/VendorRequest";
 import User from "../models/User";
 import AdminVendorRequests from "../components/AdminVendorRequests";
 import AdminUserRoles from "../components/AdminUserRoles";
-import { ShoppingCartIcon, UserGroupIcon, CubeIcon, BellIcon } from "@heroicons/react/24/outline";
+import {
+  ShoppingCartIcon,
+  UserGroupIcon,
+  BellIcon,
+  BuildingOffice2Icon,
+  TruckIcon,
+  SparklesIcon,
+} from "@heroicons/react/24/outline";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyToken } from "../lib/jwt";
@@ -30,10 +36,9 @@ export default async function AdminDashboardPage() {
   }
 
   const requestPageSize = 20;
-  const [shops, vendors, products, vendorRequestsRaw, usersRaw, pendingRequestsCount, totalRequestsCount] = await Promise.all([
+  const [shops, vendors, vendorRequestsRaw, usersRaw, pendingRequestsCount, totalRequestsCount] = await Promise.all([
     Shop.find({}).lean(),
     Vendor.find({}).lean(),
-    Product.find({}).lean(),
     VendorRequest.find({}).sort({ createdAt: -1 }).limit(requestPageSize).lean(),
     User.find({}).select("-password").sort({ createdAt: -1 }).lean(),
     VendorRequest.countDocuments({ status: "pending" }),
@@ -74,7 +79,7 @@ export default async function AdminDashboardPage() {
           <ShoppingCartIcon className="w-10 h-10 text-red-500 mr-4" />
           <div>
             <p className="text-gray-500 text-sm">Shops</p>
-            <p className="text-2xl font-bold">{shops.length}</p>
+            <p className="text-2xl font-bold">4</p>
           </div>
         </div>
 
@@ -87,12 +92,12 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Products */}
+        {/* Hotels */}
         <div className="flex items-center p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-          <CubeIcon className="w-10 h-10 text-green-500 mr-4" />
+          <BuildingOffice2Icon className="w-10 h-10 text-green-500 mr-4" />
           <div>
-            <p className="text-gray-500 text-sm">Products</p>
-            <p className="text-2xl font-bold">{products.length}</p>
+            <p className="text-gray-500 text-sm">Hotels</p>
+            <p className="text-2xl font-bold">2</p>
           </div>
         </div>
 
@@ -102,6 +107,24 @@ export default async function AdminDashboardPage() {
           <div>
             <p className="text-gray-500 text-sm">Pending Requests</p>
             <p className="text-2xl font-bold">{pendingRequestsCount}</p>
+          </div>
+        </div>
+
+        {/* Transportation */}
+        <div className="flex items-center p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+          <TruckIcon className="w-10 h-10 text-indigo-500 mr-4" />
+          <div>
+            <p className="text-gray-500 text-sm">Transportation</p>
+            <p className="text-2xl font-bold">2</p>
+          </div>
+        </div>
+
+        {/* Spa */}
+        <div className="flex items-center p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+          <SparklesIcon className="w-10 h-10 text-pink-500 mr-4" />
+          <div>
+            <p className="text-gray-500 text-sm">Spa</p>
+            <p className="text-2xl font-bold">2</p>
           </div>
         </div>
       </div>
