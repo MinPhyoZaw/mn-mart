@@ -9,24 +9,51 @@ const TYPE_MAP = {
   transportation: "transport",
 };
 
+const INITIAL_FORM = {
+  name: "",
+  price: "",
+  quantity: "",
+  category: "",
+  roomType: "",
+  amenities: {
+    wifi: false,
+    swimmingPool: false,
+    aircon: false,
+    breakfast: false,
+    extraBed: false,
+  },
+  isAvailable: false,
+  carName: "",
+  routeFrom: "",
+  routeTo: "",
+  startDateTime: "",
+  duration: "",
+  image: "",
+};
+
+const AMENITIES = [
+  { key: "wifi", label: "WiFi" },
+  { key: "swimmingPool", label: "Swimming Pool" },
+  { key: "aircon", label: "Aircon" },
+  { key: "breakfast", label: "Breakfast" },
+  { key: "extraBed", label: "Extra Bed" },
+];
+
+const FORM_TITLE = {
+  shopping: "Add New Products",
+  hotel: "Add New Room",
+  transportation: "Add New Routes",
+  spa: "Add New Service",
+};
+
 export default function VendorDashboard() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [vendor, setVendor] = useState(null);
   const [shop, setShop] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    price: "",
-    description: "",
-    image: "",
-    category: "",
-    roomType: "",
-    seats: "",
-    routeFrom: "",
-    routeTo: "",
-    duration: "",
-  });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -52,27 +79,77 @@ export default function VendorDashboard() {
   const serviceType = shop?.category || vendor?.serviceType || "";
 
   const dynamicFields = useMemo(() => {
+    if (serviceType === "shopping") {
+      return (
+        <>
+          <input
+            name="category"
+            placeholder="Category"
+            value={form.category}
+            onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
+          />
+          <input
+            name="quantity"
+            type="number"
+            min="0"
+            placeholder="Quantity"
+            value={form.quantity}
+            onChange={(e) => setForm((prev) => ({ ...prev, quantity: e.target.value }))}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
+          />
+        </>
+      );
+    }
+
     if (serviceType === "hotel") {
       return (
         <>
           <input
             name="roomType"
-            placeholder="Room Type (e.g. Deluxe Twin)"
+            placeholder="Room Type"
             value={form.roomType}
             onChange={(e) => setForm((prev) => ({ ...prev, roomType: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
             required
           />
-          <input
-            name="seats"
-            type="number"
-            min="1"
-            placeholder="Max Guests"
-            value={form.seats}
-            onChange={(e) => setForm((prev) => ({ ...prev, seats: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            required
-          />
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">Amenities</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {AMENITIES.map((amenity) => (
+                <label key={amenity.key} className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={form.amenities[amenity.key]}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        amenities: {
+                          ...prev.amenities,
+                          [amenity.key]: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  {amenity.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={form.isAvailable}
+              onChange={(e) => setForm((prev) => ({ ...prev, isAvailable: e.target.checked }))}
+              className="h-4 w-4"
+            />
+            Room available
+          </label>
         </>
       );
     }
@@ -81,8 +158,16 @@ export default function VendorDashboard() {
       return (
         <>
           <input
+            name="carName"
+            placeholder="Car Name"
+            value={form.carName}
+            onChange={(e) => setForm((prev) => ({ ...prev, carName: e.target.value }))}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
+          />
+          <input
             name="routeFrom"
-            placeholder="Route From"
+            placeholder="From (e.g. Myitkyina)"
             value={form.routeFrom}
             onChange={(e) => setForm((prev) => ({ ...prev, routeFrom: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
@@ -90,88 +175,137 @@ export default function VendorDashboard() {
           />
           <input
             name="routeTo"
-            placeholder="Route To"
+            placeholder="To (e.g. Yangon)"
             value={form.routeTo}
             onChange={(e) => setForm((prev) => ({ ...prev, routeTo: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
             required
           />
           <input
-            name="duration"
-            placeholder="Estimated Duration (e.g. 3h 20m)"
-            value={form.duration}
-            onChange={(e) => setForm((prev) => ({ ...prev, duration: e.target.value }))}
+            name="startDateTime"
+            type="datetime-local"
+            value={form.startDateTime}
+            onChange={(e) => setForm((prev) => ({ ...prev, startDateTime: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
           />
         </>
       );
     }
 
-    return (
-      <input
-        name="category"
-        placeholder="Category (optional)"
-        value={form.category}
-        onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
-        className="w-full border border-gray-300 rounded-lg px-4 py-2"
-      />
-    );
+    if (serviceType === "spa") {
+      return (
+        <input
+          name="duration"
+          placeholder="Duration (e.g. 60 min)"
+          value={form.duration}
+          onChange={(e) => setForm((prev) => ({ ...prev, duration: e.target.value }))}
+          className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          required
+        />
+      );
+    }
+
+    return null;
   }, [form, serviceType]);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setMessage("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setMessage(data?.error || "Image upload failed");
+        return;
+      }
+
+      setForm((prev) => ({ ...prev, image: data.url }));
+    } catch {
+      setMessage("Image upload failed");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!shop?._id) return;
 
+    if (!form.image) {
+      setMessage("Please upload an image before submitting.");
+      return;
+    }
+
     setSubmitting(true);
     setMessage("");
 
-    const extra = {};
-    if (serviceType === "hotel") {
-      extra.roomType = form.roomType;
-      extra.maxGuests = Number(form.seats);
+    const payload = {
+      shopId: shop._id,
+      name: form.name,
+      price: Number(form.price),
+      image: form.image,
+      type: TYPE_MAP[serviceType] || "service",
+      category: form.category || serviceType,
+      extra: {},
+      isAvailable: true,
+    };
+
+    if (serviceType === "shopping") {
+      payload.extra.quantity = Number(form.quantity);
+      payload.category = form.category;
     }
+
+    if (serviceType === "hotel") {
+      payload.name = form.roomType;
+      payload.category = "hotel-room";
+      payload.extra.roomType = form.roomType;
+      payload.extra.amenities = form.amenities;
+      payload.isAvailable = form.isAvailable;
+    }
+
     if (serviceType === "transportation") {
-      extra.routeFrom = form.routeFrom;
-      extra.routeTo = form.routeTo;
-      extra.duration = form.duration;
+      payload.name = form.carName;
+      payload.category = "transport-route";
+      payload.extra.carName = form.carName;
+      payload.extra.routeFrom = form.routeFrom;
+      payload.extra.routeTo = form.routeTo;
+      payload.extra.routeLabel = `From ${form.routeFrom} to ${form.routeTo}`;
+      payload.extra.startDateTime = form.startDateTime;
+    }
+
+    if (serviceType === "spa") {
+      payload.extra.duration = form.duration;
+      payload.category = "spa-service";
     }
 
     try {
       const res = await fetch("/api/items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          shopId: shop._id,
-          name: form.name,
-          price: Number(form.price),
-          description: form.description,
-          image: form.image,
-          type: TYPE_MAP[serviceType] || "service",
-          category: form.category || serviceType,
-          extra,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!data.success) {
-        setMessage(data.message || "Failed to create service");
+        setMessage(data.message || "Failed to create item/service");
       } else {
-        setMessage("Service created successfully.");
-        setForm({
-          name: "",
-          price: "",
-          description: "",
-          image: "",
-          category: "",
-          roomType: "",
-          seats: "",
-          routeFrom: "",
-          routeTo: "",
-          duration: "",
-        });
+        setMessage("Created successfully.");
+        setForm(INITIAL_FORM);
       }
     } catch {
-      setMessage("Server error while creating service");
+      setMessage("Server error while creating item/service");
     } finally {
       setSubmitting(false);
     }
@@ -195,54 +329,62 @@ export default function VendorDashboard() {
       </p>
 
       <div className="bg-white rounded-xl shadow p-5">
-        <h2 className="text-lg font-semibold mb-3">Create a new service/item</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          You only see fields for your assigned service type to keep the form simple and avoid wrong data.
-        </p>
+        <h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2>
 
         {message && <p className="mb-3 text-sm text-blue-600">{message}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            name="name"
-            placeholder="Service Name"
-            value={form.name}
-            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            required
-          />
+          {(serviceType === "shopping" || serviceType === "spa") && (
+            <input
+              name="name"
+              placeholder={serviceType === "shopping" ? "Product Name" : "Service Name"}
+              value={form.name}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              required
+            />
+          )}
           <input
             name="price"
             type="number"
             min="0"
             step="0.01"
-            placeholder="Price"
+            placeholder={
+              serviceType === "hotel"
+                ? "Price Per Night"
+                : serviceType === "transportation"
+                  ? "Ticket Price Per Person"
+                  : "Price"
+            }
             value={form.price}
             onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
             required
           />
-          <textarea
-            name="description"
-            rows="3"
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-          />
-          <input
-            name="image"
-            placeholder="Image URL (optional)"
-            value={form.image}
-            onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Image Upload (required)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              required={!form.image}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {uploadingImage
+                ? "Uploading image..."
+                : form.image
+                  ? "Image uploaded successfully."
+                  : "Please upload an image file."}
+            </p>
+          </div>
 
           {dynamicFields}
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || uploadingImage}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60"
           >
             {submitting ? "Saving..." : "Create"}
