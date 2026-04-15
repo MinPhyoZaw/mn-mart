@@ -21,7 +21,5 @@ export default async function ShopDetailPage({ params }) {
     throw new Error("Shop not found");
   }
 
-  const { shop, items } = data;
-
   return <ShopDetailClient shop={data.shop} items={data.items || []} />;
 }
