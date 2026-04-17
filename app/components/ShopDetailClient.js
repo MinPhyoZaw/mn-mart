@@ -4,11 +4,11 @@ import Image from "next/image";
 import { useCart } from "../context/CartContext";
 
 const AMENITY_META = {
-  wifi: { label: "WiFi", icon: "📶" },
-  swimmingPool: { label: "Swimming Pool", icon: "🏊" },
-  aircon: { label: "Aircon", icon: "❄️" },
-  breakfast: { label: "Breakfast", icon: "🍳" },
-  extraBed: { label: "Extra Bed", icon: "🛏️" },
+  wifi: { label: "WiFi" },
+  swimmingPool: { label: "Swimming Pool" },
+  aircon: { label: "Aircon" },
+  breakfast: { label: "Breakfast" },
+  extraBed: { label: "Extra Bed" },
 };
 
 export default function ShopDetailClient({ shop, items }) {
@@ -26,7 +26,7 @@ export default function ShopDetailClient({ shop, items }) {
     const amenities = item?.extra?.amenities || {};
     return Object.entries(amenities)
       .filter(([, enabled]) => Boolean(enabled))
-      .map(([key]) => AMENITY_META[key] || { label: key, icon: "✅" });
+      .map(([key]) => AMENITY_META[key] || { label: key });
   };
 
   return (
@@ -107,7 +107,7 @@ export default function ShopDetailClient({ shop, items }) {
                                   key={amenity.label}
                                   className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700 break-words"
                                 >
-                                  <span>{amenity.icon}</span>
+                                  <span>✅</span>
                                   <span>{amenity.label}</span>
                                 </span>
                               ))}
