@@ -8,6 +8,15 @@ import Order from "../../models/Order";
 const COMMISSION_RATE = 1.5;
 
 const makeOrderId = () => `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+const normalizeId = (value) => {
+  if (!value) return null;
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    if (value._id) return String(value._id);
+    if (value.id) return String(value.id);
+  }
+  return null;
+};
 
 export async function POST(req) {
   try {
@@ -29,26 +38,42 @@ export async function POST(req) {
 
     const ordersByShop = new Map();
     for (const item of cartItems) {
-      if (!item.shopId || !item.vendorId || !item._id) {
+      const normalizedItemId = normalizeId(item._id || item.itemId || item.id);
+      const normalizedShopId = normalizeId(item.shopId || item.shop?.id || item.shop?._id);
+      const normalizedVendorId = normalizeId(item.vendorId || item.vendor?.id || item.vendor?._id);
+
+      if (!normalizedShopId || !normalizedItemId) {
         return NextResponse.json({ success: false, message: "Invalid cart data. Please re-add items." }, { status: 400 });
       }
-      const key = String(item.shopId);
+
+      const normalizedItem = {
+        ...item,
+        _id: normalizedItemId,
+        shopId: normalizedShopId,
+        vendorId: normalizedVendorId,
+      };
+
+      const key = normalizedShopId;
       if (!ordersByShop.has(key)) {
         ordersByShop.set(key, []);
       }
-      ordersByShop.get(key).push(item);
+      ordersByShop.get(key).push(normalizedItem);
     }
 
     const createdOrders = [];
 
     for (const [shopId, shopItems] of ordersByShop.entries()) {
-      const vendorId = shopItems[0].vendorId;
-      const [shop, vendor] = await Promise.all([
+      const vendorIdFromCart = shopItems[0].vendorId;
+      const [shop, vendorFromCart] = await Promise.all([
         Shop.findById(shopId).lean(),
-        Vendor.findById(vendorId).lean(),
+        vendorIdFromCart ? Vendor.findById(vendorIdFromCart).lean() : null,
       ]);
 
-      if (!shop || !vendor) {
+      const resolvedVendorId = vendorIdFromCart || normalizeId(shop?.vendorId);
+      const resolvedVendor =
+        vendorFromCart || (resolvedVendorId ? await Vendor.findById(resolvedVendorId).lean() : null);
+
+      if (!shop || !resolvedVendor) {
         return NextResponse.json(
           { success: false, message: "Shop or vendor not found for one of the items." },
           { status: 404 }
@@ -73,7 +98,7 @@ export async function POST(req) {
 
       const order = await Order.create({
         orderId: makeOrderId(),
-        vendorId: vendor._id,
+        vendorId: resolvedVendor._id,
         shopId: shop._id,
         customerId: auth.user.userId,
         customerName,
@@ -91,7 +116,7 @@ export async function POST(req) {
       createdOrders.push({
         orderId: order.orderId,
         shopName: shop.name,
-        vendorName: vendor.vendorName,
+        vendorName: resolvedVendor.vendorName,
         totalAmount: order.totalAmount,
         commissionAmount: order.commissionAmount,
       });
