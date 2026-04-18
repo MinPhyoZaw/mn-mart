@@ -21,9 +21,22 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
+  const normalizedCartItems = useMemo(
+    () =>
+      cartItems.map((item) => ({
+        ...item,
+        _id: item._id || item.itemId || item.id || null,
+        shopId: item.shopId || item.shop?.id || item.shop?._id || null,
+        vendorId: item.vendorId || item.vendor?.id || item.vendor?._id || null,
+        quantity: Math.max(Number(item.quantity) || 1, 1),
+        price: Number(item.price) || 0,
+      })),
+    [cartItems]
+  );
+
   const byShopSummaries = useMemo(() => {
     const map = new Map();
-    for (const item of cartItems) {
+    for (const item of normalizedCartItems) {
       const key = item.shopId || item._id;
       const prev = map.get(key) || {
         shopName: item.shopName || "Unknown Shop",
@@ -37,7 +50,7 @@ export default function CheckoutPage() {
       ...entry,
       commission: Number(((entry.total * 1.5) / 100).toFixed(2)),
     }));
-  }, [cartItems]);
+  }, [normalizedCartItems]);
 
   const readFile = (file) =>
     new Promise((resolve, reject) => {
@@ -84,7 +97,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cartItems,
+          cartItems: normalizedCartItems,
           customerName,
           customerPhone,
           paymentProvider,
@@ -183,7 +196,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={submitting || cartItems.length === 0}
+              disabled={submitting || normalizedCartItems.length === 0}
               className="w-full sm:w-auto bg-green-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
               {submitting ? "Submitting..." : "Confirm Checkout"}
@@ -193,6 +206,25 @@ export default function CheckoutPage() {
 
         <aside className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 h-fit">
           <h2 className="text-lg font-bold">Order Summary</h2>
+          <div className="mt-4 space-y-2">
+            {normalizedCartItems.length === 0 ? (
+              <p className="text-sm text-gray-500">Your cart is empty.</p>
+            ) : (
+              normalizedCartItems.map((item) => (
+                <div key={`${item._id}-${item.shopId || "shop"}`} className="rounded-lg border border-gray-100 p-3">
+                  <p className="font-semibold text-sm">{item.name}</p>
+                  <p className="text-xs text-gray-600">
+                    {item.shopName || "Unknown Shop"} • Qty {item.quantity}
+                  </p>
+                  <p className="text-sm mt-1">
+                    {item.price.toLocaleString()} × {item.quantity} ={" "}
+                    {((item.price || 0) * (item.quantity || 1)).toLocaleString()} MMK
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+
           <div className="mt-4 space-y-3">
             {byShopSummaries.map((entry, idx) => (
               <div key={`${entry.shopName}-${idx}`} className="rounded-lg border border-gray-100 p-3">
