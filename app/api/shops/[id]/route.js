@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "../../../lib/mongodb";
 import Shop from "../../../models/Shop";
 import Item from "../../../models/Item";
+import Vendor from "../../../models/Vendor";
 
 export async function GET(req, { params }) {
   try {
@@ -20,11 +21,17 @@ export async function GET(req, { params }) {
       );
     }
 
+    const vendor = await Vendor.findById(shop.vendorId).lean();
+
     return NextResponse.json(
       {
         success: true,
         data: {
-          shop,
+          shop: {
+            ...shop,
+            vendorName: vendor?.vendorName || "Unknown Vendor",
+            vendorId: vendor?._id || null,
+          },
           items,
         },
       },

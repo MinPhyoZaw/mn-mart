@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, X } from "lucide-react";
 import { useCart } from "../context/CartContext";
@@ -57,7 +58,7 @@ export default function CartDrawer() {
 
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold line-clamp-1">{item.name}</p>
-                      <p className="text-sm text-gray-600">${item.price.toFixed(2)}</p>
+                      <p className="text-sm text-gray-600">{item.price.toLocaleString()} MMK</p>
 
                       <div className="mt-2 inline-flex items-center border rounded-md overflow-hidden">
                         <button
@@ -86,12 +87,18 @@ export default function CartDrawer() {
           <div className="p-6 border-t bg-white">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-gray-600">Total</span>
-              <span className="text-lg font-semibold">${totalPrice.toFixed(2)}</span>
+              <span className="text-lg font-semibold">{totalPrice.toLocaleString()} MMK</span>
             </div>
 
-            <button className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:bg-gray-300" disabled={cartItems.length === 0}>
+            <Link
+              href="/checkout"
+              onClick={closeCart}
+              className={`block w-full text-center text-white py-3 rounded-lg font-semibold transition ${
+                cartItems.length === 0 ? "bg-gray-300 pointer-events-none" : "bg-yellow-500 hover:bg-yellow-600"
+              }`}
+            >
               Checkout
-            </button>
+            </Link>
           </div>
         </motion.aside>
       )}

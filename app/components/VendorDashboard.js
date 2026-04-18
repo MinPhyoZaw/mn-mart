@@ -86,17 +86,28 @@ export default function VendorDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [checkoutSummary, setCheckoutSummary] = useState(null);
 
   useEffect(() => {
     const fetchVendor = async () => {
       try {
-        const res = await fetch("/api/vendor/me", { cache: "no-store" });
-        const data = await res.json();
-        if (data.success) {
-          setVendor(data.data.vendor);
-          setShop(data.data.shop);
+        const [vendorRes, summaryRes] = await Promise.all([
+          fetch("/api/vendor/me", { cache: "no-store" }),
+          fetch("/api/vendor/checkout-summary", { cache: "no-store" }),
+        ]);
+
+        const vendorData = await vendorRes.json();
+        const summaryData = await summaryRes.json();
+
+        if (vendorData.success) {
+          setVendor(vendorData.data.vendor);
+          setShop(vendorData.data.shop);
         } else {
-          setMessage(data.message || "Unable to load vendor dashboard");
+          setMessage(vendorData.message || "Unable to load vendor dashboard");
+        }
+
+        if (summaryData.success) {
+          setCheckoutSummary(summaryData.data);
         }
       } catch {
         setMessage("Unable to load vendor dashboard");
@@ -352,6 +363,17 @@ export default function VendorDashboard() {
       <p className="text-gray-600 mb-6">
         {vendor.vendorName} • {serviceType}
       </p>
+
+      <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-yellow-200 rounded-xl p-5 mb-6">
+        <h2 className="text-lg font-semibold text-yellow-800">Today Payment Notice</h2>
+        <p className="text-sm text-gray-700 mt-2">
+          Today sale&apos;s amount: <span className="font-semibold">{Number(checkoutSummary?.todaySalesAmount || 0).toLocaleString()} MMK</span>
+        </p>
+        <p className="text-sm text-gray-700 mt-1">
+          Amount to pay admin (1.5%): <span className="font-semibold">{Number(checkoutSummary?.todayAmountToAdmin || 0).toLocaleString()} MMK</span>
+        </p>
+        <p className="text-xs text-gray-500 mt-1">Total orders today: {checkoutSummary?.todayOrderCount || 0}</p>
+      </div>
 
       <div className="bg-white rounded-xl shadow p-5">
         <h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2>
