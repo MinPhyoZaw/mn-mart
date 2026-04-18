@@ -29,14 +29,19 @@ export default function CheckoutPage() {
         shopName: item.shopName || "Unknown Shop",
         vendorName: item.vendorName || "Unknown Vendor",
         total: 0,
+        items: [],
       };
-      prev.total += (Number(item.price) || 0) * (Number(item.quantity) || 1);
+      const price = Number(item.price) || 0;
+      const qty = Number(item.quantity) || 1;
+      prev.total += price * qty;
+      prev.items.push({
+        name: item.name || "Unnamed Item",
+        quantity: qty,
+        price,
+      });
       map.set(key, prev);
     }
-    return [...map.values()].map((entry) => ({
-      ...entry,
-      commission: Number(((entry.total * 1.5) / 100).toFixed(2)),
-    }));
+    return [...map.values()];
   }, [cartItems]);
 
   const readFile = (file) =>
@@ -198,8 +203,17 @@ export default function CheckoutPage() {
               <div key={`${entry.shopName}-${idx}`} className="rounded-lg border border-gray-100 p-3">
                 <p className="font-semibold text-sm">{entry.shopName}</p>
                 <p className="text-xs text-gray-600">Vendor: {entry.vendorName}</p>
-                <p className="text-sm mt-1">Sale: {entry.total.toLocaleString()} MMK</p>
-                <p className="text-sm text-orange-700">Admin 1.5%: {entry.commission.toLocaleString()} MMK</p>
+                <div className="mt-2 space-y-1">
+                  {entry.items.map((item, itemIdx) => (
+                    <div key={`${item.name}-${itemIdx}`} className="flex items-center justify-between text-xs text-gray-700">
+                      <span className="pr-3 break-words">
+                        {item.name} × {item.quantity}
+                      </span>
+                      <span>{(item.price * item.quantity).toLocaleString()} MMK</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm mt-2">Subtotal: {entry.total.toLocaleString()} MMK</p>
               </div>
             ))}
           </div>
