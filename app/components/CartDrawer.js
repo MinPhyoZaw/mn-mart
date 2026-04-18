@@ -62,7 +62,7 @@ export default function CartDrawer() {
 
                       <div className="mt-2 inline-flex items-center border rounded-md overflow-hidden">
                         <button
-                          onClick={() => decrementItem(item._id)}
+                          onClick={() => decrementItem(item._id, item.shopId)}
                           className="px-2 py-1 hover:bg-gray-100"
                           aria-label={`Decrease quantity for ${item.name}`}
                         >
@@ -70,7 +70,7 @@ export default function CartDrawer() {
                         </button>
                         <span className="px-3 py-1 text-sm">{item.quantity}</span>
                         <button
-                          onClick={() => incrementItem(item._id)}
+                          onClick={() => incrementItem(item._id, item.shopId)}
                           className="px-2 py-1 hover:bg-gray-100"
                           aria-label={`Increase quantity for ${item.name}`}
                         >

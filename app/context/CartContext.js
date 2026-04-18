@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const CART_STORAGE_KEY = "mn-mart-cart";
+const CART_STORAGE_PREFIX = "mn-mart-cart";
 
 const CartContext = createContext(null);
 
@@ -10,33 +10,75 @@ export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [storageKey, setStorageKey] = useState("");
+
+  const sanitizeItem = (item) => {
+    if (!item || !item._id || !item.shopId || !item.vendorId) return null;
+    const quantity = Math.max(Number(item.quantity) || 0, 1);
+    return {
+      _id: String(item._id),
+      shopId: String(item.shopId),
+      shopName: item.shopName || "Unknown Shop",
+      vendorId: String(item.vendorId),
+      vendorName: item.vendorName || "Unknown Vendor",
+      name: item.name || "Unnamed Item",
+      price: Number(item.price) || 0,
+      image: item.image || null,
+      quantity,
+    };
+  };
 
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-      if (savedCart) {
-        setCartItems(JSON.parse(savedCart));
+    const resolveCartStorageKey = async () => {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await res.json();
+        const identity = data?.user?._id ? String(data.user._id) : "guest";
+        setStorageKey(`${CART_STORAGE_PREFIX}:${identity}`);
+      } catch {
+        setStorageKey(`${CART_STORAGE_PREFIX}:guest`);
       }
-    } catch (error) {
-      console.error("Unable to load cart from storage", error);
-    } finally {
-      setHydrated(true);
-    }
+    };
+
+    resolveCartStorageKey();
+    const syncCartWithAuth = () => resolveCartStorageKey();
+    window.addEventListener("auth-changed", syncCartWithAuth);
+
+    return () => window.removeEventListener("auth-changed", syncCartWithAuth);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!storageKey) return;
 
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-  }, [cartItems, hydrated]);
+    setHydrated(false);
+    try {
+      const savedCart = localStorage.getItem(storageKey);
+      const parsed = savedCart ? JSON.parse(savedCart) : [];
+      const normalized = Array.isArray(parsed) ? parsed.map(sanitizeItem).filter(Boolean) : [];
+      setCartItems(normalized);
+    } catch (error) {
+      console.error("Unable to load cart from storage", error);
+      setCartItems([]);
+    } finally {
+      setHydrated(true);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!hydrated || !storageKey) return;
+
+    localStorage.setItem(storageKey, JSON.stringify(cartItems));
+  }, [cartItems, hydrated, storageKey]);
 
   const addToCart = (item) => {
     setCartItems((prevItems) => {
-      const existing = prevItems.find((cartItem) => cartItem._id === item._id);
+      const existing = prevItems.find(
+        (cartItem) => cartItem._id === item._id && cartItem.shopId === item.shopId
+      );
 
       if (existing) {
         return prevItems.map((cartItem) =>
-          cartItem._id === item._id
+          cartItem._id === item._id && cartItem.shopId === item.shopId
             ? { ...cartItem, quantity: cartItem.quantity + 1 }
             : cartItem
         );
@@ -59,19 +101,21 @@ export function CartProvider({ children }) {
     });
   };
 
-  const incrementItem = (itemId) => {
+  const incrementItem = (itemId, shopId) => {
     setCartItems((prevItems) =>
       prevItems.map((item) =>
-        item._id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+        item._id === itemId && item.shopId === shopId
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
       )
     );
   };
 
-  const decrementItem = (itemId) => {
+  const decrementItem = (itemId, shopId) => {
     setCartItems((prevItems) =>
       prevItems
         .map((item) =>
-          item._id === itemId
+          item._id === itemId && item.shopId === shopId
             ? { ...item, quantity: Math.max(item.quantity - 1, 0) }
             : item
         )
