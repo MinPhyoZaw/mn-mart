@@ -15,7 +15,13 @@ export default function ShopDetailClient({ shop, items }) {
   const { addToCart, openCart } = useCart();
 
   const handleAddToCart = (item) => {
-    addToCart(item);
+    addToCart({
+      ...item,
+      shopId: shop?._id,
+      shopName: shop?.name,
+      vendorId: shop?.vendorId,
+      vendorName: shop?.vendorName,
+    });
     openCart();
   };
 

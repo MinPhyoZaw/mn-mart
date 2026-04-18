@@ -46,6 +46,10 @@ export function CartProvider({ children }) {
         ...prevItems,
         {
           _id: item._id,
+          shopId: item.shopId,
+          shopName: item.shopName,
+          vendorId: item.vendorId,
+          vendorName: item.vendorName,
           name: item.name,
           price: Number(item.price) || 0,
           image: item.image || null,
@@ -94,6 +98,7 @@ export function CartProvider({ children }) {
     addToCart,
     incrementItem,
     decrementItem,
+    clearCart: () => setCartItems([]),
     totalItems,
     totalPrice,
     openCart: () => setIsCartOpen(true),
