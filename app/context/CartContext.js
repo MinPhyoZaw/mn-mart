@@ -123,10 +123,7 @@ export function CartProvider({ children }) {
     );
   };
 
-  const totalItems = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItems]
-  );
+  const totalItems = useMemo(() => cartItems.length, [cartItems]);
 
   const totalPrice = useMemo(
     () =>
