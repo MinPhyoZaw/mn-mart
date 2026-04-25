@@ -62,6 +62,7 @@ export async function PATCH(req, context) {
         phone,
         address,
         description: vr.description || "",
+        image: vr.shopImage || null,
       };
 
       const shop = existingShop

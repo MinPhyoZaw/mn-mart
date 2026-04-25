@@ -11,7 +11,7 @@ export async function POST(req) {
 
     await connectDB();
     const body = await req.json();
-    const { businessName, vendorType, phone, address, description } = body;
+    const { businessName, vendorType, phone, address, description, shopImage } = body;
     const requestUser = await User.findById(auth.user.userId).lean();
     const vendorName = requestUser?.name?.trim();
 
@@ -26,6 +26,7 @@ export async function POST(req) {
       phone: phone || "",
       address: address || "",
       description: description || "",
+      shopImage: shopImage || "",
       userId: auth.user.userId,
       status: "pending",
     });

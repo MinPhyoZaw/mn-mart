@@ -8,6 +8,7 @@ const vendorRequestSchema = new mongoose.Schema(
     phone: String,
     address: String,
     description: String,
+    shopImage: String,
     contactPerson: String,
     userId: {
       type: mongoose.Schema.Types.ObjectId,

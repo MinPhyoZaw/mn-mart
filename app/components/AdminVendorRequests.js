@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 export default function AdminVendorRequests({
   initialRequests,
@@ -137,6 +138,20 @@ export default function AdminVendorRequests({
             </div>
 
             <p className="text-sm mt-2 text-gray-700">{r.description}</p>
+
+            {r.shopImage && (
+              <div className="mt-3 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
+                <div className="relative h-32 w-full">
+                  <Image
+                    src={r.shopImage}
+                    alt={`${r.businessName} preview`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              </div>
+            )}
 
             <p className="text-xs text-gray-400 mt-2">
               Submitted:{" "}

@@ -11,15 +11,19 @@ export default function CategoryShopsPage({
   ctaLabel = "Book Now",
 }) {
   const [shops, setShops] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchShops = async () => {
       try {
+        setIsLoading(true);
         const res = await fetch(`/api/shops?category=${encodeURIComponent(category)}`);
         const data = await res.json();
         setShops(data.data || []);
       } catch (error) {
         console.error(`Failed to fetch ${category} shops:`, error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -40,7 +44,17 @@ export default function CategoryShopsPage({
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-10">
-        {shops.length === 0 ? (
+        {isLoading ? (
+          <p className="text-center text-gray-500">
+            {category === "shopping"
+              ? "Loading the shops..."
+              : category === "transportation"
+              ? "Loading the routes..."
+              : category === "spa"
+              ? "Loading spa services..."
+              : "Loading rooms..."}
+          </p>
+        ) : shops.length === 0 ? (
           <p className="text-center text-gray-500">No {title.toLowerCase()} available</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

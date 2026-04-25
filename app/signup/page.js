@@ -33,7 +33,7 @@ export default function SignupPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Signup failed");
-      setSuccess("Account created! Redirecting...");
+      setSuccess("Signup successfully! Redirecting to login page...");
       setTimeout(() => router.push("/login"), 1400);
     } catch (err) {
       setError(err.message || "An error occurred");
@@ -110,7 +110,15 @@ export default function SignupPage() {
             </button>
 
             {error && <div className={styles.msgError}>{error}</div>}
-            {success && <div className={styles.msgSuccess}>{success}</div>}
+
+            <div className={styles.feedbackWrap}>
+              {success && (
+                <div className={styles.successCard} role="status" aria-live="polite">
+                  <div className={styles.successIcon}>✓</div>
+                  <div className={styles.successText}>{success}</div>
+                </div>
+              )}
+            </div>
 
             <div className={styles.muted} style={{ marginTop: 14 }}>
               Already have an account? <a href="/login">Log in</a>

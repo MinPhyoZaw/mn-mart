@@ -113,3 +113,38 @@
   .left { min-height: 260px; }
   .right { padding: 28px; }
 }
+
+
+.feedbackWrap {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+.successCard {
+  width: 100%;
+  min-height: 64px;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  background: #f0fdf4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.successIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+}
+.successText {
+  color: #166534;
+  font-size: 13px;
+  font-weight: 600;
+}
