@@ -1,4 +1,3 @@
-import Image from "next/image";
 import connectDB from "../lib/mongodb";
 import Shop from "../models/Shop";
 import Vendor from "../models/Vendor";
@@ -7,6 +6,7 @@ import User from "../models/User";
 import Order from "../models/Order";
 import AdminVendorRequests from "../components/AdminVendorRequests";
 import AdminUserRoles from "../components/AdminUserRoles";
+import AdminOrderManager from "../components/AdminOrderManager";
 import {
   ShoppingCartIcon,
   UserGroupIcon,
@@ -148,27 +148,7 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      <section className="bg-white rounded-xl shadow p-5 mb-8">
-        <h2 className="text-lg font-semibold">Today Checkout Details</h2>
-        {todayOrders.length === 0 ? (
-          <p className="text-sm text-gray-500 mt-3">No checkout record for today.</p>
-        ) : (
-          <div className="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {todayOrders.map((order) => (
-              <div key={order._id} className="rounded-xl border border-gray-200 p-4">
-                <p className="font-semibold text-sm">Shop: {order.shopId?.name || "Unknown Shop"}</p>
-                <p className="text-sm text-gray-700">Vendor: {order.vendorId?.vendorName || "Unknown Vendor"}</p>
-                <p className="text-sm text-gray-700">Customer: {order.customerName}</p>
-                <p className="text-sm">Sale Amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
-                <p className="text-sm text-orange-700">Admin 1.5%: {Number(order.commissionAmount || 0).toLocaleString()} MMK</p>
-                <div className="mt-3 relative w-full h-44 rounded-lg overflow-hidden border bg-gray-50">
-                  <Image src={order.receiptImage} alt="Payment receipt" fill className="object-contain" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <AdminOrderManager />
 
       <section className="mt-8">
         <h2 className="text-xl font-semibold mb-3">Vendor Requests</h2>
