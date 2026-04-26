@@ -134,7 +134,7 @@ export default function CheckoutPage() {
       }
 
       clearCart();
-      setMessage("Checkout submitted successfully. Admin and vendors can now view the report.");
+      setMessage("Your order has been placed. Please wait for confirmation");
       setTimeout(() => router.push("/"), 1200);
     } catch {
       setMessage("Server error while submitting checkout.");

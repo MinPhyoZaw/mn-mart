@@ -87,17 +87,20 @@ export default function VendorDashboard() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
   const [checkoutSummary, setCheckoutSummary] = useState(null);
+  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     const fetchVendor = async () => {
       try {
-        const [vendorRes, summaryRes] = await Promise.all([
+        const [vendorRes, summaryRes, orderRes] = await Promise.all([
           fetch("/api/vendor/me", { cache: "no-store" }),
           fetch("/api/vendor/checkout-summary", { cache: "no-store" }),
+          fetch("/api/vendor/orders", { cache: "no-store" }),
         ]);
 
         const vendorData = await vendorRes.json();
         const summaryData = await summaryRes.json();
+        const orderData = await orderRes.json();
 
         if (vendorData.success) {
           setVendor(vendorData.data.vendor);
@@ -108,6 +111,10 @@ export default function VendorDashboard() {
 
         if (summaryData.success) {
           setCheckoutSummary(summaryData.data);
+        }
+
+        if (orderData.success) {
+          setOrders(orderData.data || []);
         }
       } catch {
         setMessage("Unable to load vendor dashboard");
@@ -347,6 +354,24 @@ export default function VendorDashboard() {
     }
   };
 
+
+  const handleOrderAction = async (id, action) => {
+    const res = await fetch(`/api/vendor/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+
+    const data = await res.json();
+    if (!data.success) {
+      setMessage(data.message || "Unable to update order status.");
+      return;
+    }
+
+    setOrders((prev) => prev.map((order) => (order._id === id ? data.data : order)));
+    setMessage(`Order marked as ${action}.`);
+  };
+
   if (loading) return <div className="p-8">Loading vendor dashboard...</div>;
 
   if (!shop || !vendor) {
@@ -373,6 +398,47 @@ export default function VendorDashboard() {
           Amount to pay admin (1.5%): <span className="font-semibold">{Number(checkoutSummary?.todayAmountToAdmin || 0).toLocaleString()} MMK</span>
         </p>
         <p className="text-xs text-gray-500 mt-1">Total orders today: {checkoutSummary?.todayOrderCount || 0}</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-5 mb-6">
+        <h2 className="text-lg font-semibold">New Confirmed Orders</h2>
+        {orders.length === 0 ? (
+          <p className="text-sm text-gray-500 mt-3">No confirmed orders yet.</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {orders.map((order) => (
+              <div key={order._id} className="rounded-xl border border-gray-200 p-4">
+                <p className="text-sm font-semibold">Order ID: {order.orderId}</p>
+                <p className="text-sm">Payment status = ✅ Verified</p>
+                <p className="text-sm">Customer: {order.customerName}</p>
+                <p className="text-sm">Phone: {order.customerPhone}</p>
+                <p className="text-sm">Delivery info: {order.customerAddress}</p>
+                <div className="mt-2 text-sm">
+                  <p className="font-medium">Items</p>
+                  {order.items?.map((item) => (
+                    <p key={item.itemId}>{item.name} × {item.quantity}</p>
+                  ))}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOrderAction(order._id, "accepted")}
+                    className="px-3 py-2 rounded bg-green-600 text-white text-sm"
+                  >
+                    Accept order
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOrderAction(order._id, "preparing")}
+                    className="px-3 py-2 rounded bg-orange-600 text-white text-sm"
+                  >
+                    Start preparing
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow p-5">

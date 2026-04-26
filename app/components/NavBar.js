@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, ShoppingCart, User, X, Upload } from "lucide-react";
+import { Bell, Menu, ShoppingCart, User, X, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
@@ -45,6 +45,8 @@ export default function Navbar() {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const fileInputRef = useRef(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -56,8 +58,19 @@ export default function Navbar() {
         const res = await fetch("/api/auth/me", { cache: "no-store" });
         const data = await res.json();
         setUser(data.user);
+
+        if (data.user?.role === "customer") {
+          const noticeRes = await fetch("/api/orders/notifications", { cache: "no-store" });
+          const noticeData = await noticeRes.json();
+          if (noticeData.success) {
+            setNotifications(noticeData.data || []);
+          }
+        } else {
+          setNotifications([]);
+        }
       } catch {
         setUser(null);
+        setNotifications([]);
       }
     };
 
@@ -77,6 +90,7 @@ export default function Navbar() {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     setIsAccountOpen(false);
+    setIsNotificationsOpen(false);
     window.dispatchEvent(new Event("auth-changed"));
     setIsMenuOpen(false);
     router.push("/");
@@ -175,6 +189,39 @@ export default function Navbar() {
                     </Link>
                   )}
 
+                  {user.role === "customer" && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                        className="relative rounded-full p-2 text-gray-700 transition hover:bg-gray-100"
+                        aria-label="Order notifications"
+                      >
+                        <Bell size={21} />
+                        <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                          {notifications.length}
+                        </span>
+                      </button>
+
+                      {isNotificationsOpen && (
+                        <div className="absolute right-0 mt-2 w-80 rounded-xl border bg-white p-3 shadow-xl">
+                          <p className="text-sm font-semibold mb-2">Order notifications</p>
+                          {notifications.length === 0 ? (
+                            <p className="text-xs text-gray-500">No notifications yet.</p>
+                          ) : (
+                            <div className="space-y-2 max-h-64 overflow-auto">
+                              {notifications.map((notice, idx) => (
+                                <p key={`${notice.orderId}-${idx}`} className="text-xs text-gray-700 border rounded p-2">
+                                  {notice.text}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onClick={openAccountPane}
@@ -254,6 +301,19 @@ export default function Navbar() {
                   )}
 
                   <div className="grid grid-cols-2 gap-2">
+                    {user.role === "customer" && (
+                      <button
+                        type="button"
+                        onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                        className="relative flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
+                      >
+                        <Bell size={18} /> Notifications
+                        <span className="absolute right-2 top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                          {notifications.length}
+                        </span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={openAccountPane}
@@ -276,6 +336,20 @@ export default function Navbar() {
                       </span>
                     </button>
                   </div>
+
+                  {user.role === "customer" && isNotificationsOpen && (
+                    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                      {notifications.length === 0 ? (
+                        <p className="text-xs text-gray-500">No notifications yet.</p>
+                      ) : (
+                        notifications.slice(0, 4).map((notice, idx) => (
+                          <p key={`${notice.orderId}-${idx}`} className="text-xs text-gray-700 py-1">
+                            {notice.text}
+                          </p>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
