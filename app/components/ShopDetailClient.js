@@ -84,10 +84,14 @@ export default function ShopDetailClient({ shop, items }) {
                     className={`overflow-hidden h-full flex flex-col ${
                       isRoom(item)
                         ? "border bg-white rounded-xl shadow-sm"
-                        : "rounded-2xl border border-gray-200 bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.12)] transition-shadow"
+                        : "w-full max-w-[250px] mx-auto rounded-2xl border border-gray-200 bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.12)] transition-shadow"
                     }`}
                   >
-                    <div className={`relative w-full bg-gray-100 ${isRoom(item) ? "h-40" : "h-36"}`}>
+                    <div
+                      className={`relative w-full bg-white ${
+                        isRoom(item) ? "h-40" : "h-36 border-b border-gray-200"
+                      }`}
+                    >
                       {item.image ? (
                         <Image
                           src={item.image}
@@ -100,12 +104,6 @@ export default function ShopDetailClient({ shop, items }) {
                     </div>
 
                     <div className={`flex flex-col flex-1 ${isRoom(item) ? "p-3" : "p-3.5"}`}>
-                      {!isRoom(item) ? (
-                        <p className="inline-flex w-fit items-center gap-1 rounded bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-600">
-                          ⏱ 10 MINS
-                        </p>
-                      ) : null}
-
                       <h3
                         className={`leading-tight break-words ${
                           isRoom(item) ? "font-semibold" : "mt-2 text-sm font-semibold min-h-[36px]"
