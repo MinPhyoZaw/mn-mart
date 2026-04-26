@@ -15,13 +15,13 @@ export async function POST(req) {
     if (!auth.ok) return auth.response;
 
     const body = await req.json();
-    const { cartItems, customerName, customerPhone, paymentProvider, receiptImage } = body;
+    const { cartItems, customerName, customerPhone, customerAddress, paymentProvider, receiptImage } = body;
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ success: false, message: "Cart is empty." }, { status: 400 });
     }
 
-    if (!customerName || !customerPhone || !paymentProvider || !receiptImage) {
+    if (!customerName || !customerPhone || !customerAddress || !paymentProvider || !receiptImage) {
       return NextResponse.json({ success: false, message: "Missing required checkout fields." }, { status: 400 });
     }
 
@@ -78,6 +78,7 @@ export async function POST(req) {
         customerId: auth.user.userId,
         customerName,
         customerPhone,
+        customerAddress,
         serviceType: shop.category,
         items: normalizedItems,
         receiptImage,
