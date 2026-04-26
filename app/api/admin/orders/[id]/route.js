@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "../../../../lib/mongodb";
 import { requireAuth } from "../../../../lib/routeAuth";
 import Order from "../../../../models/Order";
+import Shop from "../../../../models/Shop";
 
 export async function PATCH(req, { params }) {
   try {
@@ -17,14 +18,30 @@ export async function PATCH(req, { params }) {
 
     await connectDB();
 
+    const currentOrder = await Order.findById(id).lean();
+    if (!currentOrder) {
+      return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+    }
+
     const update =
       action === "approve"
-        ? { paymentStatus: "paid", orderStatus: "confirmed" }
-        : { paymentStatus: "rejected", orderStatus: "rejected" };
+        ? { paymentStatus: "paid", orderStatus: "confirmed", customerNotificationRead: false }
+        : { paymentStatus: "rejected", orderStatus: "rejected", customerNotificationRead: false };
 
     const order = await Order.findByIdAndUpdate(id, update, { new: true }).lean();
     if (!order) {
       return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+    }
+
+    if (action === "approve" && currentOrder.orderStatus !== "confirmed") {
+      const approvedQty = (order.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+      await Shop.findByIdAndUpdate(order.shopId, {
+        $inc: {
+          approvedOrderQty: approvedQty,
+          approvedIncome: Number(order.totalAmount) || 0,
+        },
+      });
     }
 
     return NextResponse.json({ success: true, data: order });

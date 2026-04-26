@@ -86,6 +86,17 @@ export default function Navbar() {
 
   const closeMenu = () => setIsMenuOpen(false);
 
+  const markNotificationAsRead = async (noticeId) => {
+    const res = await fetch("/api/orders/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: noticeId }),
+    });
+    const data = await res.json();
+    if (!data.success) return;
+    setNotifications((prev) => prev.filter((notice) => notice._id !== noticeId));
+  };
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
@@ -211,9 +222,14 @@ export default function Navbar() {
                           ) : (
                             <div className="space-y-2 max-h-64 overflow-auto">
                               {notifications.map((notice, idx) => (
-                                <p key={`${notice.orderId}-${idx}`} className="text-xs text-gray-700 border rounded p-2">
-                                  {notice.text}
-                                </p>
+                                <label key={`${notice.orderId}-${idx}`} className="text-xs text-gray-700 border rounded p-2 flex gap-2 items-start">
+                                  <input
+                                    type="checkbox"
+                                    className="mt-0.5 h-4 w-4 accent-green-600"
+                                    onChange={() => markNotificationAsRead(notice._id)}
+                                  />
+                                  <span>{notice.text}</span>
+                                </label>
                               ))}
                             </div>
                           )}
@@ -343,9 +359,14 @@ export default function Navbar() {
                         <p className="text-xs text-gray-500">No notifications yet.</p>
                       ) : (
                         notifications.slice(0, 4).map((notice, idx) => (
-                          <p key={`${notice.orderId}-${idx}`} className="text-xs text-gray-700 py-1">
-                            {notice.text}
-                          </p>
+                          <label key={`${notice.orderId}-${idx}`} className="text-xs text-gray-700 py-1 flex gap-2 items-start">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 h-4 w-4 accent-green-600"
+                              onChange={() => markNotificationAsRead(notice._id)}
+                            />
+                            <span>{notice.text}</span>
+                          </label>
                         ))
                       )}
                     </div>

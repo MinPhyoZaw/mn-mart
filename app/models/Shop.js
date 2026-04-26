@@ -60,6 +60,16 @@ const shopSchema = new mongoose.Schema({
     default: 0
   },
 
+  approvedOrderQty: {
+    type: Number,
+    default: 0
+  },
+
+  approvedIncome: {
+    type: Number,
+    default: 0
+  },
+
   isActive: {
     type: Boolean,
     default: true

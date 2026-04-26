@@ -392,12 +392,16 @@ export default function VendorDashboard() {
       <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-yellow-200 rounded-xl p-5 mb-6">
         <h2 className="text-lg font-semibold text-yellow-800">Today Payment Notice</h2>
         <p className="text-sm text-gray-700 mt-2">
-          Today sale&apos;s amount: <span className="font-semibold">{Number(checkoutSummary?.todaySalesAmount || 0).toLocaleString()} MMK</span>
+          Approved sale&apos;s amount today: <span className="font-semibold">{Number(checkoutSummary?.todaySalesAmount || 0).toLocaleString()} MMK</span>
         </p>
         <p className="text-sm text-gray-700 mt-1">
           Amount to pay admin (1.5%): <span className="font-semibold">{Number(checkoutSummary?.todayAmountToAdmin || 0).toLocaleString()} MMK</span>
         </p>
         <p className="text-xs text-gray-500 mt-1">Total orders today: {checkoutSummary?.todayOrderCount || 0}</p>
+        <p className="text-xs text-gray-500 mt-1">
+          Shop approved order qty: {Number(shop?.approvedOrderQty || 0).toLocaleString()} • Shop income:{" "}
+          {Number(shop?.approvedIncome || 0).toLocaleString()} MMK
+        </p>
       </div>
 
       <div className="bg-white rounded-xl shadow p-5 mb-6">
@@ -409,7 +413,10 @@ export default function VendorDashboard() {
             {orders.map((order) => (
               <div key={order._id} className="rounded-xl border border-gray-200 p-4">
                 <p className="text-sm font-semibold">Order ID: {order.orderId}</p>
-                <p className="text-sm">Payment status = ✅ Verified</p>
+                <label className="mt-1 inline-flex items-center gap-2 text-sm text-emerald-700 font-medium">
+                  <input type="checkbox" checked readOnly className="h-4 w-4 accent-emerald-600" />
+                  Approved by admin and paid
+                </label>
                 <p className="text-sm">Customer: {order.customerName}</p>
                 <p className="text-sm">Phone: {order.customerPhone}</p>
                 <p className="text-sm">Delivery info: {order.customerAddress}</p>
