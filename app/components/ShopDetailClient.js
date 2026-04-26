@@ -13,6 +13,7 @@ const AMENITY_META = {
 
 export default function ShopDetailClient({ shop, items }) {
   const { addToCart, openCart } = useCart();
+  const sanitizedPhone = shop?.phone ? String(shop.phone).replace(/[^\d+]/g, "") : "";
 
   const handleAddToCart = (item) => {
     addToCart({
@@ -55,6 +56,14 @@ export default function ShopDetailClient({ shop, items }) {
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Phone</p>
             <p className="mt-1 font-medium text-gray-800 break-all">{shop.phone || "N/A"}</p>
+            {sanitizedPhone ? (
+              <a
+                href={`tel:${sanitizedPhone}`}
+                className="mt-3 inline-flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
+              >
+                📞 Call Now
+              </a>
+            ) : null}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Address</p>
@@ -63,7 +72,7 @@ export default function ShopDetailClient({ shop, items }) {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-3">{isHotel ? "Available Room" : "Available Items"}</h2>
+          <h2 className="text-xl font-semibold mb-3">{isHotel ? "Available Room" : "Availabel Products"}</h2>
 
           {items?.length ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -72,22 +81,38 @@ export default function ShopDetailClient({ shop, items }) {
                 return (
                   <div
                     key={item._id}
-                    className="border bg-white rounded-xl overflow-hidden shadow-sm h-full flex flex-col"
+                    className={`overflow-hidden h-full flex flex-col ${
+                      isRoom(item)
+                        ? "border bg-white rounded-xl shadow-sm"
+                        : "rounded-2xl border border-gray-200 bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.12)] transition-shadow"
+                    }`}
                   >
-                    <div className="relative w-full h-40 bg-gray-100">
+                    <div className={`relative w-full bg-gray-100 ${isRoom(item) ? "h-40" : "h-36"}`}>
                       {item.image ? (
                         <Image
                           src={item.image}
                           alt={item.name}
                           fill
                           sizes="(max-width: 1024px) 50vw, 33vw"
-                          className="object-cover"
+                          className={isRoom(item) ? "object-cover" : "object-contain p-3"}
                         />
                       ) : null}
                     </div>
 
-                    <div className="p-3 flex flex-col flex-1">
-                      <h3 className="font-semibold leading-tight break-words">{item.name}</h3>
+                    <div className={`flex flex-col flex-1 ${isRoom(item) ? "p-3" : "p-3.5"}`}>
+                      {!isRoom(item) ? (
+                        <p className="inline-flex w-fit items-center gap-1 rounded bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-600">
+                          ⏱ 10 MINS
+                        </p>
+                      ) : null}
+
+                      <h3
+                        className={`leading-tight break-words ${
+                          isRoom(item) ? "font-semibold" : "mt-2 text-sm font-semibold min-h-[36px]"
+                        }`}
+                      >
+                        {item.name}
+                      </h3>
 
                       {isRoom(item) && (
                         <p className="mt-1 text-sm text-gray-600">
@@ -124,15 +149,17 @@ export default function ShopDetailClient({ shop, items }) {
                         </div>
                       )}
 
-                      <p className="mt-2 text-sm text-gray-500 line-clamp-2 break-words">
+                      <p className={`text-sm text-gray-500 break-words ${isRoom(item) ? "mt-2 line-clamp-2" : "mt-1"}`}>
                         {item.description || ""}
                       </p>
 
                       <div className="mt-3 flex items-center justify-between gap-2 mt-auto">
-                        <span className="font-semibold text-yellow-600">${Number(item.price).toFixed(2)}</span>
+                        <span className={`${isRoom(item) ? "font-semibold text-yellow-600" : "text-base font-bold text-gray-900"}`}>
+                          ${Number(item.price).toFixed(2)}
+                        </span>
                         {isHotel ? (
                           <a
-                            href={shop.phone ? `tel:${shop.phone}` : "#"}
+                            href={sanitizedPhone ? `tel:${sanitizedPhone}` : "#"}
                             className="text-xs sm:text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md whitespace-nowrap"
                           >
                             Call for booking
@@ -140,7 +167,7 @@ export default function ShopDetailClient({ shop, items }) {
                         ) : (
                           <button
                             onClick={() => handleAddToCart(item)}
-                            className="text-xs sm:text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md whitespace-nowrap"
+                            className="text-xs sm:text-sm px-3 py-1.5 border border-[#318616] text-[#318616] bg-[#f7fff2] hover:bg-[#ecf9e2] rounded-md font-semibold whitespace-nowrap"
                           >
                             Add to cart
                           </button>
