@@ -29,6 +29,7 @@ export async function GET(req) {
 
     const todayOrders = await Order.find({
       vendorId: vendor._id,
+      orderStatus: "confirmed",
       createdAt: { $gte: start, $lte: end },
     }).lean();
 

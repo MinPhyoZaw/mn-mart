@@ -101,6 +101,11 @@ const orderSchema = new mongoose.Schema(
       enum: ["unsettled", "settled"],
       default: "unsettled",
     },
+
+    customerNotificationRead: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
