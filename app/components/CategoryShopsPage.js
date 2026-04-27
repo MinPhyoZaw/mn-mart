@@ -14,6 +14,11 @@ export default function CategoryShopsPage({
 }) {
   const [shops, setShops] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const isTransportation = category === "transportation";
+
+  const gridClasses = isTransportation
+    ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6"
+    : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6";
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -45,7 +50,7 @@ export default function CategoryShopsPage({
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-10">
+      <div className="max-w-7xl mx-auto px-4 py-10">
         {isLoading ? (
           <p className="text-center text-gray-500">
             {category === "shopping"
@@ -59,15 +64,15 @@ export default function CategoryShopsPage({
         ) : shops.length === 0 ? (
           <p className="text-center text-gray-500">No {title.toLowerCase()} available</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className={gridClasses}>
             {shops.map((shop) => (
               <div
                 key={shop._id}
-                className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition max-w-full mx-auto"
+                className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition max-w-full mx-auto w-full"
               >
-                {category === 'transportation' ? (
+                {isTransportation ? (
                   <>
-                    <div className="relative w-full h-48 bg-gray-100">
+                    <div className="relative w-full h-56 md:h-52 bg-gray-100">
                       {shop.image ? (
                         <Image
                           src={shop.image}
@@ -79,11 +84,13 @@ export default function CategoryShopsPage({
                       ) : null}
                     </div>
 
-                    <div className="p-4">
-                      <h2 className="font-semibold text-lg mb-2 line-clamp-2">{shop.name}</h2>
+                    <div className="p-4 md:p-5">
+                      <h2 className="font-semibold text-base md:text-lg mb-3 line-clamp-2 min-h-[3rem]">
+                        {shop.name}
+                      </h2>
                       <Link
                         href={`/shops/${shop._id}`}
-                        className="inline-block w-full text-center bg-green-600 text-white text-sm py-2 rounded-lg hover:bg-green-700 transition"
+                        className="inline-block w-full text-center bg-green-600 text-white text-sm md:text-base py-2.5 rounded-lg hover:bg-green-700 transition"
                       >
                         See more
                       </Link>
