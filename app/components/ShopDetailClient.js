@@ -28,6 +28,9 @@ export default function ShopDetailClient({ shop, items }) {
 
   const isRoom = (item) => item.type === "room";
   const isHotel = shop?.category === "hotel";
+  const isTransportation = shop?.category === "transportation";
+  const isSpa = shop?.category === "spa";
+  const supportsCart = shop?.category === "shopping";
 
   const getAmenityList = (item) => {
     const amenities = item?.extra?.amenities || {};
@@ -35,6 +38,14 @@ export default function ShopDetailClient({ shop, items }) {
       .filter(([, enabled]) => Boolean(enabled))
       .map(([key]) => AMENITY_META[key] || { label: key });
   };
+
+  const sectionTitle = isHotel
+    ? "Available Room"
+    : isSpa
+      ? "Available Service"
+      : isTransportation
+        ? "Available Routes"
+        : "Available Products";
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-5 sm:p-6">
@@ -55,15 +66,17 @@ export default function ShopDetailClient({ shop, items }) {
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Phone</p>
-            <p className="mt-1 font-medium text-gray-800 break-all">{shop.phone || "N/A"}</p>
-            {sanitizedPhone ? (
-              <a
-                href={`tel:${sanitizedPhone}`}
-                className="mt-3 inline-flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
-              >
-                📞 Call Now
-              </a>
-            ) : null}
+            <div className="mt-1 flex items-center gap-3">
+              <p className="font-medium text-gray-800 break-all">{shop.phone || "N/A"}</p>
+              {sanitizedPhone ? (
+                <a
+                  href={`tel:${sanitizedPhone}`}
+                  className="inline-flex items-center gap-2 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                >
+                  📞 Call Now
+                </a>
+              ) : null}
+            </div>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Address</p>
@@ -72,7 +85,7 @@ export default function ShopDetailClient({ shop, items }) {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-3">{isHotel ? "Available Room" : "Availabel Products"}</h2>
+          <h2 className="text-xl font-semibold mb-3">{sectionTitle}</h2>
 
           {items?.length ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -119,6 +132,23 @@ export default function ShopDetailClient({ shop, items }) {
                         </p>
                       )}
 
+                      {isTransportation && (
+                        <div className="mt-2 space-y-1 text-sm text-gray-700">
+                          <p>
+                            <span className="font-medium">From:</span> {item?.extra?.routeFrom || "-"}
+                          </p>
+                          <p>
+                            <span className="font-medium">To:</span> {item?.extra?.routeTo || "-"}
+                          </p>
+                          <p>
+                            <span className="font-medium">Date & Time:</span>{" "}
+                            {item?.extra?.startDateTime
+                              ? new Date(item.extra.startDateTime).toLocaleString()
+                              : "-"}
+                          </p>
+                        </div>
+                      )}
+
                       {isRoom(item) && item.isAvailable && (
                         <p className="mt-1 flex items-center gap-2 text-sm text-green-600">
                           <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
@@ -155,12 +185,12 @@ export default function ShopDetailClient({ shop, items }) {
                         <span className={`${isRoom(item) ? "font-semibold text-yellow-600" : "text-base font-bold text-gray-900"}`}>
                           ${Number(item.price).toFixed(2)}
                         </span>
-                        {isHotel ? (
+                        {!supportsCart ? (
                           <a
                             href={sanitizedPhone ? `tel:${sanitizedPhone}` : "#"}
                             className="text-xs sm:text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md whitespace-nowrap"
                           >
-                            Call for booking
+                            Call to book
                           </a>
                         ) : (
                           <button
@@ -178,7 +208,7 @@ export default function ShopDetailClient({ shop, items }) {
             </div>
           ) : (
             <div className="bg-gray-100 p-4 rounded-lg text-gray-500">
-              {isHotel ? "No rooms available yet." : "No items yet."}
+              {isHotel ? "No rooms available yet." : isTransportation ? "No routes available yet." : "No items yet."}
             </div>
           )}
         </div>
