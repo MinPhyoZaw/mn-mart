@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+const transportationTags = [
+  { label: "Route", value: "Shwe Ku ↔ Mandalay" },
+  { label: "Date & Time", value: "Daily • 08:00 AM" },
+  { label: "Price", value: "MMK 25,000" },
+];
+
 export default function CategoryShopsPage({
   category,
   title,
@@ -83,6 +89,21 @@ export default function CategoryShopsPage({
                   <p className="text-sm text-gray-600 line-clamp-2 mb-3">
                     {shop.description}
                   </p>
+
+
+                  {category === "transportation" ? (
+                    <div className="space-y-2 mb-4">
+                      {transportationTags.map((tag) => (
+                        <div
+                          key={tag.label}
+                          className="flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2 text-xs md:text-sm"
+                        >
+                          <span className="font-semibold text-blue-700">{tag.label}</span>
+                          <span className="text-gray-700">{tag.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
 
                   <Link
                     href={`/shops/${shop._id}`}
