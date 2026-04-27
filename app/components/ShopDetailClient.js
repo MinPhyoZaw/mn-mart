@@ -47,6 +47,16 @@ export default function ShopDetailClient({ shop, items }) {
         ? "Available Routes"
         : "Available Products";
 
+  const formatDateTime = (value) => {
+    if (!value) return { date: "-", time: "-" };
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return { date: "-", time: "-" };
+    return {
+      date: parsed.toLocaleDateString(),
+      time: parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-5 sm:p-6">
       <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden shadow-lg">
@@ -91,6 +101,7 @@ export default function ShopDetailClient({ shop, items }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((item) => {
                 const amenityList = getAmenityList(item);
+                const routeDateTime = isTransportation ? formatDateTime(item?.extra?.startDateTime) : null;
                 return (
                   <div
                     key={item._id}
@@ -122,7 +133,9 @@ export default function ShopDetailClient({ shop, items }) {
                           isRoom(item) ? "font-semibold" : "mt-2 text-sm font-semibold min-h-[36px]"
                         }`}
                       >
-                        {item.name}
+                        {isTransportation
+                          ? `${item?.extra?.routeFrom || "-"} ↔ ${item?.extra?.routeTo || "-"}`
+                          : item.name}
                       </h3>
 
                       {isRoom(item) && (
@@ -135,16 +148,10 @@ export default function ShopDetailClient({ shop, items }) {
                       {isTransportation && (
                         <div className="mt-2 space-y-1 text-sm text-gray-700">
                           <p>
-                            <span className="font-medium">From:</span> {item?.extra?.routeFrom || "-"}
+                            <span className="font-medium">Date:</span> {routeDateTime?.date}
                           </p>
                           <p>
-                            <span className="font-medium">To:</span> {item?.extra?.routeTo || "-"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Date & Time:</span>{" "}
-                            {item?.extra?.startDateTime
-                              ? new Date(item.extra.startDateTime).toLocaleString()
-                              : "-"}
+                            <span className="font-medium">Time:</span> {routeDateTime?.time}
                           </p>
                         </div>
                       )}
@@ -177,7 +184,11 @@ export default function ShopDetailClient({ shop, items }) {
                         </div>
                       )}
 
-                      <p className={`text-sm text-gray-500 break-words ${isRoom(item) ? "mt-2 line-clamp-2" : "mt-1"}`}>
+                      <p
+                        className={`text-sm text-gray-500 break-words ${
+                          isRoom(item) ? "mt-2 line-clamp-2" : isTransportation ? "mt-2 line-clamp-2" : "mt-1"
+                        }`}
+                      >
                         {item.description || ""}
                       </p>
 
