@@ -133,19 +133,23 @@ export default function ShopDetailClient({ shop, items }) {
                       )}
 
                       {isTransportation && (
-                        <div className="mt-2 space-y-1 text-sm text-gray-700">
-                          <p>
-                            <span className="font-medium">From:</span> {item?.extra?.routeFrom || "-"}
-                          </p>
-                          <p>
-                            <span className="font-medium">To:</span> {item?.extra?.routeTo || "-"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Date & Time:</span>{" "}
-                            {item?.extra?.startDateTime
-                              ? new Date(item.extra.startDateTime).toLocaleString()
-                              : "-"}
-                          </p>
+                        <div className="mt-3 flex items-center justify-between gap-3 border rounded-lg p-3 bg-white">
+                          <div className="flex items-start gap-4">
+                            <div>
+                              <p className="text-xs text-gray-500">Route</p>
+                              <p className="mt-1 font-semibold text-gray-800">
+                                {item?.extra?.routeFrom || "-"} <span className="text-gray-400">→</span> {item?.extra?.routeTo || "-"}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {item?.extra?.startDateTime ? new Date(item.extra.startDateTime).toLocaleString() : "-"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">Price</p>
+                            <p className="mt-1 font-bold text-yellow-600">{Number(item.price || 0).toLocaleString()} MMK</p>
+                          </div>
                         </div>
                       )}
 
@@ -182,9 +186,11 @@ export default function ShopDetailClient({ shop, items }) {
                       </p>
 
                       <div className="mt-3 flex items-center justify-between gap-2 mt-auto">
-                        <span className={`${isRoom(item) ? "font-semibold text-yellow-600" : "text-base font-bold text-gray-900"}`}>
-                          ${Number(item.price).toFixed(2)}
-                        </span>
+                        {!isTransportation && (
+                          <span className={`${isRoom(item) ? "font-semibold text-yellow-600" : "text-base font-bold text-gray-900"}`}>
+                            {Number(item.price || 0).toLocaleString()} MMK
+                          </span>
+                        )}
                         {!supportsCart ? (
                           <a
                             href={sanitizedPhone ? `tel:${sanitizedPhone}` : "#"}
