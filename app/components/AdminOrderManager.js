@@ -50,57 +50,63 @@ export default function AdminOrderManager() {
       {orders.length === 0 ? (
         <p className="text-sm text-gray-500 mt-3">No orders yet.</p>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        <div className="mt-4 grid grid-cols-1 gap-4">
           {orders.map((order) => (
-            <div key={order._id} className="border rounded-xl p-4 flex flex-col">
-              <p className="text-sm font-semibold">Order: {order.orderId}</p>
-              <p className="text-sm">Vendor name: {order.vendorId?.vendorName || "Unknown"}</p>
-              <p className="text-sm">Shop name: {order.shopId?.name || "Unknown"}</p>
-              <p className="text-sm">Customer: {order.customerName}</p>
-              <p className="text-sm">Phone: {order.customerPhone}</p>
-              <p className="text-sm">Address: {order.customerAddress}</p>
-              <p className="text-sm">Total amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
-              <p className="text-sm">Status: {order.orderStatus?.toUpperCase() || "PENDING"}</p>
-              <div className="mt-3 relative h-24 w-full overflow-hidden border bg-gray-50">
-                <button
-                  type="button"
-                  onClick={() => setActiveReceipt(order.receiptImage)}
-                  className="h-full w-full cursor-zoom-in"
-                  aria-label={`Open receipt for order ${order.orderId}`}
-                >
-                  <Image src={order.receiptImage} alt="Receipt" fill className="object-contain" unoptimized />
-                </button>
+            <div key={order._id} className="border rounded-xl p-4 flex flex-col md:grid md:grid-cols-12 md:gap-4 md:items-start">
+              <div className="md:col-span-8">
+                <p className="text-sm font-semibold">Order: {order.orderId}</p>
+                <div className="mt-2 grid gap-x-4 gap-y-1 text-sm md:grid-cols-2">
+                  <p>Vendor name: {order.vendorId?.vendorName || "Unknown"}</p>
+                  <p>Shop name: {order.shopId?.name || "Unknown"}</p>
+                  <p>Customer: {order.customerName}</p>
+                  <p>Phone: {order.customerPhone}</p>
+                  <p className="md:col-span-2">Address: {order.customerAddress}</p>
+                  <p>Total amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
+                  <p>Status: {order.orderStatus?.toUpperCase() || "PENDING"}</p>
+                </div>
               </div>
-
-              {order.orderStatus === "pending" ? (
-                <div className="mt-3 flex gap-2">
+              <div className="mt-3 md:mt-0 md:col-span-4 md:self-stretch md:flex md:flex-col">
+                <div className="relative h-24 w-full overflow-hidden border bg-gray-50 rounded-md md:h-28">
                   <button
                     type="button"
-                    onClick={() => onAction(order._id, "approve")}
-                    className="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+                    onClick={() => setActiveReceipt(order.receiptImage)}
+                    className="h-full w-full cursor-zoom-in"
+                    aria-label={`Open receipt for order ${order.orderId}`}
                   >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onAction(order._id, "reject")}
-                    className="flex-1 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
-                  >
-                    Reject
+                    <Image src={order.receiptImage} alt="Receipt" fill className="object-contain" unoptimized />
                   </button>
                 </div>
-              ) : (
-                <p
-                  className={`mt-3 text-sm font-semibold ${
-                    order.orderStatus === "confirmed" ? "text-emerald-700" : "text-rose-700"
-                  }`}
-                >
-                  {order.orderStatus === "confirmed" ? "Order approved" : "Order rejected"}
-                </p>
-              )}
+
+                {order.orderStatus === "pending" ? (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAction(order._id, "approve")}
+                      className="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onAction(order._id, "reject")}
+                      className="flex-1 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                ) : (
+                  <p
+                    className={`mt-3 text-sm font-semibold ${
+                      order.orderStatus === "confirmed" ? "text-emerald-700" : "text-rose-700"
+                    }`}
+                  >
+                    {order.orderStatus === "confirmed" ? "Order approved" : "Order rejected"}
+                  </p>
+                )}
+              </div>
 
               {order.orderStatus === "confirmed" && (
-                <label className="mt-3 p-2 text-xs border border-emerald-200 bg-emerald-50 rounded-lg flex items-start gap-2">
+                <label className="mt-3 p-2 text-xs border border-emerald-200 bg-emerald-50 rounded-lg flex items-start gap-2 md:col-span-12">
                   <input type="checkbox" checked readOnly className="mt-0.5 h-4 w-4 accent-emerald-600" />
                   <span>
                     Order no <strong>{order.orderId}</strong> is approved and sent to vendor{" "}

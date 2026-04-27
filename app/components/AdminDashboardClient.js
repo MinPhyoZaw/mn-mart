@@ -42,7 +42,6 @@ export default function AdminDashboardClient({
       <div className="mx-auto flex flex-col md:flex-row w-full max-w-7xl gap-6">
         <aside className="w-full md:w-72 md:shrink-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h1 className="text-xl font-bold text-slate-900">Admin Dashboard</h1>
-          <p className="mt-1 text-xs text-slate-500">Modern control panel for admin workflows</p>
 
           <nav className="mt-6 space-y-2">
             {menuItems.map((item) => {
