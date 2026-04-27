@@ -61,7 +61,7 @@ export default function AdminOrderManager() {
               <p className="text-sm">Address: {order.customerAddress}</p>
               <p className="text-sm">Total amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
               <p className="text-sm">Status: {order.orderStatus?.toUpperCase() || "PENDING"}</p>
-              <div className="mt-3 relative h-24 w-full overflow-hidden rounded border bg-gray-50">
+              <div className="mt-3 relative h-24 w-full overflow-hidden border bg-gray-50">
                 <button
                   type="button"
                   onClick={() => setActiveReceipt(order.receiptImage)}
@@ -72,22 +72,32 @@ export default function AdminOrderManager() {
                 </button>
               </div>
 
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onAction(order._id, "approve")}
-                  className="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+              {order.orderStatus === "pending" ? (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onAction(order._id, "approve")}
+                    className="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAction(order._id, "reject")}
+                    className="flex-1 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
+                  >
+                    Reject
+                  </button>
+                </div>
+              ) : (
+                <p
+                  className={`mt-3 text-sm font-semibold ${
+                    order.orderStatus === "confirmed" ? "text-emerald-700" : "text-rose-700"
+                  }`}
                 >
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onAction(order._id, "reject")}
-                  className="flex-1 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
-                >
-                  Reject
-                </button>
-              </div>
+                  {order.orderStatus === "confirmed" ? "Order approved" : "Order rejected"}
+                </p>
+              )}
 
               {order.orderStatus === "confirmed" && (
                 <label className="mt-3 p-2 text-xs border border-emerald-200 bg-emerald-50 rounded-lg flex items-start gap-2">

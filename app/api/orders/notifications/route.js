@@ -7,7 +7,8 @@ const toNotification = (order) => {
   if (order.orderStatus === "confirmed") {
     return {
       type: "confirmed",
-      text: "Your payment has been verified. Your order is now confirmed and being prepared.",
+      text: "Your order is confirmed.",
+      thankYouMessage: "Thank you for using MN Mart.",
     };
   }
 

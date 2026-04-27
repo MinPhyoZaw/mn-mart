@@ -12,7 +12,7 @@ export async function PATCH(req, { params }) {
     const { id } = params;
     const { action } = await req.json();
 
-    if (!["accepted", "preparing"].includes(action)) {
+    if (!["accepted", "rejected"].includes(action)) {
       return NextResponse.json({ success: false, message: "Invalid action" }, { status: 400 });
     }
 
@@ -21,6 +21,18 @@ export async function PATCH(req, { params }) {
     const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
     if (!vendor) {
       return NextResponse.json({ success: false, message: "Vendor profile not found" }, { status: 404 });
+    }
+
+    const existingOrder = await Order.findOne({ _id: id, vendorId: vendor._id }).lean();
+    if (!existingOrder) {
+      return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+    }
+
+    if (existingOrder.orderStatus !== "confirmed") {
+      return NextResponse.json(
+        { success: false, message: "You can only respond after admin approval." },
+        { status: 400 }
+      );
     }
 
     const order = await Order.findOneAndUpdate(

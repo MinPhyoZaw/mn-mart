@@ -16,7 +16,7 @@ export async function GET(req) {
       return NextResponse.json({ success: false, message: "Vendor profile not found" }, { status: 404 });
     }
 
-    const orders = await Order.find({ vendorId: vendor._id, orderStatus: "confirmed" })
+    const orders = await Order.find({ vendorId: vendor._id })
       .sort({ createdAt: -1 })
       .limit(50)
       .lean();
