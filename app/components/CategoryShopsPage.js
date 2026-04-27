@@ -4,11 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const transportationTags = [
-  { label: "Route", value: "Shwe Ku ↔ Mandalay" },
-  { label: "Date & Time", value: "Daily • 08:00 AM" },
-  { label: "Price", value: "MMK 25,000" },
-];
+// Transportation tags removed from listing — details handled on shop page
 
 export default function CategoryShopsPage({
   category,
@@ -63,55 +59,76 @@ export default function CategoryShopsPage({
         ) : shops.length === 0 ? (
           <p className="text-center text-gray-500">No {title.toLowerCase()} available</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {shops.map((shop) => (
               <div
                 key={shop._id}
-                className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition"
+                className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition max-w-full mx-auto"
               >
-                <div className="relative w-full h-32 md:h-40 bg-gray-100">
-                  {shop.image ? (
-                    <Image
-                      src={shop.image}
-                      alt={shop.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                      className="object-cover"
-                    />
-                  ) : null}
-                </div>
-
-                <div className="p-4">
-                  <h2 className="font-semibold text-lg mb-1 line-clamp-1 font-['Raleway']">
-                    {shop.name}
-                  </h2>
-
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                    {shop.description}
-                  </p>
-
-
-                  {category === "transportation" ? (
-                    <div className="space-y-2 mb-4">
-                      {transportationTags.map((tag) => (
-                        <div
-                          key={tag.label}
-                          className="flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2 text-xs md:text-sm"
-                        >
-                          <span className="font-semibold text-blue-700">{tag.label}</span>
-                          <span className="text-gray-700">{tag.value}</span>
-                        </div>
-                      ))}
+                {category === 'transportation' ? (
+                  <>
+                    <div className="relative w-full h-48 bg-gray-100">
+                      {shop.image ? (
+                        <Image
+                          src={shop.image}
+                          alt={shop.name}
+                          fill
+                          sizes="(min-width:1280px) 20vw, (max-width:768px) 100vw"
+                          className="object-cover"
+                        />
+                      ) : null}
                     </div>
-                  ) : null}
 
-                  <Link
-                    href={`/shops/${shop._id}`}
-                    className="block text-center bg-green-600 text-white text-sm py-2 rounded-lg hover:bg-green-700 transition"
-                  >
-                    {ctaLabel}
-                  </Link>
-                </div>
+                    <div className="p-4">
+                      <h2 className="font-semibold text-lg mb-2 line-clamp-2">{shop.name}</h2>
+                      <Link
+                        href={`/shops/${shop._id}`}
+                        className="inline-block w-full text-center bg-green-600 text-white text-sm py-2 rounded-lg hover:bg-green-700 transition"
+                      >
+                        See more
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col md:flex-row">
+                    <div className="relative w-full md:w-40 h-40 md:h-auto flex-shrink-0 bg-gray-100">
+                      {shop.image ? (
+                        <Image
+                          src={shop.image}
+                          alt={shop.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 240px"
+                          className="object-cover"
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h2 className="font-semibold text-lg mb-1 line-clamp-1 font-['Raleway']">
+                          {shop.name}
+                        </h2>
+
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">{shop.description}</p>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <Link
+                          href={`/shops/${shop._id}`}
+                          className="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
+                        >
+                          {ctaLabel}
+                        </Link>
+
+                        <div className="text-xs text-gray-500">
+                          {category === 'transportation' ? (
+                            shop.extra?.startDateTime ? new Date(shop.extra.startDateTime).toLocaleString() : ''
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
