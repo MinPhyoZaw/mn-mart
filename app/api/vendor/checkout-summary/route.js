@@ -30,10 +30,11 @@ export async function GET(req) {
     const todayOrders = await Order.find({
       vendorId: vendor._id,
       orderStatus: "confirmed",
+      vendorStatus: "accepted",
       createdAt: { $gte: start, $lte: end },
     }).lean();
 
-    const salesAmount = todayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const salesAmount = todayOrders.reduce((sum, order) => sum + (order.vendorEarning || 0), 0);
     const commissionAmount = todayOrders.reduce((sum, order) => sum + (order.commissionAmount || 0), 0);
 
     return NextResponse.json({

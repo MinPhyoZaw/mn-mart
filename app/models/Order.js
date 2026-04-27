@@ -40,6 +40,7 @@ const orderSchema = new mongoose.Schema(
       {
         itemId: { type: mongoose.Schema.Types.ObjectId, ref: "Item", required: true },
         name: { type: String, required: true },
+        image: { type: String, default: null },
         price: { type: Number, required: true },
         quantity: { type: Number, required: true },
         lineTotal: { type: Number, required: true },

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 const MAX_IMAGE_SIDE = 1280;
@@ -392,10 +393,12 @@ export default function VendorDashboard() {
       <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-yellow-200 rounded-xl p-5 mb-6">
         <h2 className="text-lg font-semibold text-yellow-800">Today Payment Notice</h2>
         <p className="text-sm text-gray-700 mt-2">
-          Approved sale&apos;s amount today: <span className="font-semibold">{Number(checkoutSummary?.todaySalesAmount || 0).toLocaleString()} MMK</span>
+          Vendor profit (both-side approved) today:{" "}
+          <span className="font-semibold">{Number(checkoutSummary?.todaySalesAmount || 0).toLocaleString()} MMK</span>
         </p>
         <p className="text-sm text-gray-700 mt-1">
-          Amount to pay admin (1.5%): <span className="font-semibold">{Number(checkoutSummary?.todayAmountToAdmin || 0).toLocaleString()} MMK</span>
+          Admin profit (1.5%):{" "}
+          <span className="font-semibold">{Number(checkoutSummary?.todayAmountToAdmin || 0).toLocaleString()} MMK</span>
         </p>
         <p className="text-xs text-gray-500 mt-1">Total orders today: {checkoutSummary?.todayOrderCount || 0}</p>
         <p className="text-xs text-gray-500 mt-1">
@@ -429,9 +432,27 @@ export default function VendorDashboard() {
                 <p className="text-sm">Delivery info: {order.customerAddress}</p>
                 <div className="mt-2 text-sm">
                   <p className="font-medium">Items</p>
-                  {order.items?.map((item) => (
-                    <p key={item.itemId}>{item.name} × {item.quantity}</p>
-                  ))}
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {order.items?.map((item, index) => (
+                      <div key={`${item.itemId}-${index}`} className="rounded-lg border border-gray-200 bg-gray-50 p-2">
+                        <div className="flex items-center gap-2">
+                          <div className="relative h-14 w-14 overflow-hidden rounded-md border border-gray-200 bg-white">
+                            {item.image ? (
+                              <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-[10px] text-gray-400">No image</div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{item.name}</p>
+                            <p className="text-xs text-gray-600">
+                              {item.quantity} × {Number(item.price || 0).toLocaleString()} MMK
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {order.orderStatus === "confirmed" && order.vendorStatus === "new" && (
                   <div className="mt-3 flex gap-2">
