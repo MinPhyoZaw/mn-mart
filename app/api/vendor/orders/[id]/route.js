@@ -3,6 +3,7 @@ import connectDB from "../../../../lib/mongodb";
 import { requireAuth } from "../../../../lib/routeAuth";
 import Vendor from "../../../../models/Vendor";
 import Order from "../../../../models/Order";
+import Shop from "../../../../models/Shop";
 
 export async function PATCH(req, { params }) {
   try {
@@ -43,6 +44,26 @@ export async function PATCH(req, { params }) {
 
     if (!order) {
       return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+    }
+
+    if (
+      action === "accepted" &&
+      order.orderStatus === "confirmed" &&
+      existingOrder.settlementStatus !== "settled"
+    ) {
+      const approvedQty = (order.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+      await Promise.all([
+        Shop.findByIdAndUpdate(order.shopId, {
+          $inc: {
+            approvedOrderQty: approvedQty,
+            approvedIncome: Number(order.vendorEarning) || 0,
+          },
+        }),
+        Order.findByIdAndUpdate(order._id, { settlementStatus: "settled" }),
+      ]);
+
+      order.settlementStatus = "settled";
     }
 
     return NextResponse.json({ success: true, data: order });

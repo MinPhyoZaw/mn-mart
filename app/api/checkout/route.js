@@ -61,6 +61,7 @@ export async function POST(req) {
         return {
           itemId: item._id,
           name: item.name,
+          image: item.image || null,
           price,
           quantity: qty,
           lineTotal: price * qty,
