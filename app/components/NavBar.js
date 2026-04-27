@@ -228,7 +228,14 @@ export default function Navbar() {
                                     className="mt-0.5 h-4 w-4 accent-green-600"
                                     onChange={() => markNotificationAsRead(notice._id)}
                                   />
-                                  <span>{notice.text}</span>
+                                  <span>
+                                    {notice.text}
+                                    {notice.thankYouMessage && (
+                                      <span className="mt-1 block rounded border border-green-200 bg-green-50 px-2 py-1 text-green-700">
+                                        {notice.thankYouMessage}
+                                      </span>
+                                    )}
+                                  </span>
                                 </label>
                               ))}
                             </div>
@@ -365,7 +372,14 @@ export default function Navbar() {
                               className="mt-0.5 h-4 w-4 accent-green-600"
                               onChange={() => markNotificationAsRead(notice._id)}
                             />
-                            <span>{notice.text}</span>
+                            <span>
+                              {notice.text}
+                              {notice.thankYouMessage && (
+                                <span className="mt-1 block rounded border border-green-200 bg-green-50 px-2 py-1 text-green-700">
+                                  {notice.thankYouMessage}
+                                </span>
+                              )}
+                            </span>
                           </label>
                         ))
                       )}

@@ -92,7 +92,7 @@ const orderSchema = new mongoose.Schema(
 
     vendorStatus: {
       type: String,
-      enum: ["new", "accepted", "preparing"],
+      enum: ["new", "accepted", "rejected", "preparing"],
       default: "new",
     },
 
