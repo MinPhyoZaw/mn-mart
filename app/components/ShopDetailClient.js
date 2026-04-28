@@ -98,19 +98,21 @@ export default function ShopDetailClient({ shop, items }) {
           <h2 className="text-xl font-semibold mb-3">{sectionTitle}</h2>
 
           {items?.length ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className={`grid ${supportsCart ? "grid-cols-2 lg:grid-cols-5" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"} gap-4`}>
               {items.map((item) => {
                 const amenityList = getAmenityList(item);
                 const routeDateTime = isTransportation ? formatDateTime(item?.extra?.startDateTime) : null;
                 return (
                   <div
                     key={item._id}
-                    className={`overflow-hidden h-full flex flex-col ${
+                    className={
                       isRoom(item)
-                        ? "border bg-white rounded-xl shadow-sm"
-                        : "w-full max-w-[250px] mx-auto rounded-2xl border border-gray-200 bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.12)] transition-shadow"
-                    }`}
-                  >
+                        ? `overflow-hidden h-full flex flex-col border bg-white rounded-xl shadow-sm`
+                        : supportsCart
+                        ? `overflow-hidden h-full flex flex-col items-start w-full rounded-2xl border border-gray-200 bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.12)] transition-shadow`
+                        : `overflow-hidden h-full flex flex-col w-full max-w-[250px] mx-auto rounded-2xl border border-gray-200 bg-white shadow-[0_1px_6px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.12)] transition-shadow`
+                    }>
+                  
                     <div
                       className={`relative w-full bg-white ${
                         isRoom(item) ? "h-40" : "h-36 border-b border-gray-200"
@@ -127,7 +129,7 @@ export default function ShopDetailClient({ shop, items }) {
                       ) : null}
                     </div>
 
-                    <div className={`flex flex-col flex-1 ${isRoom(item) ? "p-3" : "p-3.5"}`}>
+                    <div className={`flex flex-col flex-1 ${!isRoom(item) && supportsCart ? "items-start" : ""} ${isRoom(item) ? "p-3" : "p-3.5"}`}>
                       <h3
                         className={`leading-tight break-words ${
                           isRoom(item) ? "font-semibold" : "mt-2 text-sm font-semibold min-h-[36px]"

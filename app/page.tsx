@@ -9,9 +9,9 @@ export default function HomePage() {
   return (
      <div className='w-[90%] mx-auto'>
       <PromoBanner/>
-      <TopShops/>
+      {/* <TopShops/> */}
       <Categories/>
-      <ImageGridComponent/> 
+      {/* <ImageGridComponent/>  */}
     </div>
   );
 }

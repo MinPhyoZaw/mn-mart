@@ -6,131 +6,90 @@ import { ShoppingCart, Car, Hotel, Sparkles } from "lucide-react";
 const categories = [
   {
     name: "Shopping",
-    image: "/images/shopping-girl.png",
-    hoverImage: "/images/kachin-2.jpg",
+    desc: "Buy from local shops",
+    icon: <ShoppingCart size={22} />,
     link: "/shops",
-    icon: <ShoppingCart size={28} />,
-    backColor: "bg-red-500",
-    service:"shop now",
+    color: "bg-orange-500",
   },
   {
     name: "Transportation",
-    image: "/images/promo-2.png",
-    hoverImage: "/images/car-ticket-2.jpg",
+    desc: "Book travel easily",
+    icon: <Car size={22} />,
     link: "/transportation",
-    icon: <Car size={28} />,
-    backColor: "bg-blue-500",
-    service:"book now",
+    color: "bg-blue-500",
   },
   {
     name: "Hotel",
-    image: "/images/mn-hotel.jpg",
-    hoverImage: "/images/hotel-2.jpg",
+    desc: "Find best hotels",
+    icon: <Hotel size={22} />,
     link: "/hotel",
-    icon: <Hotel size={28} />,
-    backColor: "bg-green-500",
-    service: "book now",
+    color: "bg-green-500",
   },
   {
     name: "Spa",
-    image: "/images/nail-spa.jpg",
-    hoverImage: "/images/spa-2.jpg",
+    desc: "Relax & refresh",
+    icon: <Sparkles size={22} />,
     link: "/spa",
-    icon: <Sparkles size={28} />,
-    backColor: "bg-yellow-500",
-    service: "book now",
+    color: "bg-pink-500",
   },
 ];
+
 export default function Categories() {
   return (
-    <div className="w-[90%] mx-auto py-16">
-      <div className="flex flex-col md:flex-row rounded-3xl overflow-hidden shadow-2xl">
+    <div className="w-[92%] md:w-[90%] mx-auto py-8 md:py-10">
+      
+      {/* Title */}
+      <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6">
+        Explore Services
+      </h2>
+
+      {/* Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
 
         {categories.map((cat) => (
-          <div
+          <Link
             key={cat.name}
-            className="relative md:w-1/4 h-[220px] md:h-[350px] group perspective overflow-hidden"
+            href={cat.link}
+            className="
+              bg-white
+              rounded-xl md:rounded-2xl
+              shadow-sm
+              hover:shadow-md
+              transition
+              p-3 md:p-4
+              h-[90px] sm:h-[100px] md:h-[110px]
+              flex items-center justify-between
+              group
+            "
           >
-            {/* Flip Wrapper */}
-            <div className="flip-card absolute inset-0">
 
-              {/* Front */}
-              <div
-                className="absolute inset-0 bg-cover bg-center flip-front"
-                style={{ backgroundImage: `url(${cat.image})` }}
-              />
+            {/* LEFT TEXT */}
+            <div className="pr-2">
+              <h3 className="text-xs sm:text-sm font-semibold text-gray-800 leading-tight">
+                {cat.name}
+              </h3>
 
-              {/* Back */}
-              <div
-                className={`
-    absolute inset-0
-    bg-cover bg-center
-    flip-back
-    ${cat.backColor}
-    bg-blend-multiply
-  `}
-  style={{ backgroundImage: `url(${cat.hoverImage})` }}
-              />
-
+              <p className="text-[10px] sm:text-xs text-gray-500 mt-1 line-clamp-2">
+                {cat.desc}
+              </p>
             </div>
 
-            {/* Dark Overlay */}
-            
+            {/* RIGHT ICON */}
+            <div
+              className={`
+                ${cat.color}
+                text-white
+                p-2 md:p-2.5
+                rounded-full
+                group-hover:scale-110
+                transition
+                shrink-0
+              `}
+            >
+              {cat.icon}
+            </div>
 
-            {/* TEXT + ICON CONTENT */}
-          <div className="absolute inset-0 z-20 text-white">
-
-  {/* TOP LEFT CATEGORY NAME */}
-  <div className="absolute top-4 left-4 font-['Raleway']">
-    <h2 className="
-      text-sm md:text-base font-bold tracking-wide
-      bg-black/40
-      px-4 py-2
-      rounded-lg
-      backdrop-blur-sm
-      font-['Raleway']
-    ">
-      {cat.name}
-    </h2>
-  </div>
-
-
-  {/* CENTER CONTENT (ICON + EXPLORE) */}
-  <div className="absolute inset-0 flex flex-col items-center justify-center">
-
-    {/* ICON */}
-    <div
-      className={`
-        ${cat.color}
-        p-3
-        rounded-full
-        shadow-lg
-        opacity-0
-        scale-75
-        group-hover:opacity-100
-        group-hover:scale-100
-        transition-all
-        duration-500
-        flex
-        items-center
-        justify-center
-        border-4 border-white
-      `}
-    >
-      {cat.icon}
-    </div>
-
-    <Link
-      href={cat.link}
-      className="mt-5 bg-white text-black px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-200 transition"
-    >
-      {cat.service}
-    </Link>
-
-  </div>
-
-</div>
-          </div>
+          </Link>
         ))}
 
       </div>
