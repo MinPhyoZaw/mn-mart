@@ -1,6 +1,7 @@
 import connectDB from "../lib/mongodb";
 import Product from "../models/Product";
 import Item from "../models/Item";
+import Shop from "../models/Shop"; // 👈 THIS LINE FIXES IT
 import AddToCartButton from "./AddToCartButton";
 import Image from "next/image";
 
