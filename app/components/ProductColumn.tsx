@@ -1,5 +1,6 @@
 import connectDB from "../lib/mongodb";
 import Product from "../models/Product";
+import Item from "../models/Item";
 
 type ProductType = {
   _id: string;
@@ -11,9 +12,23 @@ type ProductType = {
 async function getLatestProducts(): Promise<ProductType[]> {
   await connectDB();
 
+  const items = await Item.find({ type: "product", isAvailable: true })
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .lean();
+
+  if (items.length) {
+    return items.map((item) => ({
+      _id: String(item._id),
+      name: item.name,
+      description: item.description,
+      price: item.price,
+    }));
+  }
+
   const products = await Product.find({ isActive: true })
     .sort({ createdAt: -1 })
-    .limit(10)
+    .limit(20)
     .lean();
 
   return products.map((product) => ({
@@ -32,11 +47,12 @@ export default async function ProductColumn() {
       <h2 className="text-xl md:text-3xl font-thin mb-6 font-['Raleway'] text-gray-800">New Arrival</h2>
 
       {products.length ? (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="overflow-x-auto pb-2">
+          <div className="flex gap-4 min-w-max snap-x snap-mandatory">
           {products.map((product) => (
             <div
               key={product._id}
-              className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                className="w-[calc((100vw-9.5rem)/5)] min-w-[180px] snap-start rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
             >
               <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
               <p className="mt-2 text-xs md:text-sm text-gray-500 line-clamp-2">
@@ -47,6 +63,7 @@ export default async function ProductColumn() {
               </p>
             </div>
           ))}
+          </div>
         </div>
       ) : (
         <div className="rounded-lg bg-gray-100 p-4 text-gray-500">No products available.</div>
