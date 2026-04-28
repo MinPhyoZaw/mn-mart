@@ -1,0 +1,44 @@
+"use client";
+
+import React from "react";
+import { useCart } from "../context/CartContext";
+
+type Props = {
+  product: {
+    _id: string;
+    name: string;
+    price: number;
+    image?: string;
+    shopId?: string;
+    shopName?: string;
+    vendorId?: string;
+  };
+};
+
+export default function AddToCartButton({ product }: Props) {
+  const { addToCart, openCart } = useCart();
+
+  const handle = () => {
+    addToCart({
+      _id: product._id,
+      name: product.name,
+      price: product.price,
+      image: product.image || null,
+      shopId: product.shopId || "",
+      shopName: product.shopName || "",
+      vendorId: product.vendorId || product.shopId || "",
+      vendorName: "",
+    });
+    openCart();
+  };
+
+  return (
+    <button
+      onClick={handle}
+      className="mt-3 w-full text-sm bg-[#f7fff2] border border-[#318616] text-[#318616] px-3 py-1.5 rounded-md font-semibold hover:bg-[#ecf9e2]"
+      aria-label={`Add ${product.name} to cart`}
+    >
+      Add to cart
+    </button>
+  );
+}

@@ -6,6 +6,7 @@ import { Bell, Menu, ShoppingCart, User, X, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
+import SearchBar from "./SearchBar";
 
 const MAX_IMAGE_SIDE = 320;
 const OUTPUT_QUALITY = 0.72;
@@ -391,6 +392,9 @@ export default function Navbar() {
           </div>
         )}
       </nav>
+
+      {/* Search bar placed below navbar */}
+      <SearchBar />
 
       {isAccountOpen && user && (
         <>
