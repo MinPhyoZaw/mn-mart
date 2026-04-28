@@ -16,11 +16,29 @@ type ProductType = {
   vendorId?: string;
 };
 
+const normalizeTagName = (tagName?: string) => (tagName || "").trim().toLowerCase();
+
+const getTagAliases = (tagName?: string): string[] => {
+  if (!tagName) return [];
+
+  const normalized = normalizeTagName(tagName);
+  const map: Record<string, string[]> = {
+    newarrival: ["NewArrival", "newarrival", "new-arrival", "New Arrival"],
+    bestsellers: ["BestSellers", "BestSeller", "bestsellers", "best-sellers", "Best Sellers"],
+    toppicks: ["TopPicks", "TopPick", "toppicks", "top-picks", "Top Picks"],
+    recomendedforyou: ["RecomendedForYou", "RecommendedForYou", "recomendedforyou", "recommendedforyou", "Recommended For You"],
+    recommendedforyou: ["RecommendedForYou", "RecomendedForYou", "recommendedforyou", "recomendedforyou", "Recommended For You"],
+  };
+
+  return map[normalized] || [tagName];
+};
+
 async function fetchProductsByTag(tagName?: string, limit = 10): Promise<ProductType[]> {
   await connectDB();
 
   const itemQuery: any = { type: "product", isAvailable: true };
-  if (tagName) itemQuery.tagName = tagName;
+  const tagAliases = getTagAliases(tagName);
+  if (tagAliases.length) itemQuery.tagName = { $in: tagAliases };
 
   const items = await Item.find(itemQuery).sort({ createdAt: -1 }).limit(limit).lean();
 
@@ -46,7 +64,9 @@ async function fetchProductsByTag(tagName?: string, limit = 10): Promise<Product
   }
 
   const productQuery: any = { isActive: true };
-  if (tagName) productQuery.tagName = tagName;
+  if (tagAliases.length && Product.schema.path("tagName")) {
+    productQuery.tagName = { $in: tagAliases };
+  }
 
   const products = await Product.find(productQuery).sort({ createdAt: -1 }).limit(limit).lean();
   if (!products.length) return [];
