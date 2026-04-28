@@ -45,6 +45,13 @@ const itemSchema = new mongoose.Schema(
       default: null,
     },
 
+    tagName: {
+      type: String,
+      enum: ["NewArrival", "BestSellers", "TopPicks", "RecomendedForYou"],
+      default: "NewArrival",
+      index: true,
+    },
+
     // 🔥 IMPORTANT FIX
     extra: {
       type: mongoose.Schema.Types.Mixed,

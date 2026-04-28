@@ -59,6 +59,7 @@ export async function POST(req) {
       image: body.image,
       type: body.type,
       category: body.category,
+      tagName: body.tagName,
       extra: body.extra,
       isAvailable: body.isAvailable,
     });
@@ -90,6 +91,7 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const shopId = searchParams.get("shopId");
+    const tagName = searchParams.get("tagName");
 
     const filter = {};
 
@@ -102,6 +104,10 @@ export async function GET(req) {
       }
 
       filter.shopId = shopId;
+    }
+
+    if (tagName) {
+      filter.tagName = tagName;
     }
 
     const items = await Item.find(filter).sort({ createdAt: -1 }).lean();

@@ -47,6 +47,7 @@ const INITIAL_FORM = {
   price: "",
   quantity: "",
   category: "",
+  tagName: "NewArrival",
   roomType: "",
   amenities: {
     wifi: false,
@@ -78,6 +79,8 @@ const FORM_TITLE = {
   transportation: "Add New Routes",
   spa: "Add New Service",
 };
+
+const SHOPPING_TAGS = ["NewArrival", "BestSellers", "TopPicks", "RecomendedForYou"];
 
 export default function VendorDashboard() {
   const [loading, setLoading] = useState(true);
@@ -151,6 +154,19 @@ export default function VendorDashboard() {
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
             required
           />
+          <select
+            name="tagName"
+            value={form.tagName}
+            onChange={(e) => setForm((prev) => ({ ...prev, tagName: e.target.value }))}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
+          >
+            {SHOPPING_TAGS.map((tag) => (
+              <option key={tag} value={tag}>
+                {tag}
+              </option>
+            ))}
+          </select>
         </>
       );
     }
@@ -309,6 +325,7 @@ export default function VendorDashboard() {
     if (serviceType === "shopping") {
       payload.extra.quantity = Number(form.quantity);
       payload.category = form.category;
+      payload.tagName = form.tagName;
     }
 
     if (serviceType === "hotel") {
