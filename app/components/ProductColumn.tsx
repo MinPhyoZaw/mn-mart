@@ -1,6 +1,7 @@
 import connectDB from "../lib/mongodb";
 import Product from "../models/Product";
 import Item from "../models/Item";
+import Shop from "../models/Shop"; // 👈 THIS LINE FIXES IT
 import AddToCartButton from "./AddToCartButton";
 import Image from "next/image";
 
@@ -19,38 +20,61 @@ async function getLatestProducts(): Promise<ProductType[]> {
   const items = await Item.find({ type: "product", isAvailable: true })
     .sort({ createdAt: -1 })
     .limit(10)
-    .populate("shopId", "vendorId name")
     .lean();
 
   if (items.length) {
-    return items.map((item) => ({
-      _id: String(item._id),
-      name: item.name,
-      description: item.description,
-      price: item.price,
-      image: item.image,
-      shopId: item.shopId?._id ? String(item.shopId._id) : String(item.shopId || ""),
-      shopName: item.shopId?.name || item.shopName || "",
-      vendorId: item.shopId?.vendorId ? String(item.shopId.vendorId) : "",
-    }));
+    // Manually load shops to avoid populate dependency issues
+    const shopIds = Array.from(new Set(items.map((it) => String(it.shopId)).filter(Boolean)));
+    const shops = shopIds.length ? await Shop.find({ _id: { $in: shopIds } }).lean() : [];
+    const shopMap = shops.reduce((acc, s) => {
+      acc[String(s._id)] = s;
+      return acc;
+    }, {} as Record<string, any>);
+
+    return items.map((item) => {
+      const sid = item.shopId ? String(item.shopId) : "";
+      const shop = shopMap[sid] || {};
+      return {
+        _id: String(item._id),
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        image: item.image,
+        shopId: sid,
+        shopName: shop.name || item.shopName || "",
+        vendorId: shop.vendorId ? String(shop.vendorId) : "",
+      };
+    });
   }
 
   const products = await Product.find({ isActive: true })
     .sort({ createdAt: -1 })
     .limit(20)
-    .populate("shopId", "vendorId name")
     .lean();
 
-  return products.map((product) => ({
-    _id: String(product._id),
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    image: product.image,
-    shopId: product.shopId?._id ? String(product.shopId._id) : String(product.shopId || ""),
-    shopName: product.shopId?.name || product.shopName || "",
-    vendorId: product.shopId?.vendorId ? String(product.shopId.vendorId) : "",
-  }));
+  if (products.length) {
+    const shopIds = Array.from(new Set(products.map((p) => String(p.shopId)).filter(Boolean)));
+    const shops = shopIds.length ? await Shop.find({ _id: { $in: shopIds } }).lean() : [];
+    const shopMap = shops.reduce((acc, s) => {
+      acc[String(s._id)] = s;
+      return acc;
+    }, {} as Record<string, any>);
+
+    return products.map((product) => {
+      const sid = product.shopId ? String(product.shopId) : "";
+      const shop = shopMap[sid] || {};
+      return {
+        _id: String(product._id),
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        image: product.image,
+        shopId: sid,
+        shopName: shop.name || product.shopName || "",
+        vendorId: shop.vendorId ? String(shop.vendorId) : "",
+      };
+    });
+  }
 }
 
 export default async function ProductColumn() {
