@@ -2,8 +2,7 @@ import connectDB from "../lib/mongodb";
 import Product from "../models/Product";
 import Item from "../models/Item";
 import Shop from "../models/Shop"; // 👈 THIS LINE FIXES IT
-import AddToCartButton from "./AddToCartButton";
-import Image from "next/image";
+import ProductCarouselClient from "./ProductCarouselClient";
 
 type ProductType = {
   _id: string;
@@ -103,47 +102,5 @@ export default async function ProductColumn({ tagName = "NewArrival", title, lim
 
   if (!products.length) return null;
 
-  return (
-    <section className="py-8 w-[92%] md:w-[90%] mx-auto">
-      <h2 className="text-lg md:text-2xl font-semibold mb-5 text-gray-800">{heading}</h2>
-
-      <div className="overflow-x-auto pb-2">
-        <div className="flex gap-4 min-w-max snap-x snap-mandatory">
-          {products.map((product) => (
-            <div
-              key={product._id}
-              className="
-                w-[160px] md:w-[200px]
-                snap-start
-                rounded-xl
-                bg-white
-                shadow-sm
-                hover:shadow-md
-                transition
-                p-3
-                group
-              "
-            >
-              <div className="relative w-full h-[120px] md:h-[150px] mb-3">
-                <Image
-                  src={product.image || "/images/placeholder.png"}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-lg group-hover:scale-105 transition"
-                />
-              </div>
-
-              <h3 className="text-xs md:text-sm font-medium text-gray-800 line-clamp-2">{product.name}</h3>
-
-              <p className="text-[10px] text-red-400 mt-1">{product.shopName}</p>
-
-              <p className="mt-2 text-sm md:text-base  text-gray-500">{Number(product.price || 0).toLocaleString()} MMK</p>
-
-              <AddToCartButton product={product} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+  return <ProductCarouselClient products={products} heading={heading} />;
 }
