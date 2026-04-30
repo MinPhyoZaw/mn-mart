@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import connectDB from "../../lib/mongodb";
 import Shop from "../../models/Shop";
 
+export const revalidate = 60;
+
 const CATEGORY_ALIASES = {
   shop: "shopping",
   shops: "shopping",
@@ -22,6 +24,11 @@ function normalizeCategory(category) {
   return CATEGORY_ALIASES[normalized] || normalized;
 }
 
+function toNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export async function GET(req) {
   try {
     await connectDB();
@@ -29,10 +36,36 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const category = normalizeCategory(searchParams.get("category"));
 
-    const query = category ? { category } : {};
-    const shops = await Shop.find(query).lean();
+    const page = Math.max(1, toNumber(searchParams.get("page"), 1));
+    const limit = Math.min(50, Math.max(1, toNumber(searchParams.get("limit"), 20)));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json({ success: true, data: shops }, { status: 200 });
+    const query = category ? { category } : {};
+    const projection = "name description image category";
+
+    const [shops, total] = await Promise.all([
+      Shop.find(query).select(projection).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Shop.countDocuments(query),
+    ]);
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: shops,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      },
+    );
   } catch (error) {
     console.error("GET /api/shops error:", error);
     return NextResponse.json({ success: false, message: "Failed to fetch shops" }, { status: 500 });
