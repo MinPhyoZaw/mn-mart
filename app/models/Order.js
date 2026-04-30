@@ -29,6 +29,11 @@ const orderSchema = new mongoose.Schema(
     customerName: { type: String, required: true },
     customerPhone: { type: String, required: true },
     customerAddress: { type: String, required: true },
+    bookingDetails: {
+      guestCount: { type: Number, default: null },
+      extraBedAmount: { type: Number, default: null },
+      note: { type: String, default: "" },
+    },
 
     serviceType: {
       type: String,

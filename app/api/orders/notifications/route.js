@@ -4,6 +4,13 @@ import { requireAuth } from "../../../lib/routeAuth";
 import Order from "../../../models/Order";
 
 const toNotification = (order) => {
+  if (order.orderStatus === "confirmed" && order.vendorStatus === "accepted" && order.serviceType === "hotel") {
+    return {
+      type: "confirmed",
+      text: "Your room booking is confirm ,thank you for using mn-mart",
+    };
+  }
+
   if (order.orderStatus === "confirmed") {
     return {
       type: "confirmed",
