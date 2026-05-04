@@ -1,7 +1,7 @@
 "use client";
 import { Wifi, BedDouble, Tv, Coffee } from "lucide-react";
+import AddToCartButton from "./AddToCartButton";
 import Image from "next/image";
-import { useCart } from "../context/CartContext";
 import { useState } from "react";
 
 const AMENITY_META = {
@@ -16,8 +16,6 @@ const HOTEL_BOOKING_TEXT =
   "Room booking တင်ရန်အတွက် အခန်းခကျသင့်ငွေမှ 5000MMK (၅ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
 
 export default function ShopDetailClient({ shop, items }) {
-  const { addToCart, openCart } = useCart();
-
   const [activeBookingItemId, setActiveBookingItemId] = useState(null);
   const [showQrLarge, setShowQrLarge] = useState(false);
 
@@ -37,7 +35,6 @@ export default function ShopDetailClient({ shop, items }) {
     ? items.find((i) => i._id === activeBookingItemId)
     : null;
 
-  const isRoom = (item) => item.type === "room";
   const isHotel = shop?.category === "hotel";
 
   const getAmenityList = (item) =>
@@ -100,55 +97,64 @@ export default function ShopDetailClient({ shop, items }) {
       <h1 className="text-2xl font-bold mt-4">{shop.name}</h1>
 
       {/* ITEMS */}
-     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-  {items.map((item) => (
-    <div
-      key={item._id}
-      className="border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition"
-    >
-      {/* Image */}
-      <div className="relative h-44">
-        <Image
-          src={item.image}
-          alt={item.name}
-          fill
-          className="object-cover"
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+        {items.map((item) => (
+          <div
+            key={item._id}
+            className="border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition"
+          >
+            <div className="relative h-40 bg-gray-100">
+              {item.image ? (
+                <Image src={item.image} alt={item.name} fill className="object-cover" />
+              ) : null}
+            </div>
+
+            <div className="p-4 flex flex-col">
+              <h3 className="font-semibold text-base line-clamp-2">{item.name}</h3>
+              <p className="mt-1 text-sm text-green-700 line-clamp-1">{shop.name}</p>
+
+              <div className="mt-2">
+                <span className="text-black font-semibold text-base">
+                  {Number(item.price || 0).toLocaleString()} MMK
+                </span>
+                {isHotel ? (
+                  <span className="text-gray-400 text-sm font-light ml-1">/ night</span>
+                ) : null}
+              </div>
+
+              {isHotel ? (
+                <>
+                  <div className="flex items-center gap-3 mt-3 text-gray-600">
+                    {item?.extra?.amenities?.wifi && <Wifi size={18} />}
+                    {item?.extra?.amenities?.extraBed && <BedDouble size={18} />}
+                    {item?.extra?.amenities?.tv && <Tv size={18} />}
+                    {item?.extra?.amenities?.breakfast && <Coffee size={18} />}
+                  </div>
+
+                  <button
+                    onClick={() => setActiveBookingItemId(item._id)}
+                    className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
+                  >
+                    Book Now
+                  </button>
+                </>
+              ) : (
+                <AddToCartButton
+                  product={{
+                    _id: item._id,
+                    name: item.name,
+                    price: Number(item.price) || 0,
+                    image: item.image,
+                    shopId: shop._id,
+                    shopName: shop.name,
+                    vendorId: item.vendorId || shop.vendorId,
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        ))}
       </div>
-
-      {/* Content */}
-      <div className="p-4 flex flex-col">
-        <h3 className="font-semibold text-lg">{item.name}</h3>
-
-        {/* Price */}
-        <div className="mt-2">
-          <span className="text-black font-semibold text-lg">
-            {item.price?.toLocaleString()} MMK
-          </span>
-          <span className="text-gray-400 text-sm font-light ml-1">
-            / night
-          </span>
-        </div>
-
-        {/* Amenities Icons */}
-        <div className="flex items-center gap-3 mt-3 text-gray-600">
-          {item?.extra?.amenities?.wifi && <Wifi size={18} />}
-          {item?.extra?.amenities?.extraBed && <BedDouble size={18} />}
-          {item?.extra?.amenities?.tv && <Tv size={18} />}
-          {item?.extra?.amenities?.breakfast && <Coffee size={18} />}
-        </div>
-
-        {/* Button */}
-        <button
-          onClick={() => setActiveBookingItemId(item._id)}
-          className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
-        >
-          Book Now
-        </button>
-      </div>
-    </div>
-  ))}
-</div>
 
       {/* MODAL */}
       {isHotel && activeBookingItem && (
