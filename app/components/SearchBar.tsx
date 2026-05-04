@@ -3,18 +3,25 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Camera, Loader2, Search } from "lucide-react";
 
 type Shop = { _id: string; name: string };
+type SearchProduct = { _id: string; name: string; shopId?: { _id?: string; name?: string } | string };
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<SearchProduct[]>([]);
   const [open, setOpen] = useState(false);
+  const [visionLoading, setVisionLoading] = useState(false);
+  const [visionLabels, setVisionLabels] = useState<string[]>([]);
+  const [visionCategory, setVisionCategory] = useState<string | null>(null);
+  const [visionProducts, setVisionProducts] = useState<SearchProduct[]>([]);
+  const [visionError, setVisionError] = useState("");
   const timerRef = useRef<number | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -64,6 +71,47 @@ export default function SearchBar() {
     setOpen(false);
   };
 
+  const handleOpenImageInput = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setVisionLoading(true);
+      setVisionError("");
+      setVisionProducts([]);
+      setVisionLabels([]);
+      setVisionCategory(null);
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch("/api/vision-search", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "Image search failed");
+      }
+
+      setVisionLabels(data?.data?.labels || []);
+      setVisionCategory(data?.data?.mappedCategory || null);
+      setVisionProducts(data?.data?.products || []);
+      setOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unable to search with image";
+      setVisionError(message);
+    } finally {
+      setVisionLoading(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <div ref={rootRef} className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-3">
       <form onSubmit={onSubmit} className="relative">
@@ -82,7 +130,7 @@ export default function SearchBar() {
               border border-gray-200
               bg-white
               pl-4
-              pr-36   /* 👈 space for right content */
+              pr-48
               py-2.5
               shadow-sm
               focus:outline-none
@@ -103,6 +151,16 @@ export default function SearchBar() {
 
             {/* Search Button */}
             <button
+              type="button"
+              onClick={handleOpenImageInput}
+              disabled={visionLoading}
+              className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 p-2 rounded-full transition disabled:opacity-60"
+              aria-label="Search with image"
+            >
+              {visionLoading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+            </button>
+
+            <button
               type="submit"
               className="
                 bg-green-500
@@ -113,10 +171,19 @@ export default function SearchBar() {
                 transition
               "
             >
-              <Search size={18} />
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
             </button>
 
           </div>
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
         </div>
 
         {/* DROPDOWN */}
@@ -146,7 +213,7 @@ export default function SearchBar() {
                 <div className="mt-2">
                   <p className="text-xs font-semibold text-gray-500 px-2">Products</p>
                   <div className="divide-y">
-                    {products.map((p: any) => (
+                    {products.map((p) => (
                       <Link
                         key={p._id}
                         href={`/shops/${p.shopId?._id || p.shopId}?product=${p._id}`}
@@ -162,6 +229,52 @@ export default function SearchBar() {
               )}
 
             </div>
+          </div>
+        )}
+
+        {(visionLoading || visionError || visionProducts.length > 0 || visionLabels.length > 0) && (
+          <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            {visionLoading && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Loader2 className="animate-spin" size={16} /> Processing image search...
+              </div>
+            )}
+
+            {!visionLoading && visionError && <p className="text-sm text-red-600">{visionError}</p>}
+
+            {!visionLoading && !visionError && (
+              <>
+                <div className="mb-3 text-sm text-gray-600">
+                  {visionLabels.length > 0 ? (
+                    <>
+                      Labels: <span className="font-medium text-gray-800">{visionLabels.join(", ")}</span>
+                      {visionCategory ? (
+                        <span> · Category: <span className="font-medium text-gray-800">{visionCategory}</span></span>
+                      ) : null}
+                    </>
+                  ) : (
+                    "No similar products found"
+                  )}
+                </div>
+
+                {visionProducts.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {visionProducts.map((p) => (
+                      <Link
+                        key={p._id}
+                        href={`/shops/${p.shopId?._id || p.shopId}?product=${p._id}`}
+                        className="rounded-lg border border-gray-200 p-3 hover:border-green-400 hover:shadow-sm transition"
+                      >
+                        <p className="text-sm font-medium text-gray-900 line-clamp-2">{p.name}</p>
+                        <p className="mt-1 text-xs text-gray-500">{p.shopId?.name || "Shop"}</p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  visionLabels.length > 0 && <p className="text-sm text-gray-500">No similar products found</p>
+                )}
+              </>
+            )}
           </div>
         )}
 
