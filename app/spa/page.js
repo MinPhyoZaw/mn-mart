@@ -1,12 +1,13 @@
 import CategoryShopsPage from "../components/CategoryShopsPage";
 // Pass serializable icon keys from server component; actual icon components
 // will be resolved inside the client `CategoryShopsPage` component.
+
 const spaServiceCategories = [
-  { name: "Massage", icon: "Hand" },
-  { name: "Facial", icon: "Flower2" },
-  { name: "Body Treatment", icon: "Waves" },
-  { name: "Foot & Hand Care", icon: "Footprints" },
-  { name: "Special Packages", icon: "Gift" },
+  { name: "Massage" },
+  { name: "Facial" },
+  { name: "Body Treatment" },
+  { name: "Foot & Hand Care" },
+  { name: "Special Packages" },
 ];
 
 export default function SpaPage() {
@@ -17,6 +18,7 @@ export default function SpaPage() {
       heroImage="/images/nail-spa.jpg"
       ctaLabel="Book Now"
       serviceCategories={spaServiceCategories}
+      
     />
   );
 }

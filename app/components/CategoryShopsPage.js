@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import ShopsHero from "./shops/ShopsHero";
 import ShopsGrid from "./shops/ShopsGrid";
 
@@ -9,6 +10,7 @@ export default function CategoryShopsPage({
   title,
   heroImage,
   ctaLabel = "Book Now",
+  serviceCategories = [],
   serviceCategories = [],
 }) {
   const [shops, setShops] = useState([]);
