@@ -6,7 +6,7 @@ export default function HotelPage() {
       category="hotel"
       title="Hotels"
       heroImage="/images/mn-hotel.jpg"
-      ctaLabel="Book Now"
+      ctaLabel="See Hotel Rooms"
     />
   );
 }

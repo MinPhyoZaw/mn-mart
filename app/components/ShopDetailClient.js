@@ -1,5 +1,5 @@
 "use client";
-
+import { Wifi, BedDouble, Tv, Coffee } from "lucide-react";
 import Image from "next/image";
 import { useCart } from "../context/CartContext";
 import { useState } from "react";
@@ -12,105 +12,294 @@ const AMENITY_META = {
   extraBed: { label: "Extra Bed" },
 };
 
-const HOTEL_BOOKING_TEXT = "Hotel booking တင်ရန်အတွက် အခန်းခကျသင့်ငွေမှ 5000MMK (၅ထောင်ကျပ်)အား အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို လွှပေးပါခင်ဗျာ။";
+const HOTEL_BOOKING_TEXT =
+  "Room booking တင်ရန်အတွက် အခန်းခကျသင့်ငွေမှ 5000MMK (၅ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
 
 export default function ShopDetailClient({ shop, items }) {
   const { addToCart, openCart } = useCart();
+
   const [activeBookingItemId, setActiveBookingItemId] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ customerName: "", customerPhone: "", extraBedAmount: "0", guestCount: "1", note: "", receiptImage: "" });
-  const [bookingMessage, setBookingMessage] = useState("");
+  const [showQrLarge, setShowQrLarge] = useState(false);
+
+  const [bookingForm, setBookingForm] = useState({
+    customerName: "",
+    customerPhone: "",
+    extraBedAmount: "0",
+    guestCount: "1",
+    note: "",
+    receiptImage: "",
+  });
+
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [bookingMessage, setBookingMessage] = useState("");
 
-  const sanitizedPhone = shop?.phone ? String(shop.phone).replace(/[^\d+]/g, "") : "";
+  const activeBookingItem = activeBookingItemId
+    ? items.find((i) => i._id === activeBookingItemId)
+    : null;
 
-  const handleAddToCart = (item) => {
-    addToCart({ ...item, shopId: shop?._id, shopName: shop?.name, vendorId: shop?.vendorId, vendorName: shop?.vendorName });
-    openCart();
-  };
+  const isRoom = (item) => item.type === "room";
+  const isHotel = shop?.category === "hotel";
 
-  const handleReceiptUpload = async (event) => {
-    const file = event.target.files?.[0];
+  const getAmenityList = (item) =>
+    Object.entries(item?.extra?.amenities || {})
+      .filter(([, enabled]) => enabled)
+      .map(([key]) => AMENITY_META[key] || { label: key });
+
+  const handleReceiptUpload = (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = () => setBookingForm((prev) => ({ ...prev, receiptImage: String(reader.result || "") }));
+    reader.onload = () =>
+      setBookingForm((prev) => ({
+        ...prev,
+        receiptImage: reader.result,
+      }));
     reader.readAsDataURL(file);
   };
 
-  const submitHotelBooking = async (item) => {
-    if (!bookingForm.customerName || !bookingForm.customerPhone || !bookingForm.receiptImage) {
-      setBookingMessage("Please fill required fields and upload receipt.");
+  const submitHotelBooking = async () => {
+    if (
+      !bookingForm.customerName ||
+      !bookingForm.customerPhone ||
+      !bookingForm.receiptImage
+    ) {
+      setBookingMessage("Please fill all required fields.");
       return;
     }
+
     setBookingSubmitting(true);
-    setBookingMessage("");
+
     try {
-      const res = await fetch("/api/hotel-booking", {
+      await fetch("/api/hotel-booking", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          roomItemId: item._id,
-          shopId: shop?._id,
-          customerName: bookingForm.customerName,
-          customerPhone: bookingForm.customerPhone,
-          extraBedAmount: Number(bookingForm.extraBedAmount) || 0,
-          guestCount: Number(bookingForm.guestCount) || 1,
-          note: bookingForm.note,
-          receiptImage: bookingForm.receiptImage,
+          ...bookingForm,
+          roomItemId: activeBookingItem._id,
+          shopId: shop._id,
         }),
       });
-      const data = await res.json();
-      if (!data.success) {
-        setBookingMessage(data.message || "Booking failed.");
-      } else {
-        setBookingMessage("Booking submitted successfully.");
-        setActiveBookingItemId(null);
-      }
+
+      setBookingMessage("Booking submitted successfully");
+      setActiveBookingItemId(null);
     } catch {
-      setBookingMessage("Server error while booking.");
+      setBookingMessage("Error submitting booking");
     } finally {
       setBookingSubmitting(false);
     }
   };
 
-  const isRoom = (item) => item.type === "room";
-  const isHotel = shop?.category === "hotel";
-  const isTransportation = shop?.category === "transportation";
-  const isSpa = shop?.category === "spa";
-  const supportsCart = shop?.category === "shopping";
+  return (
+    <div className="max-w-6xl mx-auto p-6">
 
-  const getAmenityList = (item) => Object.entries(item?.extra?.amenities || {}).filter(([, enabled]) => Boolean(enabled)).map(([key]) => AMENITY_META[key] || { label: key });
-
-  const sectionTitle = isHotel ? "Available Room" : isSpa ? "Available Service" : isTransportation ? "Available Routes" : "Available Products";
-
-  return <div className="max-w-6xl mx-auto px-4 py-5 sm:p-6">{/* trimmed */}
-    <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden shadow-lg"><Image src={shop.image || "/images/default-shop.png"} alt={shop.name} fill className="object-cover" /></div>
-    <div className="mt-6"><h1 className="text-2xl sm:text-3xl font-bold text-yellow-600 break-words">{shop.name}</h1>
-      <p className="text-gray-600 mt-2 break-words">{shop.description || "No description available"}</p>
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4"><p className="text-xs uppercase tracking-wide text-gray-500">Phone</p><p className="mt-1 font-medium text-gray-800 break-all">{shop.phone || "N/A"}</p></div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4"><p className="text-xs uppercase tracking-wide text-gray-500">Address</p><p className="mt-1 font-medium text-gray-800 break-words">{shop.address || "N/A"}</p></div>
+      {/* SHOP IMAGE */}
+      <div className="relative w-full h-64 rounded-xl overflow-hidden">
+        <Image src={shop.image} alt={shop.name} fill className="object-cover" />
       </div>
-      <div className="mt-8"><h2 className="text-xl font-semibold mb-3">{sectionTitle}</h2>
-        {bookingMessage && <p className="mb-3 text-sm text-blue-700">{bookingMessage}</p>}
-        {items?.length ? <div className={`grid ${supportsCart ? "grid-cols-2 lg:grid-cols-5" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"} gap-4`}>
-          {items.map((item) => <div key={item._id} className="overflow-hidden h-full flex flex-col border bg-white rounded-xl shadow-sm"><div className="relative w-full bg-white h-40">{item.image && <Image src={item.image} alt={item.name} fill className="object-cover" />}</div>
-            <div className="flex flex-col flex-1 p-3"><h3 className="font-semibold">{item.name}</h3>
-              {isRoom(item) && <div className="mt-2"><span className="font-semibold text-yellow-600">{Number(item.price || 0).toLocaleString()} MMK</span></div>}
-              <div className="mt-3 flex items-center justify-between gap-2 mt-auto">
-                {!supportsCart ? <button type="button" onClick={() => setActiveBookingItemId(activeBookingItemId === item._id ? null : item._id)} className="text-xs sm:text-sm px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md whitespace-nowrap">Book Now</button> : <button onClick={() => handleAddToCart(item)} className="text-xs sm:text-sm px-3 py-1.5 border border-[#318616] text-[#318616] bg-[#f7fff2] hover:bg-[#ecf9e2] rounded-md font-semibold whitespace-nowrap">Add to cart</button>}
+
+      <h1 className="text-2xl font-bold mt-4">{shop.name}</h1>
+
+      {/* ITEMS */}
+     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+  {items.map((item) => (
+    <div
+      key={item._id}
+      className="border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition"
+    >
+      {/* Image */}
+      <div className="relative h-44">
+        <Image
+          src={item.image}
+          alt={item.name}
+          fill
+          className="object-cover"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="p-4 flex flex-col">
+        <h3 className="font-semibold text-lg">{item.name}</h3>
+
+        {/* Price */}
+        <div className="mt-2">
+          <span className="text-black font-semibold text-lg">
+            {item.price?.toLocaleString()} MMK
+          </span>
+          <span className="text-gray-400 text-sm font-light ml-1">
+            / night
+          </span>
+        </div>
+
+        {/* Amenities Icons */}
+        <div className="flex items-center gap-3 mt-3 text-gray-600">
+          {item?.extra?.amenities?.wifi && <Wifi size={18} />}
+          {item?.extra?.amenities?.extraBed && <BedDouble size={18} />}
+          {item?.extra?.amenities?.tv && <Tv size={18} />}
+          {item?.extra?.amenities?.breakfast && <Coffee size={18} />}
+        </div>
+
+        {/* Button */}
+        <button
+          onClick={() => setActiveBookingItemId(item._id)}
+          className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
+        >
+          Book Now
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
+
+      {/* MODAL */}
+      {isHotel && activeBookingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+
+          {/* overlay */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setActiveBookingItemId(null)}
+          />
+
+          {/* modal */}
+          <div className="relative w-full max-w-5xl bg-white rounded-xl shadow-xl flex flex-col md:flex-row overflow-hidden">
+
+            {/* LEFT IMAGE */}
+            <div className="md:w-1/2 h-64 md:h-auto relative">
+              <Image
+                src={activeBookingItem.image}
+                alt={activeBookingItem.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+
+            {/* RIGHT FORM */}
+            <div className="md:w-1/2 p-6 overflow-y-auto">
+
+              <button
+                onClick={() => setActiveBookingItemId(null)}
+                className="absolute right-4 top-4"
+              >
+                ✕
+              </button>
+
+              <h2 className="text-xl font-semibold mb-2">
+                {activeBookingItem.name}
+              </h2>
+
+              {/* Amenities */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {getAmenityList(activeBookingItem).map((a, i) => (
+                  <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                    {a.label}
+                  </span>
+                ))}
               </div>
-              {isHotel && activeBookingItemId === item._id && <div className="mt-4 space-y-2 border rounded-lg p-3 bg-gray-50">
-                <input placeholder="Name" className="w-full border rounded px-3 py-2" value={bookingForm.customerName} onChange={(e) => setBookingForm((p) => ({ ...p, customerName: e.target.value }))} />
-                <input placeholder="Phone Number" className="w-full border rounded px-3 py-2" value={bookingForm.customerPhone} onChange={(e) => setBookingForm((p) => ({ ...p, customerPhone: e.target.value }))} />
-                <input type="number" min="0" placeholder="Amount of Extra bed" className="w-full border rounded px-3 py-2" value={bookingForm.extraBedAmount} onChange={(e) => setBookingForm((p) => ({ ...p, extraBedAmount: e.target.value }))} />
-                <input type="number" min="1" placeholder="Number of guest" className="w-full border rounded px-3 py-2" value={bookingForm.guestCount} onChange={(e) => setBookingForm((p) => ({ ...p, guestCount: e.target.value }))} />
-                <textarea placeholder="Description" className="w-full border rounded px-3 py-2" value={bookingForm.note} onChange={(e) => setBookingForm((p) => ({ ...p, note: e.target.value }))} />
-                <textarea className="w-full border rounded px-3 py-2 text-sm" value={HOTEL_BOOKING_TEXT} readOnly />
-                <div className="relative h-36 w-36 overflow-hidden border rounded"><Image src="/images/logo.png" alt="Online banking QR" fill className="object-cover" /></div>
-                <input type="file" accept="image/*" onChange={handleReceiptUpload} className="w-full border rounded px-3 py-2" />
-                <button type="button" onClick={() => submitHotelBooking(item)} disabled={bookingSubmitting} className="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded px-3 py-2">{bookingSubmitting ? "Submitting..." : "Confirm Order"}</button>
-              </div>}
-            </div></div>)}
-        </div> : <div className="bg-gray-100 p-4 rounded-lg text-gray-500">No items yet.</div>}
-      </div></div></div>;
+
+              <div className="space-y-3">
+
+                <input
+                  placeholder="Enter name"
+                  className="w-full border px-3 py-2 rounded"
+                  value={bookingForm.customerName}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, customerName: e.target.value })
+                  }
+                />
+
+                <input
+                  placeholder="Enter phone number"
+                  className="w-full border px-3 py-2 rounded"
+                  value={bookingForm.customerPhone}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, customerPhone: e.target.value })
+                  }
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    placeholder="Enter guest number"
+                    className="border px-3 py-2 rounded"
+                    value={bookingForm.guestCount}
+                    onChange={(e) =>
+                      setBookingForm({ ...bookingForm, guestCount: e.target.value })
+                    }
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Enter extra bed number"
+                    className="border px-3 py-2 rounded"
+                    value={bookingForm.extraBedAmount}
+                    onChange={(e) =>
+                      setBookingForm({
+                        ...bookingForm,
+                        extraBedAmount: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <textarea
+                  placeholder="Note"
+                  className="w-full border px-3 py-2 rounded"
+                  value={bookingForm.note}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, note: e.target.value })
+                  }
+                />
+
+                <div className="border p-3 bg-gray-50 text-sm">
+                  {HOTEL_BOOKING_TEXT}
+                </div>
+
+                {/* QR */}
+                <div
+                  className="h-32 w-32 mx-auto border cursor-pointer relative"
+                  onClick={() => setShowQrLarge(true)}
+                >
+                  <Image src="/images/logo.png" alt="QR" fill />
+                </div>
+
+                <input type="file" onChange={handleReceiptUpload} />
+
+                <button
+                  onClick={submitHotelBooking}
+                  disabled={bookingSubmitting}
+                  className="w-full bg-yellow-500 text-white py-2 rounded"
+                >
+                  {bookingSubmitting ? "Submitting..." : "Confirm Order"}
+                </button>
+
+                {bookingMessage && (
+                  <p className="text-sm text-blue-600">{bookingMessage}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LARGE QR */}
+      {showQrLarge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setShowQrLarge(false)}
+          />
+
+          <div className="relative z-50 bg-white p-4 rounded">
+            <Image
+              src="/images/logo.png"
+              alt="QR Large"
+              width={400}
+              height={400}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
