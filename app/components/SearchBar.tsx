@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { getItemRoute } from "../lib/getItemRoute";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2, Search } from "lucide-react";
 
@@ -198,7 +199,7 @@ export default function SearchBar() {
                     {shops.map((s) => (
                       <Link
                         key={s._id}
-                        href={`/shops/${s._id}`}
+                        href={getItemRoute(s)}
                         onClick={() => setOpen(false)}
                         className="block px-3 py-2 hover:bg-gray-50"
                       >
@@ -216,7 +217,7 @@ export default function SearchBar() {
                     {products.map((p) => (
                       <Link
                         key={p._id}
-                        href={`/shops/${p.shopId?._id || p.shopId}?product=${p._id}`}
+                        href={`${getItemRoute(p.shopId)}?product=${p._id}`}
                         onClick={() => setOpen(false)}
                         className="block px-3 py-2 hover:bg-gray-50"
                       >
@@ -262,7 +263,7 @@ export default function SearchBar() {
                     {visionProducts.map((p) => (
                       <Link
                         key={p._id}
-                        href={`/shops/${p.shopId?._id || p.shopId}?product=${p._id}`}
+                        href={`${getItemRoute(p.shopId)}?product=${p._id}`}
                         className="rounded-lg border border-gray-200 p-3 hover:border-green-400 hover:shadow-sm transition"
                       >
                         <p className="text-sm font-medium text-gray-900 line-clamp-2">{p.name}</p>

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getItemRoute } from "../../lib/getItemRoute";
 
 export default function ShopCard({ shop, isTransportation, ctaLabel }) {
   return (
@@ -23,7 +24,7 @@ export default function ShopCard({ shop, isTransportation, ctaLabel }) {
         {!isTransportation ? <p className="text-sm text-gray-600 line-clamp-3 mb-4">{shop.description}</p> : null}
 
         <Link
-          href={`/shops/${shop._id}`}
+          href={getItemRoute(shop)}
           className={`inline-block w-full text-center bg-green-600 text-white ${isTransportation ? "text-sm md:text-base" : "text-sm"} py-2.5 rounded-lg hover:bg-green-700 transition`}
         >
           {isTransportation ? "See more" : ctaLabel}
