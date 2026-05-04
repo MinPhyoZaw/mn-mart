@@ -1,12 +1,10 @@
-import CategoryShopsPage from "../components/CategoryShopsPage";
+import ShoppingItemsPage from "../components/shops/ShoppingItemsPage";
 
 export default function ShopsPage() {
   return (
-    <CategoryShopsPage
-      category="shopping"
-      title="Shops"
+    <ShoppingItemsPage
+      title="Shopping"
       heroImage="/images/kachin62dfcc5.webp"
-      ctaLabel="Shop Now"
     />
   );
 }

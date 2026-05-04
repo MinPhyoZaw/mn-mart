@@ -92,6 +92,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const shopId = searchParams.get("shopId");
     const tagName = searchParams.get("tagName");
+    const shopCategory = searchParams.get("shopCategory");
 
     const filter = {};
 
@@ -110,9 +111,28 @@ export async function GET(req) {
       filter.tagName = tagName;
     }
 
-    const items = await Item.find(filter).sort({ createdAt: -1 }).lean();
+    if (shopCategory) {
+      const shoppingShops = await Shop.find({ category: shopCategory }).select("_id").lean();
+      filter.shopId = { $in: shoppingShops.map((shop) => shop._id) };
+    }
 
-    return NextResponse.json({ success: true, data: items }, { status: 200 });
+    const items = await Item.find(filter)
+      .populate({ path: "shopId", select: "name category" })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const normalizedItems = items.map((item) => ({
+      ...item,
+      shop: item.shopId
+        ? {
+            _id: item.shopId._id,
+            name: item.shopId.name,
+            category: item.shopId.category,
+          }
+        : null,
+    }));
+
+    return NextResponse.json({ success: true, data: normalizedItems }, { status: 200 });
   } catch (error) {
     console.error("GET /api/items error:", error);
     return NextResponse.json(
