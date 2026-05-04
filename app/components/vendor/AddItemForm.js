@@ -43,6 +43,18 @@ const FORM_TITLE = {
 };
 
 const SHOPPING_TAGS = ["NewArrival", "BestSellers", "TopPicks", "RecomendedForYou"];
+const SHOPPING_CATEGORIES = [
+  "electronics",
+  "fashion",
+  "food & beverage",
+  "DIY",
+  "hardware",
+  "furniture",
+  "Media",
+  "Beauty & personal care",
+  "Tobacco products",
+  "Toy and hobbies",
+];
 
 export default function AddItemForm({ serviceType, shop, onCreated, setMessage }) {
   const [form, setForm] = useState(INITIAL_FORM);
@@ -53,7 +65,12 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     if (serviceType === "shopping") {
       return (
         <>
-          <input name="category" placeholder="Category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
+          <select name="category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
+            <option value="" disabled>Select category</option>
+            {SHOPPING_CATEGORIES.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
           <input name="quantity" type="number" min="0" placeholder="Quantity" value={form.quantity} onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
           <select name="tagName" value={form.tagName} onChange={(e) => setForm((p) => ({ ...p, tagName: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
             {SHOPPING_TAGS.map((tag) => (
@@ -132,10 +149,14 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
       setMessage?.("Please upload an image before submitting.");
       return;
     }
+    if (serviceType === "shopping" && !form.category) {
+      setMessage?.("Please select a product category.");
+      return;
+    }
     setSubmitting(true);
     setMessage?.("");
 
-    const payload = { shopId: shop._id, name: form.name, price: Number(form.price), image: form.image, type: TYPE_MAP[serviceType] || "service", category: form.category || serviceType, extra: {}, isAvailable: true };
+    const payload = { shopId: shop._id, name: form.name, price: Number(form.price), image: form.image, type: TYPE_MAP[serviceType] || "service", extra: {}, isAvailable: true };
 
     if (serviceType === "shopping") {
       payload.extra.quantity = Number(form.quantity);
@@ -145,7 +166,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
     if (serviceType === "hotel") {
       payload.name = form.roomType;
-      payload.category = "hotel-room";
       payload.extra.roomType = form.roomType;
       payload.extra.amenities = form.amenities;
       payload.isAvailable = form.isAvailable;
@@ -153,7 +173,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
     if (serviceType === "transportation") {
       payload.name = form.carName;
-      payload.category = "transport-route";
       payload.extra.carName = form.carName;
       payload.extra.routeFrom = form.routeFrom;
       payload.extra.routeTo = form.routeTo;
@@ -163,7 +182,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
     if (serviceType === "spa") {
       payload.extra.duration = form.duration;
-      payload.category = "spa-service";
     }
 
     try {
