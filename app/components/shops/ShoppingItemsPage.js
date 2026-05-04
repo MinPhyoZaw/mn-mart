@@ -18,7 +18,9 @@ export default function ShoppingItemsPage({ title, heroImage }) {
         const data = await res.json();
 
         if (isMounted) {
-          setItems(data.data || []);
+          const allItems = data.data || [];
+          const randomizedItems = [...allItems].sort(() => Math.random() - 0.5);
+          setItems(randomizedItems);
         }
       } catch (error) {
         console.error("Failed to fetch shopping items:", error);
