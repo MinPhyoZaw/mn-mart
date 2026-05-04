@@ -1,18 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
 import ShopsHero from "./shops/ShopsHero";
 import ShopsGrid from "./shops/ShopsGrid";
+// Destructure inside function to avoid parser/transpile duplication issues
 
-export default function CategoryShopsPage({
-  category,
-  title,
-  heroImage,
-  ctaLabel = "Book Now",
-  serviceCategories = [],
-  serviceCategories = [],
-}) {
+export default function CategoryShopsPage(param) {
+  const { category, title, heroImage, ctaLabel = "Book Now", serviceCategories = [] } = param || {};
   const [shops, setShops] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(
