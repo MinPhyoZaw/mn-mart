@@ -1,5 +1,18 @@
 import mongoose from "mongoose";
 
+const SHOPPING_CATEGORIES = [
+  "electronics",
+  "fashion",
+  "food & beverage",
+  "DIY",
+  "hardware",
+  "furniture",
+  "Media",
+  "Beauty & personal care",
+  "Tobacco products",
+  "Toy and hobbies",
+];
+
 const itemSchema = new mongoose.Schema(
   {
     shopId: {
@@ -43,6 +56,13 @@ const itemSchema = new mongoose.Schema(
     category: {
       type: String,
       default: null,
+      validate: {
+        validator(value) {
+          if (this.type !== "product") return value === null || value === undefined || value === "";
+          return SHOPPING_CATEGORIES.includes(value);
+        },
+        message: "Category is required and must be a valid shopping category for product items",
+      },
     },
 
     tagName: {

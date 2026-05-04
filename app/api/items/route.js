@@ -7,6 +7,18 @@ import Vendor from "../../models/Vendor";
 import { requireAuth } from "../../lib/routeAuth";
 
 const REQUIRED_FIELDS = ["shopId", "name", "price", "type"];
+const SHOPPING_CATEGORIES = [
+  "electronics",
+  "fashion",
+  "food & beverage",
+  "DIY",
+  "hardware",
+  "furniture",
+  "Media",
+  "Beauty & personal care",
+  "Tobacco products",
+  "Toy and hobbies",
+];
 
 export async function POST(req) {
   try {
@@ -14,6 +26,7 @@ export async function POST(req) {
     if (!auth.ok) return auth.response;
 
     const body = await req.json();
+    const normalizedCategory = typeof body.category === "string" ? body.category.trim() : "";
 
     const missingFields = REQUIRED_FIELDS.filter((field) => {
       const value = body?.[field];
@@ -33,6 +46,20 @@ export async function POST(req) {
     if (!mongoose.Types.ObjectId.isValid(body.shopId)) {
       return NextResponse.json(
         { success: false, message: "Invalid shopId format" },
+        { status: 400 }
+      );
+    }
+
+    if (body.type === "product" && !normalizedCategory) {
+      return NextResponse.json(
+        { success: false, message: "Category is required for shopping products" },
+        { status: 400 }
+      );
+    }
+
+    if (body.type === "product" && !SHOPPING_CATEGORIES.includes(normalizedCategory)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid category for shopping product" },
         { status: 400 }
       );
     }
@@ -58,7 +85,7 @@ export async function POST(req) {
       description: body.description,
       image: body.image,
       type: body.type,
-      category: body.category,
+      category: body.type === "product" ? normalizedCategory : undefined,
       tagName: body.tagName,
       extra: body.extra,
       isAvailable: body.isAvailable,
