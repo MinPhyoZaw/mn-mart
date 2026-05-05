@@ -71,6 +71,22 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     loadRoutes();
   }, [serviceType]);
 
+  const handleCreateRoute = async () => {
+    setCreatingRoute(true);
+    const payload = { ...routeForm, companyId: form.companyId || undefined };
+    try {
+      const res = await fetch("/api/transport-routes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!data.success) return setMessage?.(data.message || "Failed to create route");
+      setRoutes((prev) => [data.data, ...prev]);
+      setForm((p) => ({ ...p, routeId: data.data._id }));
+      setRouteForm(INITIAL_ROUTE_FORM);
+      setMessage?.("Route template saved.");
+    } finally {
+      setCreatingRoute(false);
+    }
+  };
+
   const dynamicFields = useMemo(() => {
     if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
     if (serviceType === "spa") return <input name="duration" placeholder="Duration (e.g. 60 min)" value={form.duration || ""} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
@@ -111,22 +127,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
       </>
     );
   }, [serviceType, form, routeForm, routes, creatingRoute]);
-
-  const handleCreateRoute = async () => {
-    setCreatingRoute(true);
-    const payload = { ...routeForm, companyId: form.companyId || undefined };
-    try {
-      const res = await fetch("/api/transport-routes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (!data.success) return setMessage?.(data.message || "Failed to create route");
-      setRoutes((prev) => [data.data, ...prev]);
-      setForm((p) => ({ ...p, routeId: data.data._id }));
-      setRouteForm(INITIAL_ROUTE_FORM);
-      setMessage?.("Route template saved.");
-    } finally {
-      setCreatingRoute(false);
-    }
-  };
 
   const handleImageUpload = async (e) => { const file = e.target.files?.[0]; if (!file) return; setUploadingImage(true); try { const image = await compressItemImage(file); setForm((p) => ({ ...p, image })); } finally { setUploadingImage(false); } };
 
