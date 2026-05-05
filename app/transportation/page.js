@@ -1,5 +1,7 @@
 import { CheckCircle, Bus, Clock, Zap, ShieldCheck } from "lucide-react";
 import ShopsHero from "../components/shops/ShopsHero";
+import CreatedTicketsSection from "../components/transportation/CreatedTicketsSection";
+
 
 const popularRoutes = [
   { label: "မြစ်ကြီးနား - မန္တလေး", image: "/images/mdy.png" },
@@ -7,6 +9,7 @@ const popularRoutes = [
   { label: "မြစ်ကြီးနား - လိုင်ဇာ", image: "/images/Laiza.jpg" },
   { label: "မြစ်ကြီးနား - ပန်ဝါ", image: "/images/panwa.jpg" },
 ];
+
 
 export default function TransportationPage() {
   return (
@@ -88,6 +91,7 @@ export default function TransportationPage() {
   </div>
 </div>
       </section>
+       <CreatedTicketsSection />
     </div>
   );
 }

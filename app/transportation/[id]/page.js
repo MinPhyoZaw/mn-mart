@@ -87,57 +87,143 @@ export default async function TransportationTicketPage({ params }) {
 
         <div className="mt-8 space-y-5">
           {tickets.map((ticket) => (
-            <article key={ticket.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
-              <div className="grid gap-4 md:grid-cols-[250px_1fr_280px]">
-                <div className="rounded-xl bg-gray-100 p-3">
-                  <img src={ticket.image} alt={ticket.company} className="h-44 w-full rounded-lg object-cover" />
-                </div>
+            <article className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm md:p-4">
+  <div className="grid gap-4 md:grid-cols-[200px_1fr_220px]">
 
-                <div className="border-gray-200 md:border-x md:px-6">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-green-100 px-4 py-1.5 text-base font-semibold text-green-700">{ticket.company}</span>
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  </div>
+    {/* Image */}
+    <div className="rounded-lg  p-2">
+      <img
+        src={ticket.image}
+        alt={ticket.company}
+        className="h-32 w-full rounded-md object-cover"
+      />
+    </div>
 
-                  <p className="mt-3 text-2xl font-bold text-gray-900">
-                    {ticket.from}
-                    <ArrowRight className="mx-3 inline h-6 w-6 text-green-600" />
-                    {ticket.to}
-                  </p>
-                  <p className="mt-2 text-lg font-medium text-gray-700">{ticket.carType}</p>
+    {/* Middle Content */}
+    <div className="border-gray-200 md:border-x md:px-4">
 
-                  <div className="mt-3 space-y-2 text-gray-700">
-                    <p>{ticket.time}</p>
-                    <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-green-600" />{ticket.date}</p>
-                    <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-green-600" />{ticket.fromTerminal}</p>
-                    <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-green-600" />{ticket.toTerminal}</p>
-                  </div>
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+          {ticket.company}
+        </span>
+        <CheckCircle2 className="h-4 w-4 text-green-600" />
+      </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {ticket.features.map((feature) => (
-                      <span key={feature} className="rounded-xl bg-gray-100 px-3 py-1.5 text-sm text-gray-700">
-                        {feature.toLowerCase().includes("air") ? <Snowflake className="mr-1 inline h-4 w-4 text-green-600" /> : <Sofa className="mr-1 inline h-4 w-4 text-green-600" />}
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
+      <p className="mt-2 text-xl font-bold text-gray-900">
+        {ticket.from}
+        <ArrowRight className="mx-2 inline h-4 w-4 text-green-600" />
+        {ticket.to}
+      </p>
 
-                  <div className="mt-5 flex items-center justify-between border-t pt-4 text-gray-800">
-                    <p className="flex items-center gap-2"><Users className="h-4 w-4 text-green-600" />{ticket.seats} Seats Available</p>
-                    {ticket.instantConfirm && <p className="flex items-center gap-2 text-green-700"><CheckCircle2 className="h-4 w-4" />Instant Confirm</p>}
-                  </div>
-                </div>
+      <p className="mt-1 text-sm font-medium text-gray-700">
+        {ticket.carType}
+      </p>
 
-                <div className="flex flex-col justify-center gap-3">
-                  <div>
-                    <p className="text-lg text-gray-600">Price</p>
-                    <p className="text-5xl font-bold text-green-700">{ticket.price}<span className="ml-1 text-2xl">MMK</span></p>
-                  </div>
-                  <Link href={`/checkout?transport=${id}&ticket=${ticket.id}`} className="inline-flex items-center justify-center rounded-xl bg-green-700 px-6 py-3 text-xl font-semibold text-white hover:bg-green-800">Book Now</Link>
-                  <Link href={`/transportation/${id}?ticket=${ticket.id}`} className="inline-flex items-center justify-center rounded-xl border border-green-700 px-6 py-3 text-lg font-semibold text-green-700 hover:bg-green-50">View Details</Link>
-                </div>
-              </div>
-            </article>
+      {/* Info */}
+      <div className="mt-2 space-y-2 text-sm text-gray-600">
+
+  {/* Time */}
+  <div className="flex items-center gap-2">
+    <span className="min-w-[120px] text-gray-500">
+      ကားထွက်မည့်အချိန်
+    </span>
+    <span className="font-medium text-gray-800">{ticket.time}</span>
+  </div>
+
+  {/* Date */}
+  <div className="flex items-center gap-2">
+    <CalendarDays className="h-3.5 w-3.5 text-green-600" />
+    <span className="min-w-[120px] text-gray-500">
+      ကားထွက်မည့်ရက်  ~
+    </span>
+    <span className="font-medium text-gray-800">{ticket.date}</span>
+  </div>
+
+  {/* From Terminal */}
+  <div className="flex items-start gap-2">
+    <MapPin className="mt-0.5 h-3.5 w-3.5 text-green-600" />
+    <span className="min-w-[120px] text-gray-500">
+      ကားစထွက်မည့်နေရာ (ဂိတ်စ) ~
+    </span>
+    <span className="font-medium text-gray-800">
+      {ticket.fromTerminal}
+    </span>
+  </div>
+
+  {/* To Terminal */}
+  <div className="flex items-start gap-2">
+    <MapPin className="mt-0.5 h-3.5 w-3.5 text-green-600" />
+    <span className="min-w-[120px] text-gray-500">
+      ကားရပ်မည့်နေရာ (ဂိတ်ဆုံး) ~
+    </span>
+    <span className="font-medium text-gray-800">
+      {ticket.toTerminal}
+    </span>
+  </div>
+
+</div>
+
+      {/* Features */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {ticket.features.map((feature) => (
+          <span
+            key={feature}
+            className="rounded-lg bg-gray-100 px-2 py-1 text-xs text-gray-700"
+          >
+            {feature.toLowerCase().includes("air") ? (
+              <Snowflake className="mr-1 inline h-3 w-3 text-green-600" />
+            ) : (
+              <Sofa className="mr-1 inline h-3 w-3 text-green-600" />
+            )}
+            {feature}
+          </span>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="mt-3 flex items-center justify-between border-t pt-2 text-sm text-gray-700">
+        <p className="flex items-center gap-1">
+          <Users className="h-4 w-4 text-green-600" />
+          {ticket.seats} Seats
+        </p>
+
+        {ticket.instantConfirm && (
+          <p className="flex items-center gap-1 text-green-700">
+            <CheckCircle2 className="h-4 w-4" />
+            Instant
+          </p>
+        )}
+      </div>
+    </div>
+
+    {/* Right Side */}
+    <div className="flex flex-col justify-center gap-2">
+
+      <div>
+        <p className="text-sm text-gray-500">Price</p>
+        <p className="text-2xl font-bold text-gray-700">
+          {ticket.price}
+          <span className="ml-1 text-base">MMK</span>
+        </p>
+      </div>
+
+      <Link
+        href={`/checkout?transport=${id}&ticket=${ticket.id}`}
+        className="inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+      >
+        Book Now
+      </Link>
+
+      <Link
+        href={`/transportation/${id}?ticket=${ticket.id}`}
+        className="inline-flex items-center justify-center rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+      >
+        Details
+      </Link>
+    </div>
+
+  </div>
+</article>
           ))}
         </div>
       </div>
