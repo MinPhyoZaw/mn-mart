@@ -101,29 +101,29 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
             <input placeholder="From City" value={routeForm.fromCity} onChange={(e) => setRouteForm((p) => ({ ...p, fromCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
             <input placeholder="To City" value={routeForm.toCity} onChange={(e) => setRouteForm((p) => ({ ...p, toCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
           </div>
-          <input placeholder="Boarding Points (comma separated)" value={routeForm.boardingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, boardingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
-          <input placeholder="Dropping Points (comma separated)" value={routeForm.droppingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, droppingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
-          <input placeholder='Duration (e.g. "12 hours")' value={routeForm.duration} onChange={(e) => setRouteForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+          <input placeholder="တက်လို့ရမည့်နေရာများ" value={routeForm.boardingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, boardingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+          <input placeholder="ဆင်းလို့ရမည့်နေရာများ" value={routeForm.droppingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, droppingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+          {/* <input placeholder='Duration (e.g. "12 hours")' value={routeForm.duration} onChange={(e) => setRouteForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border rounded-lg px-3 py-2" /> */}
           <button type="button" onClick={handleCreateRoute} disabled={creatingRoute} className="bg-gray-900 text-white rounded-lg px-3 py-2 text-sm">{creatingRoute ? "Saving..." : "Save Route Template"}</button>
         </div>
 
         <select name="routeId" value={form.routeId} onChange={(e) => setForm((p) => ({ ...p, routeId: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
-          <option value="" disabled>Select Route Template</option>
+          <option value="" disabled>ခရီးစဉ်ရွေးချယ်မည်</option>
           {routes.map((route) => <option key={route._id} value={route._id}>{route.companyName} - {route.fromCity} → {route.toCity}</option>)}
         </select>
         {/* <input name="companyId" placeholder="Company ID" value={form.companyId} onChange={(e) => setForm((p) => ({ ...p, companyId: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /> */}
-        <select name="vehicleType" value={form.vehicleType} onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
+        <select name="vehicleType" placeholder="ကားအမျိုးအစား" value={form.vehicleType} onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
           <option value="VIP">VIP</option><option value="Standard">Standard</option><option value="Mini Van">Mini Van</option>
         </select>
-        <input name="totalSeats" type="number" min="1" placeholder="Total Seats" value={form.totalSeats} onChange={(e) => setForm((p) => ({ ...p, totalSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
-        <input name="availableSeats" type="number" min="0" placeholder="Available Seats" value={form.availableSeats} onChange={(e) => setForm((p) => ({ ...p, availableSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
-        <input name="departureDate" type="date" value={form.departureDate} onChange={(e) => setForm((p) => ({ ...p, departureDate: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <input name="totalSeats" type="number" min="1" placeholder="ခုံအရေအတွက်" value={form.totalSeats} onChange={(e) => setForm((p) => ({ ...p, totalSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <input name="availableSeats" type="number" min="0" placeholder="ရနိုင်မည့်ခုံအရေအတွက်" value={form.availableSeats} onChange={(e) => setForm((p) => ({ ...p, availableSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <input name="departureDate" placeholder="Sample" type="date" value={form.departureDate} onChange={(e) => setForm((p) => ({ ...p, departureDate: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
         <input name="departureTime" type="time" value={form.departureTime} onChange={(e) => setForm((p) => ({ ...p, departureTime: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
         {/* <input name="arrivalTime" type="time" value={form.arrivalTime} onChange={(e) => setForm((p) => ({ ...p, arrivalTime: e.target.value }))} className="w-full border rounded-lg px-4 py-2" /> */}
-        <input name="ticketAmenities" placeholder="Amenities (comma separated: AC, Charging, Blanket)" value={form.ticketAmenities} onChange={(e) => setForm((p) => ({ ...p, ticketAmenities: e.target.value }))} className="w-full border rounded-lg px-4 py-2" />
+        <input name="ticketAmenities" placeholder="၀န်ဆောင်မှုများ ( AC , ရေသန့် ...)" value={form.ticketAmenities} onChange={(e) => setForm((p) => ({ ...p, ticketAmenities: e.target.value }))} className="w-full border rounded-lg px-4 py-2" />
         {/* <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.instantConfirm} onChange={(e) => setForm((p) => ({ ...p, instantConfirm: e.target.checked }))} />Instant Confirm</label> */}
-        <select name="status" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))} className="w-full border rounded-lg px-4 py-2"><option value="active">active</option><option value="cancelled">cancelled</option><option value="full">full</option></select>
-        {/* <input name="driverPhone" placeholder="Driver Phone (optional)" value={form.driverPhone} onChange={(e) => setForm((p) => ({ ...p, driverPhone: e.target.value }))} className="w-full border rounded-lg px-4 py-2" /> */}
+        {/* <select name="status" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))} className="w-full border rounded-lg px-4 py-2"><option value="active">active</option><option value="cancelled">cancelled</option><option value="full">full</option></select> */}
+        { <input name="driverPhone" placeholder=" Company Phone Number" value={form.driverPhone} onChange={(e) => setForm((p) => ({ ...p, driverPhone: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required/> }
       </>
     );
   }, [serviceType, form, routeForm, routes, creatingRoute]);
