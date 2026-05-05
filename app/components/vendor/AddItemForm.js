@@ -87,6 +87,29 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     }
   };
 
+  const routeTemplateForm = useMemo(() => {
+    if (serviceType !== "transportation") return null;
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleCreateRoute();
+        }}
+        className="border rounded-lg p-3 space-y-2 mb-4"
+      >
+        <p className="font-medium text-sm">Create reusable route template</p>
+        <input placeholder="Company Name" value={routeForm.companyName} onChange={(e) => setRouteForm((p) => ({ ...p, companyName: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+        <div className="grid grid-cols-2 gap-2">
+          <input placeholder="From City" value={routeForm.fromCity} onChange={(e) => setRouteForm((p) => ({ ...p, fromCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
+          <input placeholder="To City" value={routeForm.toCity} onChange={(e) => setRouteForm((p) => ({ ...p, toCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
+        </div>
+        <input placeholder="တက်လို့ရမည့်နေရာများ" value={routeForm.boardingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, boardingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+        <input placeholder="ဆင်းလို့ရမည့်နေရာများ" value={routeForm.droppingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, droppingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+        <button type="submit" disabled={creatingRoute} className="bg-gray-900 text-white rounded-lg px-3 py-2 text-sm">{creatingRoute ? "Saving..." : "Save Route Template"}</button>
+      </form>
+    );
+  }, [serviceType, routeForm, creatingRoute]);
+
   const dynamicFields = useMemo(() => {
     if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
     if (serviceType === "spa") return <input name="duration" placeholder="Duration (e.g. 60 min)" value={form.duration || ""} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
@@ -94,19 +117,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
     return (
       <>
-        <div className="border rounded-lg p-3 space-y-2">
-          <p className="font-medium text-sm">Create reusable route template</p>
-          <input placeholder="Company Name" value={routeForm.companyName} onChange={(e) => setRouteForm((p) => ({ ...p, companyName: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
-          <div className="grid grid-cols-2 gap-2">
-            <input placeholder="From City" value={routeForm.fromCity} onChange={(e) => setRouteForm((p) => ({ ...p, fromCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
-            <input placeholder="To City" value={routeForm.toCity} onChange={(e) => setRouteForm((p) => ({ ...p, toCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
-          </div>
-          <input placeholder="တက်လို့ရမည့်နေရာများ" value={routeForm.boardingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, boardingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
-          <input placeholder="ဆင်းလို့ရမည့်နေရာများ" value={routeForm.droppingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, droppingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
-          {/* <input placeholder='Duration (e.g. "12 hours")' value={routeForm.duration} onChange={(e) => setRouteForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border rounded-lg px-3 py-2" /> */}
-          <button type="button" onClick={handleCreateRoute} disabled={creatingRoute} className="bg-gray-900 text-white rounded-lg px-3 py-2 text-sm">{creatingRoute ? "Saving..." : "Save Route Template"}</button>
-        </div>
-
         <select name="routeId" value={form.routeId} onChange={(e) => setForm((p) => ({ ...p, routeId: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
           <option value="" disabled>ခရီးစဉ်ရွေးချယ်မည်</option>
           {routes.map((route) => <option key={route._id} value={route._id}>{route.companyName} - {route.fromCity} → {route.toCity}</option>)}
@@ -117,8 +127,14 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
         </select>
         <input name="totalSeats" type="number" min="1" placeholder="ခုံအရေအတွက်" value={form.totalSeats} onChange={(e) => setForm((p) => ({ ...p, totalSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
         <input name="availableSeats" type="number" min="0" placeholder="ရနိုင်မည့်ခုံအရေအတွက်" value={form.availableSeats} onChange={(e) => setForm((p) => ({ ...p, availableSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
-        <input name="departureDate" placeholder="Sample" type="date" value={form.departureDate} onChange={(e) => setForm((p) => ({ ...p, departureDate: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
-        <input name="departureTime" type="time" value={form.departureTime} onChange={(e) => setForm((p) => ({ ...p, departureTime: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <div>
+          <label className="text-sm font-medium mb-1 block">ကားထွက်မည့်ရက်</label>
+          <input name="departureDate" type="date" value={form.departureDate} onChange={(e) => setForm((p) => ({ ...p, departureDate: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1 block">ကားထွက်မည့်အချိန်</label>
+          <input name="departureTime" type="time" value={form.departureTime} onChange={(e) => setForm((p) => ({ ...p, departureTime: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        </div>
         {/* <input name="arrivalTime" type="time" value={form.arrivalTime} onChange={(e) => setForm((p) => ({ ...p, arrivalTime: e.target.value }))} className="w-full border rounded-lg px-4 py-2" /> */}
         <input name="ticketAmenities" placeholder="၀န်ဆောင်မှုများ ( AC , ရေသန့် ...)" value={form.ticketAmenities} onChange={(e) => setForm((p) => ({ ...p, ticketAmenities: e.target.value }))} className="w-full border rounded-lg px-4 py-2" />
         {/* <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.instantConfirm} onChange={(e) => setForm((p) => ({ ...p, instantConfirm: e.target.checked }))} />Instant Confirm</label> */}
@@ -126,7 +142,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
         { <input name="driverPhone" placeholder=" Company Phone Number" value={form.driverPhone} onChange={(e) => setForm((p) => ({ ...p, driverPhone: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required/> }
       </>
     );
-  }, [serviceType, form, routeForm, routes, creatingRoute]);
+  }, [serviceType, form, routes]);
 
   const handleImageUpload = async (e) => { const file = e.target.files?.[0]; if (!file) return; setUploadingImage(true); try { const image = await compressItemImage(file); setForm((p) => ({ ...p, image })); } finally { setUploadingImage(false); } };
 
@@ -162,5 +178,5 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     } catch { setMessage?.("Server error while creating item/service"); } finally { setSubmitting(false); }
   };
 
-  return <div className="bg-white rounded-xl shadow p-5"><h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2><form onSubmit={handleSubmit} className="space-y-3"><input name="price" type="number" min="0" step="0.01" placeholder="Price" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /><input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 rounded-lg px-4 py-2" required={!form.image} />{dynamicFields}<button type="submit" disabled={submitting || uploadingImage} className="bg-green-600 text-white px-4 py-2 rounded-lg">{submitting ? "Saving..." : "Create"}</button></form></div>;
+  return <div className="bg-white rounded-xl shadow p-5"><h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2>{routeTemplateForm}<form onSubmit={handleSubmit} className="space-y-3"><input name="price" type="number" min="0" step="0.01" placeholder="Price" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /><input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 rounded-lg px-4 py-2" required={!form.image} />{dynamicFields}<button type="submit" disabled={submitting || uploadingImage} className="bg-green-600 text-white px-4 py-2 rounded-lg">{submitting ? "Saving..." : "Create"}</button></form></div>;
 }
