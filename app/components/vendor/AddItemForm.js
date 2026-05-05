@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { compressItemImage } from "./ImageUtils";
 
 const TYPE_MAP = {
@@ -19,12 +19,28 @@ const INITIAL_FORM = {
   roomType: "",
   amenities: { wifi: false, swimmingPool: false, aircon: false, breakfast: false, extraBed: false },
   isAvailable: false,
-  carName: "",
-  routeFrom: "",
-  routeTo: "",
-  startDateTime: "",
-  duration: "",
+  routeId: "",
+  companyId: "",
+  vehicleType: "Standard",
+  totalSeats: "",
+  availableSeats: "",
+  departureDate: "",
+  departureTime: "",
+  arrivalTime: "",
+  ticketAmenities: "",
+  instantConfirm: true,
+  status: "active",
+  driverPhone: "",
   image: "",
+};
+
+const INITIAL_ROUTE_FORM = {
+  companyName: "",
+  fromCity: "",
+  toCity: "",
+  boardingPoints: "",
+  droppingPoints: "",
+  duration: "",
 };
 
 const AMENITIES = [
@@ -35,193 +51,116 @@ const AMENITIES = [
   { key: "extraBed", label: "Extra Bed" },
 ];
 
-const FORM_TITLE = {
-  shopping: "Add New Products",
-  hotel: "Add New Room",
-  transportation: "Add New Routes",
-  spa: "Add New Service",
-};
-
-const SHOPPING_TAGS = ["NewArrival", "BestSellers", "TopPicks", "RecomendedForYou"];
-const SHOPPING_CATEGORIES = [
-  "electronics",
-  "fashion",
-  "food & beverage",
-  "DIY",
-  "hardware",
-  "furniture",
-  "Media",
-  "Beauty & personal care",
-  "Tobacco products",
-  "Toy and hobbies",
-];
+const FORM_TITLE = { shopping: "Add New Products", hotel: "Add New Room", transportation: "Create Transportation Ticket", spa: "Add New Service" };
 
 export default function AddItemForm({ serviceType, shop, onCreated, setMessage }) {
   const [form, setForm] = useState(INITIAL_FORM);
+  const [routeForm, setRouteForm] = useState(INITIAL_ROUTE_FORM);
+  const [routes, setRoutes] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [creatingRoute, setCreatingRoute] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  useEffect(() => {
+    if (serviceType !== "transportation") return;
+    const loadRoutes = async () => {
+      const res = await fetch("/api/transport-routes", { cache: "no-store" });
+      const data = await res.json();
+      if (data.success) setRoutes(data.data || []);
+    };
+    loadRoutes();
+  }, [serviceType]);
+
   const dynamicFields = useMemo(() => {
-    if (serviceType === "shopping") {
-      return (
-        <>
-          <select name="category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
-            <option value="" disabled>Select category</option>
-            {SHOPPING_CATEGORIES.map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-          <input name="quantity" type="number" min="0" placeholder="Quantity" value={form.quantity} onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-          <select name="tagName" value={form.tagName} onChange={(e) => setForm((p) => ({ ...p, tagName: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
-            {SHOPPING_TAGS.map((tag) => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
-          </select>
-        </>
-      );
-    }
+    if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
+    if (serviceType === "spa") return <input name="duration" placeholder="Duration (e.g. 60 min)" value={form.duration || ""} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
+    if (serviceType !== "transportation") return null;
 
-    if (serviceType === "hotel") {
-      return (
-        <>
-          <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Amenities</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {AMENITIES.map((amenity) => (
-                <label key={amenity.key} className="flex items-center gap-2 text-sm text-gray-700">
-                  <input type="checkbox" checked={form.amenities[amenity.key]} onChange={(e) => setForm((p) => ({ ...p, amenities: { ...p.amenities, [amenity.key]: e.target.checked } }))} className="h-4 w-4" />
-                  {amenity.label}
-                </label>
-              ))}
-            </div>
+    return (
+      <>
+        <div className="border rounded-lg p-3 space-y-2">
+          <p className="font-medium text-sm">Create reusable route template</p>
+          <input placeholder="Company Name" value={routeForm.companyName} onChange={(e) => setRouteForm((p) => ({ ...p, companyName: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+          <div className="grid grid-cols-2 gap-2">
+            <input placeholder="From City" value={routeForm.fromCity} onChange={(e) => setRouteForm((p) => ({ ...p, fromCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
+            <input placeholder="To City" value={routeForm.toCity} onChange={(e) => setRouteForm((p) => ({ ...p, toCity: e.target.value }))} className="border rounded-lg px-3 py-2" />
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input type="checkbox" checked={form.isAvailable} onChange={(e) => setForm((p) => ({ ...p, isAvailable: e.target.checked }))} className="h-4 w-4" />
-            Room available
-          </label>
-        </>
-      );
-    }
+          <input placeholder="Boarding Points (comma separated)" value={routeForm.boardingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, boardingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+          <input placeholder="Dropping Points (comma separated)" value={routeForm.droppingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, droppingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+          <input placeholder='Duration (e.g. "12 hours")' value={routeForm.duration} onChange={(e) => setRouteForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+          <button type="button" onClick={handleCreateRoute} disabled={creatingRoute} className="bg-gray-900 text-white rounded-lg px-3 py-2 text-sm">{creatingRoute ? "Saving..." : "Save Route Template"}</button>
+        </div>
 
-    if (serviceType === "transportation") {
-      return (
-        <>
-          <input name="carName" placeholder="Car Name" value={form.carName} onChange={(e) => setForm((p) => ({ ...p, carName: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-          <input name="routeFrom" placeholder="From (e.g. Myitkyina)" value={form.routeFrom} onChange={(e) => setForm((p) => ({ ...p, routeFrom: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-          <input name="routeTo" placeholder="To (e.g. Yangon)" value={form.routeTo} onChange={(e) => setForm((p) => ({ ...p, routeTo: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-          <input name="startDateTime" type="datetime-local" value={form.startDateTime} onChange={(e) => setForm((p) => ({ ...p, startDateTime: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-        </>
-      );
-    }
+        <select name="routeId" value={form.routeId} onChange={(e) => setForm((p) => ({ ...p, routeId: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
+          <option value="" disabled>Select Route Template</option>
+          {routes.map((route) => <option key={route._id} value={route._id}>{route.companyName} - {route.fromCity} → {route.toCity}</option>)}
+        </select>
+        <input name="companyId" placeholder="Company ID" value={form.companyId} onChange={(e) => setForm((p) => ({ ...p, companyId: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
+        <select name="vehicleType" value={form.vehicleType} onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
+          <option value="VIP">VIP</option><option value="Standard">Standard</option><option value="Mini Van">Mini Van</option>
+        </select>
+        <input name="totalSeats" type="number" min="1" placeholder="Total Seats" value={form.totalSeats} onChange={(e) => setForm((p) => ({ ...p, totalSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <input name="availableSeats" type="number" min="0" placeholder="Available Seats" value={form.availableSeats} onChange={(e) => setForm((p) => ({ ...p, availableSeats: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <input name="departureDate" type="date" value={form.departureDate} onChange={(e) => setForm((p) => ({ ...p, departureDate: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <input name="departureTime" type="time" value={form.departureTime} onChange={(e) => setForm((p) => ({ ...p, departureTime: e.target.value }))} className="w-full border rounded-lg px-4 py-2" required />
+        <input name="arrivalTime" type="time" value={form.arrivalTime} onChange={(e) => setForm((p) => ({ ...p, arrivalTime: e.target.value }))} className="w-full border rounded-lg px-4 py-2" />
+        <input name="ticketAmenities" placeholder="Amenities (comma separated: AC, Charging, Blanket)" value={form.ticketAmenities} onChange={(e) => setForm((p) => ({ ...p, ticketAmenities: e.target.value }))} className="w-full border rounded-lg px-4 py-2" />
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.instantConfirm} onChange={(e) => setForm((p) => ({ ...p, instantConfirm: e.target.checked }))} />Instant Confirm</label>
+        <select name="status" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))} className="w-full border rounded-lg px-4 py-2"><option value="active">active</option><option value="cancelled">cancelled</option><option value="full">full</option></select>
+        <input name="driverPhone" placeholder="Driver Phone (optional)" value={form.driverPhone} onChange={(e) => setForm((p) => ({ ...p, driverPhone: e.target.value }))} className="w-full border rounded-lg px-4 py-2" />
+      </>
+    );
+  }, [serviceType, form, routeForm, routes, creatingRoute]);
 
-    if (serviceType === "spa") {
-      return <input name="duration" placeholder="Duration (e.g. 60 min)" value={form.duration} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
-    }
-
-    return null;
-  }, [form, serviceType]);
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setMessage?.("Please upload a valid image file.");
-      return;
-    }
-    setUploadingImage(true);
-    setMessage?.("");
+  const handleCreateRoute = async () => {
+    setCreatingRoute(true);
+    const payload = { ...routeForm, companyId: form.companyId || undefined };
     try {
-      const image = await compressItemImage(file);
-      setForm((p) => ({ ...p, image }));
-    } catch (error) {
-      setMessage?.(error.message || "Image upload failed");
+      const res = await fetch("/api/transport-routes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!data.success) return setMessage?.(data.message || "Failed to create route");
+      setRoutes((prev) => [data.data, ...prev]);
+      setForm((p) => ({ ...p, routeId: data.data._id }));
+      setRouteForm(INITIAL_ROUTE_FORM);
+      setMessage?.("Route template saved.");
     } finally {
-      setUploadingImage(false);
-      e.target.value = "";
+      setCreatingRoute(false);
     }
   };
 
+  const handleImageUpload = async (e) => { const file = e.target.files?.[0]; if (!file) return; setUploadingImage(true); try { const image = await compressItemImage(file); setForm((p) => ({ ...p, image })); } finally { setUploadingImage(false); } };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!shop?._id) return;
-    if (!form.image) {
-      setMessage?.("Please upload an image before submitting.");
-      return;
-    }
-    if (serviceType === "shopping" && !form.category) {
-      setMessage?.("Please select a product category.");
-      return;
-    }
-    setSubmitting(true);
-    setMessage?.("");
-
-    const payload = { shopId: shop._id, name: form.name, price: Number(form.price), image: form.image, type: TYPE_MAP[serviceType] || "service", extra: {}, isAvailable: true };
-
-    if (serviceType === "shopping") {
-      payload.extra.quantity = Number(form.quantity);
-      payload.category = form.category;
-      payload.tagName = form.tagName;
-    }
-
-    if (serviceType === "hotel") {
-      payload.name = form.roomType;
-      payload.extra.roomType = form.roomType;
-      payload.extra.amenities = form.amenities;
-      payload.isAvailable = form.isAvailable;
-    }
+    const payload = { shopId: shop._id, name: form.name || "Transportation Ticket", price: Number(form.price), image: form.image, type: TYPE_MAP[serviceType] || "service", extra: {}, isAvailable: true };
 
     if (serviceType === "transportation") {
-      payload.name = form.carName;
-      payload.extra.carName = form.carName;
-      payload.extra.routeFrom = form.routeFrom;
-      payload.extra.routeTo = form.routeTo;
-      payload.extra.routeLabel = `From ${form.routeFrom} to ${form.routeTo}`;
-      payload.extra.startDateTime = form.startDateTime;
-    }
-
-    if (serviceType === "spa") {
-      payload.extra.duration = form.duration;
+      payload.name = `Ticket ${form.departureDate} ${form.departureTime}`;
+      payload.extra = {
+        routeId: form.routeId,
+        companyId: form.companyId,
+        vehicleType: form.vehicleType,
+        totalSeats: Number(form.totalSeats),
+        availableSeats: Number(form.availableSeats),
+        departureDate: form.departureDate,
+        departureTime: form.departureTime,
+        arrivalTime: form.arrivalTime || null,
+        amenities: form.ticketAmenities.split(",").map((v) => v.trim()).filter(Boolean),
+        instantConfirm: Boolean(form.instantConfirm),
+        status: form.status,
+        driverPhone: form.driverPhone || null,
+      };
     }
 
     try {
       const res = await fetch("/api/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
-      if (!data.success) {
-        setMessage?.(data.message || "Failed to create item/service");
-      } else {
-        setMessage?.("Created successfully.");
-        setForm(INITIAL_FORM);
-        onCreated?.();
-      }
-    } catch {
-      setMessage?.("Server error while creating item/service");
-    } finally {
-      setSubmitting(false);
-    }
+      if (!data.success) return setMessage?.(data.message || "Failed");
+      setMessage?.("Created successfully.");
+      setForm(INITIAL_FORM);
+      onCreated?.();
+    } catch { setMessage?.("Server error while creating item/service"); } finally { setSubmitting(false); }
   };
 
-  return (
-    <div className="bg-white rounded-xl shadow p-5">
-      <h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2>
-
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {(serviceType === "shopping" || serviceType === "spa") && (
-          <input name="name" placeholder={serviceType === "shopping" ? "Product Name" : "Service Name"} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-        )}
-
-        <input name="price" type="number" min="0" step="0.01" placeholder={serviceType === "hotel" ? "Price Per Night" : serviceType === "transportation" ? "Ticket Price Per Person" : "Price"} value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Image Upload (required)</label>
-          <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 rounded-lg px-4 py-2" required={!form.image} />
-          <p className="mt-1 text-xs text-gray-500">{uploadingImage ? "Uploading image..." : form.image ? "Image uploaded successfully." : "Please upload an image file."}</p>
-        </div>
-
-        {dynamicFields}
-
-        <button type="submit" disabled={submitting || uploadingImage} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60">{submitting ? "Saving..." : "Create"}</button>
-      </form>
-    </div>
-  );
+  return <div className="bg-white rounded-xl shadow p-5"><h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2><form onSubmit={handleSubmit} className="space-y-3"><input name="price" type="number" min="0" step="0.01" placeholder="Price" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /><input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 rounded-lg px-4 py-2" required={!form.image} />{dynamicFields}<button type="submit" disabled={submitting || uploadingImage} className="bg-green-600 text-white px-4 py-2 rounded-lg">{submitting ? "Saving..." : "Create"}</button></form></div>;
 }
