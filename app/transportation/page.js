@@ -1,6 +1,7 @@
 import { CheckCircle, Bus, Clock, Zap, ShieldCheck } from "lucide-react";
 import ShopsHero from "../components/shops/ShopsHero";
 import CreatedTicketsSection from "../components/transportation/CreatedTicketsSection";
+import TransportationShopsSection from "../components/transportation/TransportationShopsSection";
 
 
 const popularRoutes = [
@@ -91,7 +92,9 @@ export default function TransportationPage() {
   </div>
 </div>
       </section>
-       <CreatedTicketsSection />
+
+      <TransportationShopsSection />
+      <CreatedTicketsSection />
     </div>
   );
 }
