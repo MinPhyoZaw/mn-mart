@@ -40,7 +40,14 @@ export async function GET(req) {
     const limit = Math.min(50, Math.max(1, toNumber(searchParams.get("limit"), 20)));
     const skip = (page - 1) * limit;
 
-    const query = category ? { category } : {};
+    const query = category
+      ? {
+          $or: [
+            { category },
+            { category: { $regex: `^${category}$`, $options: "i" } },
+          ],
+        }
+      : {};
     const projection = "name description image category";
 
     const [shops, total] = await Promise.all([
