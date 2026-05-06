@@ -105,6 +105,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
         </div>
         <input placeholder="တက်လို့ရမည့်နေရာများ" value={routeForm.boardingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, boardingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
         <input placeholder="ဆင်းလို့ရမည့်နေရာများ" value={routeForm.droppingPoints} onChange={(e) => setRouteForm((p) => ({ ...p, droppingPoints: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
+        <input placeholder="Duration (e.g. 7 hr 30 min)" value={routeForm.duration} onChange={(e) => setRouteForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border rounded-lg px-3 py-2" />
         <button type="submit" disabled={creatingRoute} className="bg-gray-900 text-white rounded-lg px-3 py-2 text-sm">{creatingRoute ? "Saving..." : "Save Route Template"}</button>
       </form>
     );
