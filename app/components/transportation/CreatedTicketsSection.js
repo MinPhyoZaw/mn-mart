@@ -83,11 +83,14 @@ export default function CreatedTicketsSection() {
     const normalizedRoute = normalizeRoute(route);
 
     const matched = tickets
-      .filter((ticket) => {
-        if (ticket?.type !== "transport") return false;
-        const ticketRoute = normalizeRoute(ticket?.route || "");
-        return ticketRoute === normalizedRoute;
-      })
+  .filter((ticket) => {
+    if (ticket?.type !== "transport") return false;
+
+    return (
+      ticket?.extra?.fromCity?.toLowerCase() === from.toLowerCase() &&
+      ticket?.extra?.toCity?.toLowerCase() === to.toLowerCase()
+    );
+  })
       .sort((a, b) => minutesFromTime(a?.extra?.departureTime || "") - minutesFromTime(b?.extra?.departureTime || ""));
 
     setTimeout(() => {
