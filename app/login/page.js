@@ -28,7 +28,13 @@ export default function LoginPage() {
         setError(data.message || "Login failed");
       } else {
         window.dispatchEvent(new Event("auth-changed"));
-        router.push("/");
+        if (data.user?.role === "vendor") {
+          const typeMap = { shopping: "shop", transportation: "transport", transport: "transport", hotel: "hotel", spa: "spa" };
+          const t = typeMap[data.user.serviceType] || data.user.serviceType;
+          router.push(`/vendor/${t}/dashboard`);
+        } else {
+          router.push("/");
+        }
         router.refresh();
       }
     } catch (err) {

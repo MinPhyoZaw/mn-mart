@@ -31,13 +31,13 @@ export async function POST(req) {
       );
 
     // ✅ Sign JWT
-    const token = signToken({ userId: user._id, role: user.role });
+    const token = signToken({ userId: user._id, role: user.role, serviceType: user.serviceType });
 
     // ✅ Set HttpOnly cookie
     const response = NextResponse.json({
       success: true,
       message: "Logged in",
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, serviceType: user.serviceType },
     });
 
     response.cookies.set({

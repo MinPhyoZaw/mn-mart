@@ -8,7 +8,9 @@ const OrdersPanel = dynamic(() => import("./vendor/OrdersPanel"), { ssr: false }
 const CheckoutSummary = dynamic(() => import("./vendor/CheckoutSummary"), { ssr: false });
 const RoomsList = dynamic(() => import("./vendor/RoomsList"), { ssr: false });
 
-export default function VendorDashboard() {
+const TYPE_MAP = { shopping: "shop", transport: "transport", transportation: "transport", hotel: "hotel", spa: "spa" };
+
+export default function VendorDashboard({ expectedType = "" }) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [vendor, setVendor] = useState(null);
@@ -50,6 +52,7 @@ export default function VendorDashboard() {
   }, []);
 
   const serviceType = shop?.category || vendor?.serviceType || "";
+  const normalizedType = TYPE_MAP[serviceType] || serviceType;
 
   const handleOrderAction = async (id, action) => {
     const res = await fetch(`/api/vendor/orders/${id}`, {
@@ -101,6 +104,14 @@ export default function VendorDashboard() {
     );
   }
 
+  if (expectedType && normalizedType && expectedType !== normalizedType) {
+    return (
+      <div className="p-8">
+        <p className="text-red-500">Unauthorized vendor dashboard route.</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <CheckoutSummary vendor={vendor} shop={shop} checkoutSummary={checkoutSummary} serviceType={serviceType} />
@@ -110,7 +121,7 @@ export default function VendorDashboard() {
 
         <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
 
-        <RoomsList shop={shop} refreshToken={roomsRefreshToken} />
+        {normalizedType === "hotel" && <RoomsList shop={shop} refreshToken={roomsRefreshToken} />}
 
         <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
       </div>
