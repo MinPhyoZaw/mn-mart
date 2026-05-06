@@ -36,6 +36,7 @@ export default function ShopDetailClient({ shop, items }) {
     : null;
 
   const isHotel = shop?.category === "hotel";
+  const visibleItems = isHotel ? items.filter((item) => item.isAvailable !== false) : items;
 
   const getAmenityList = (item) =>
     Object.entries(item?.extra?.amenities || {})
@@ -98,7 +99,10 @@ export default function ShopDetailClient({ shop, items }) {
 
       {/* ITEMS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-        {items.map((item) => (
+        {visibleItems.length === 0 ? (
+          <p className="text-sm text-gray-500">No available rooms right now.</p>
+        ) : null}
+        {visibleItems.map((item) => (
           <div
             key={item._id}
             className="border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition"
