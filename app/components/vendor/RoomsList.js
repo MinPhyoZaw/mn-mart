@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-export default function RoomsList({ shop }) {
+export default function RoomsList({ shop, refreshToken = 0 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [showAvailable, setShowAvailable] = useState(true);
+  const [showNotAvailable, setShowNotAvailable] = useState(false);
 
   useEffect(() => {
     if (!shop || !shop._id) return;
@@ -25,7 +27,12 @@ export default function RoomsList({ shop }) {
     };
 
     load();
-  }, [shop]);
+  }, [shop, refreshToken]);
+
+  const filteredItems = items.filter((item) => {
+    if (item.isAvailable) return showAvailable;
+    return showNotAvailable;
+  });
 
   const toggleAvailability = async (itemId, current) => {
     try {
@@ -49,11 +56,24 @@ export default function RoomsList({ shop }) {
       <h2 className="text-xl font-semibold mb-3">Your Rooms</h2>
       {message && <p className="text-sm text-red-500 mb-2">{message}</p>}
 
+      <div className="mb-4 flex flex-wrap gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={showAvailable} onChange={(e) => setShowAvailable(e.target.checked)} />
+          <span>Available</span>
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={showNotAvailable} onChange={(e) => setShowNotAvailable(e.target.checked)} />
+          <span>Not Available</span>
+        </label>
+      </div>
+
       {items.length === 0 ? (
         <p className="text-sm text-gray-500">No rooms created yet.</p>
+      ) : filteredItems.length === 0 ? (
+        <p className="text-sm text-gray-500">No rooms match selected availability filter.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <div key={item._id} className="border rounded-lg bg-white p-3 shadow-sm">
               <div className="relative h-40 bg-gray-100 rounded-md overflow-hidden">
                 {item.image ? (

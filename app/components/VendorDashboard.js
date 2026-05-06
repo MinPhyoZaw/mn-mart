@@ -15,6 +15,7 @@ export default function VendorDashboard() {
   const [shop, setShop] = useState(null);
   const [checkoutSummary, setCheckoutSummary] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [roomsRefreshToken, setRoomsRefreshToken] = useState(0);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -85,6 +86,11 @@ export default function VendorDashboard() {
     }
   };
 
+  const handleCreated = async () => {
+    setRoomsRefreshToken((prev) => prev + 1);
+    await refreshData();
+  };
+
   if (loading) return <div className="p-8">Loading vendor dashboard...</div>;
 
   if (!shop || !vendor) {
@@ -104,9 +110,9 @@ export default function VendorDashboard() {
 
         <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
 
-        <RoomsList shop={shop} />
+        <RoomsList shop={shop} refreshToken={roomsRefreshToken} />
 
-        <AddItemForm serviceType={serviceType} shop={shop} onCreated={refreshData} setMessage={setMessage} />
+        <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
       </div>
     </div>
   );
