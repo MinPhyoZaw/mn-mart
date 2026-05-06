@@ -87,7 +87,7 @@ export default async function TransportationTicketPage({ params }) {
 
         <div className="mt-8 space-y-5">
           {tickets.map((ticket) => (
-            <article className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm md:p-4">
+            <article key={ticket.id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm md:p-4">
   <div className="grid gap-4 md:grid-cols-[200px_1fr_220px]">
 
     {/* Image */}

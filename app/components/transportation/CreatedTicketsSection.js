@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CalendarDays, Clock3, MapPin, Phone, Users } from "lucide-react";
 
@@ -41,10 +42,7 @@ export default function CreatedTicketsSection() {
     };
   }, []);
 
-  const availableTickets = useMemo(
-    () => tickets.filter((ticket) => Number(ticket?.extra?.availableSeats || 0) > 0),
-    [tickets]
-  );
+  const allTickets = useMemo(() => tickets, [tickets]);
 
   return (
     <section className="px-4 md:px-10 pb-12">
@@ -58,11 +56,11 @@ export default function CreatedTicketsSection() {
 
         {isFetchingTickets ? (
           <p className="text-sm text-gray-500">Loading tickets...</p>
-        ) : availableTickets.length === 0 ? (
+        ) : allTickets.length === 0 ? (
           <p className="rounded-lg bg-gray-100 px-4 py-3 text-sm text-gray-600">No available tickets right now.</p>
         ) : (
           <div className="space-y-4">
-            {availableTickets.map((ticket) => {
+            {allTickets.map((ticket) => {
               const fromCity = ticket?.extra?.fromCity || ticket?.extra?.from || "-";
               const toCity = ticket?.extra?.toCity || ticket?.extra?.to || "-";
               const routeName = ticket?.route || `${fromCity} - ${toCity}`;
@@ -124,6 +122,13 @@ export default function CreatedTicketsSection() {
                         <p className="text-sm text-gray-600">Price</p>
                         <p className="text-4xl font-bold text-[#318616]">{formatPrice(ticket?.price)}</p>
                       </div>
+
+                      <Link
+                        href={`/transportation/${ticket?.shop?._id}`}
+                        className="inline-flex w-full items-center justify-center rounded-xl border border-[#0c8c3a] px-4 py-2 text-sm font-semibold text-[#0c8c3a] transition hover:bg-green-50"
+                      >
+                        View Ticket Details
+                      </Link>
 
                       {phone ? (
                         <a
