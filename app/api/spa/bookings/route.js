@@ -5,7 +5,7 @@ import SpaService from "../../../models/SpaService";
 import SpaBooking from "../../../models/SpaBooking";
 
 export async function POST(req) {
-  const auth = requireAuth(req, ["customer", "admin", "vendor"]);
+  const auth = requireAuth(req, ["customer"]);
   if (!auth.ok) return auth.response;
 
   const body = await req.json();
@@ -16,7 +16,10 @@ export async function POST(req) {
 
   await connectDB();
   const service = await SpaService.findById(serviceId).lean();
-  if (!service) return NextResponse.json({ success: false, message: "Spa service not found." }, { status: 404 });
+  if (!service || !service.isActive) return NextResponse.json({ success: false, message: "Spa service not found." }, { status: 404 });
+
+  const slotExists = (service.availableSlots || []).some((slot) => slot.start === selectedTimeSlot.start && slot.end === selectedTimeSlot.end);
+  if (!slotExists) return NextResponse.json({ success: false, message: "Selected time slot is not available." }, { status: 400 });
 
   const booking = await SpaBooking.create({
     serviceId: service._id,
@@ -36,7 +39,7 @@ export async function POST(req) {
 }
 
 export async function GET(req) {
-  const auth = requireAuth(req, ["customer", "admin", "vendor"]);
+  const auth = requireAuth(req, ["customer", "admin"]);
   if (!auth.ok) return auth.response;
   await connectDB();
 
