@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, CalendarDays, Clock3, MapPin, Phone, Users } from "lucide-react";
 
 const formatPrice = (value) => {
   if (value === undefined || value === null || value === "") return "Not available";
@@ -8,6 +9,8 @@ const formatPrice = (value) => {
   if (Number.isNaN(parsed)) return "Not available";
   return `${parsed.toLocaleString()} MMK`;
 };
+
+const normalizePhone = (value) => (value ? String(value).replace(/\s+/g, "") : "");
 
 export default function CreatedTicketsSection() {
   const [tickets, setTickets] = useState([]);
@@ -45,43 +48,102 @@ export default function CreatedTicketsSection() {
 
   return (
     <section className="px-4 md:px-10 pb-12">
-      <div className="mx-auto max-w-6xl">
-        <h2 className="text-center text-2xl font-bold mb-2">Available Tickets</h2>
-        <p className="text-center text-sm text-gray-600 mb-6">All available tickets</p>
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-6 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Available Car Tickets</h2>
+            <p className="text-sm text-gray-600">Choose your preferred trip</p>
+          </div>
+        </div>
 
         {isFetchingTickets ? (
           <p className="text-sm text-gray-500">Loading tickets...</p>
         ) : availableTickets.length === 0 ? (
           <p className="rounded-lg bg-gray-100 px-4 py-3 text-sm text-gray-600">No available tickets right now.</p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
             {availableTickets.map((ticket) => {
               const fromCity = ticket?.extra?.fromCity || ticket?.extra?.from || "-";
               const toCity = ticket?.extra?.toCity || ticket?.extra?.to || "-";
               const routeName = ticket?.route || `${fromCity} - ${toCity}`;
-              const callPhone = ticket?.extra?.driverPhone || ticket?.phone;
+              const vehicleType = ticket?.extra?.vehicleType || "Not specified";
+              const departureDate = ticket?.extra?.departureDate || "TBA";
+              const departureTime = ticket?.extra?.departureTime || "TBA";
+              const seats = ticket?.extra?.availableSeats ?? "N/A";
+              const phone = normalizePhone(ticket?.extra?.driverPhone || ticket?.phone);
 
               return (
                 <article
                   key={ticket._id}
-                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:p-6"
                 >
-                  <p className="text-base font-semibold text-gray-900">{routeName}</p>
-                  <p className="mt-1 text-sm text-gray-600">Vehicle: {ticket?.extra?.vehicleType || "Not specified"}</p>
-                  <p className="mt-1 text-sm text-gray-600">Departure Date: {ticket?.extra?.departureDate || "TBA"}</p>
-                  <p className="mt-1 text-sm text-gray-600">Departure Time: {ticket?.extra?.departureTime || "TBA"}</p>
-                  <p className="mt-1 text-sm text-gray-600">Available Seats: {ticket?.extra?.availableSeats ?? "N/A"}</p>
-                  <p className="mt-1 text-sm text-gray-600">Price: {formatPrice(ticket?.price)}</p>
-                  <p className="mt-1 text-sm text-gray-600">Vendor Phone: {callPhone || "Not available"}</p>
+                  <div className="grid gap-4 md:grid-cols-[1.2fr_1.5fr_auto] md:gap-6">
+                    <div className="space-y-3 md:border-r md:border-dashed md:pr-6">
+                      <span className="inline-flex rounded-lg bg-green-50 px-3 py-1 text-sm font-semibold text-[#318616]">
+                        {routeName}
+                      </span>
+                      <p className="text-lg font-semibold text-gray-900">{vehicleType}</p>
+                      <p className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <Users size={16} className="text-[#318616]" />
+                        {seats} Seats Available
+                      </p>
+                    </div>
 
-                  {callPhone ? (
-                    <a
-                      href={`tel:${callPhone}`}
-                      className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-                    >
-                      📞 Call to Book
-                    </a>
-                  ) : null}
+                    <div className="space-y-3 md:border-r md:border-dashed md:pr-6">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-gray-500">From</p>
+                          <p className="text-2xl font-bold text-gray-900">{fromCity}</p>
+                        </div>
+                        <ArrowRight className="text-[#318616]" />
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-gray-500">To</p>
+                          <p className="text-2xl font-bold text-gray-900">{toCity}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
+                        <p className="inline-flex items-center gap-2">
+                          <Clock3 size={16} className="text-[#318616]" />
+                          {departureTime}
+                        </p>
+                        <p className="inline-flex items-center gap-2">
+                          <CalendarDays size={16} className="text-[#318616]" />
+                          {departureDate}
+                        </p>
+                      </div>
+
+                      <p className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <MapPin size={16} className="text-[#318616]" />
+                        Route: {fromCity} → {toCity}
+                      </p>
+                    </div>
+
+                    <div className="flex min-w-[220px] flex-col justify-between gap-3">
+                      <div>
+                        <p className="text-sm text-gray-600">Price</p>
+                        <p className="text-4xl font-bold text-[#318616]">{formatPrice(ticket?.price)}</p>
+                      </div>
+
+                      {phone ? (
+                        <a
+                          href={`tel:${phone}`}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0c8c3a] px-4 py-3 text-lg font-semibold text-white transition hover:bg-[#0a7c32]"
+                        >
+                          <Phone size={18} />
+                          Call to Book
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full cursor-not-allowed rounded-xl bg-gray-200 px-4 py-3 text-lg font-semibold text-gray-500"
+                        >
+                          Phone not available
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </article>
               );
             })}
