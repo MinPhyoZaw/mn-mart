@@ -34,9 +34,9 @@ export default function TransportationShopsSection() {
   return (
     <section className="px-4 md:px-10 pb-4">
       <div className="mx-auto max-w-7xl">
-        <h2 className="text-center text-2xl font-bold mb-6">Transportation Shops</h2>
+        <h2 className="text-center text-2xl font-bold mb-6">Available Car Operators</h2>
         {isLoading ? (
-          <p className="text-center text-gray-500">Loading transportation shops...</p>
+          <p className="text-center text-gray-500">Loading car operators...</p>
         ) : shops.length === 0 ? (
           <p className="text-center text-gray-500">No transportation shops available</p>
         ) : (

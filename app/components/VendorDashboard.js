@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 const AddItemForm = dynamic(() => import("./vendor/AddItemForm"), { ssr: false });
 const OrdersPanel = dynamic(() => import("./vendor/OrdersPanel"), { ssr: false });
 const CheckoutSummary = dynamic(() => import("./vendor/CheckoutSummary"), { ssr: false });
+const RoomsList = dynamic(() => import("./vendor/RoomsList"), { ssr: false });
 
 export default function VendorDashboard() {
   const [loading, setLoading] = useState(true);
@@ -102,6 +103,8 @@ export default function VendorDashboard() {
         {message && <p className="mb-3 text-sm text-blue-600">{message}</p>}
 
         <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+
+        <RoomsList shop={shop} />
 
         <AddItemForm serviceType={serviceType} shop={shop} onCreated={refreshData} setMessage={setMessage} />
       </div>

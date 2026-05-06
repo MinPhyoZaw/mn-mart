@@ -207,19 +207,19 @@ export default async function TransportationTicketPage({ params }) {
         </p>
       </div>
 
-      <Link
-        href={`/checkout?transport=${id}&ticket=${ticket.id}`}
-        className="inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-      >
-        Book Now
-      </Link>
+     <a
+  href={`tel:${(shop?.phone || '').replace(/\s+/g, '')}`}
+  className="inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+>
+  Call To Book
+</a>
 
-      <Link
+      {/* <Link
         href={`/transportation/${id}?ticket=${ticket.id}`}
         className="inline-flex items-center justify-center rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
       >
         Details
-      </Link>
+      </Link> */}
     </div>
 
   </div>

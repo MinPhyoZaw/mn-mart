@@ -5,10 +5,26 @@ import TransportationShopsSection from "../components/transportation/Transportat
 
 
 const popularRoutes = [
-  { label: "မြစ်ကြီးနား - မန္တလေး", image: "/images/mdy.png" },
-  { label: "မြစ်ကြီးနား - ပူတာအို", image: "/images/put.jpg" },
-  { label: "မြစ်ကြီးနား - လိုင်ဇာ", image: "/images/Laiza.jpg" },
-  { label: "မြစ်ကြီးနား - ပန်ဝါ", image: "/images/panwa.jpg" },
+  {
+    label: "Myitkyina - Mandalay",
+    burmeseLabel: "မြစ်ကြီးနား - မန္တလေး",
+    image: "/images/mdy.png",
+  },
+  {
+    label: "Myitkyina - Putao",
+    burmeseLabel: "မြစ်ကြီးနား - ပူတာအို",
+    image: "/images/put.jpg",
+  },
+  {
+    label: "Myitkyina - Laiza",
+    burmeseLabel: "မြစ်ကြီးနား - လိုင်ဇာ",
+    image: "/images/Laiza.jpg",
+  },
+  {
+    label: "Myitkyina - Panwa",
+    burmeseLabel: "မြစ်ကြီးနား - ပန်ဝါ",
+    image: "/images/panwa.jpg",
+  },
 ];
 
 
@@ -20,42 +36,42 @@ export default function TransportationPage() {
     
       {/* ✅ Feature Section */}
       <section className="px-4 md:px-10 py-8">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+  <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
 
-          <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bus className="text-[#318616]" size={24} />
-              <p className="text-sm font-semibold">50+ Car Operator</p>
-            </div>
-            <CheckCircle className="text-green-500" size={18} />
-          </div>
+    <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <Bus className="text-[#318616]" size={24} />
+        <p className="text-sm font-semibold">50+ Car Operators</p>
+      </div>
+      <CheckCircle className="text-green-500" size={18} />
+    </div>
 
-          <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Zap className="text-[#318616]" size={24} />
-              <p className="text-sm font-semibold">Easy Booking</p>
-            </div>
-            <CheckCircle className="text-green-500" size={18} />
-          </div>
+    <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <Zap className="text-[#318616]" size={24} />
+        <p className="text-sm font-semibold">Easy Booking</p>
+      </div>
+      <CheckCircle className="text-green-500" size={18} />
+    </div>
 
-          <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Clock className="text-[#318616]" size={24} />
-              <p className="text-sm font-semibold">24/7 Available</p>
-            </div>
-            <CheckCircle className="text-green-500" size={18} />
-          </div>
+    <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <Clock className="text-[#318616]" size={24} />
+        <p className="text-sm font-semibold">24/7 Availability</p>
+      </div>
+      <CheckCircle className="text-green-500" size={18} />
+    </div>
 
-          <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="text-[#318616]" size={24} />
-              <p className="text-sm font-semibold">Instant Confirm</p>
-            </div>
-            <CheckCircle className="text-green-500" size={18} />
-          </div>
+    <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <ShieldCheck className="text-[#318616]" size={24} />
+        <p className="text-sm font-semibold">Instant Confirmation</p>
+      </div>
+      <CheckCircle className="text-green-500" size={18} />
+    </div>
 
-        </div>
-      </section>
+  </div>
+</section>
 
       {/* ✅ Popular Routes */}
       <section className="px-4 md:px-10 py-10">
@@ -83,10 +99,20 @@ export default function TransportationPage() {
           <span className="text-white text-sm md:text-base font-semibold text-center mb-2">
             {route.label}
           </span>
-          <span className="bg-[#318616] text-white text-xs md:text-sm font-medium px-3 py-1.5 rounded-lg shadow">
+          {/* <span className="bg-[#318616] text-white text-xs md:text-sm font-medium px-3 py-1.5 rounded-lg shadow">
             Search Route
-          </span>
+          </span> */}
+
+          
         </div>
+
+        <div className="absolute bottom-0 left-0 w-full">
+            <div className="bg-black/40 backdrop-blur-sm px-3 py-2">
+              <p className="text-white text-xs md:text-sm font-medium text-center">
+                {route.label}
+              </p>
+            </div>
+          </div>
       </a>
     ))}
   </div>
@@ -94,7 +120,7 @@ export default function TransportationPage() {
       </section>
 
       <TransportationShopsSection />
-      <CreatedTicketsSection />
+
     </div>
   );
 }
