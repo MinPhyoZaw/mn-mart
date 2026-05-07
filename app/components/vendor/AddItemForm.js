@@ -51,18 +51,7 @@ const AMENITIES = [
   { key: "extraBed", label: "Extra Bed" },
 ];
 
-const SHOPPING_CATEGORIES = [
-  "electronics",
-  "fashion",
-  "food & beverage",
-  "DIY",
-  "hardware",
-  "furniture",
-  "Media",
-  "Beauty & personal care",
-  "Tobacco products",
-  "Toy and hobbies",
-];
+
 
 const FORM_TITLE = { shopping: "Add New Products", hotel: "Add New Room", transportation: "Create Transportation Ticket", spa: "Add New Service" };
 
