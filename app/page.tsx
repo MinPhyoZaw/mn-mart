@@ -2,6 +2,7 @@ import PromoBanner from './components/PromoBanner';
 import Categories from './components/Categories';
 import ProductColumn from './components/ProductColumn';
 import Advertisement from "./components/Advertisement";
+import TicketAdsSection from './components/TicketAdsSection'; // Import the TicketAdsSection
 
 export default function HomePage() {
   return (
@@ -13,7 +14,11 @@ export default function HomePage() {
      
       <ProductColumn tagName="BestSellers" title="Best Sellers" />
       <ProductColumn tagName="TopPicks" title="Top Picks" />
+      <TicketAdsSection />
       <ProductColumn tagName="RecomendedForYou" title="Recommended For You" />
+
+      
+
     </div>
   );
 }
