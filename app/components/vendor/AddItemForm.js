@@ -206,9 +206,16 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    const defaultNameByServiceType = {
+      hotel: form.roomType,
+      spa: "Spa Service",
+      shopping: form.name,
+      transportation: "Transportation Ticket",
+    };
+
     const payload = {
       shopId: shop._id,
-      name: form.name || "Transportation Ticket",
+      name: defaultNameByServiceType[serviceType] || form.name || "Item",
       price: Number(form.price),
       image: form.image,
       type: TYPE_MAP[serviceType] || "service",
