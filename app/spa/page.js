@@ -4,15 +4,10 @@ export default function SpaPage() {
   return (
     <CategoryShopsPage
       category="spa"
-      title="Spas & Salons"
+      title="Spa"
       heroImage="/images/nail-spa.jpg"
-      ctaLabel="View Services"
-      serviceCategories={[
-        { name: "Massage" },
-        { name: "Facial" },
-        { name: "Manicure" },
-        { name: "Hair" },
-      ]}
+      ctaLabel="See Spa Shop"
+      serviceCategories={[]}
     />
   );
 }
