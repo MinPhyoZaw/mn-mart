@@ -98,7 +98,7 @@ export default function ShopDetailClient({ shop, items }) {
       <h1 className="text-2xl font-bold mt-4">{shop.name}</h1>
 
       {/* ITEMS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-6">
         {visibleItems.length === 0 ? (
           <p className="text-sm text-gray-500">No available rooms right now.</p>
         ) : null}
