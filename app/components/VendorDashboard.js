@@ -110,7 +110,7 @@ export default function VendorDashboard() {
 
         <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
 
-        <RoomsList shop={shop} refreshToken={roomsRefreshToken} />
+        {serviceType === "hotel" ? <RoomsList shop={shop} refreshToken={roomsRefreshToken} /> : null}
 
         <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
       </div>
