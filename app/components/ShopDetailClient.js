@@ -36,6 +36,7 @@ export default function ShopDetailClient({ shop, items }) {
     : null;
 
   const isHotel = shop?.category === "hotel";
+  const isShopping = shop?.category === "shopping";
   const visibleItems = isHotel ? items.filter((item) => item.isAvailable !== false) : items;
 
   const getAmenityList = (item) =>
@@ -98,7 +99,7 @@ export default function ShopDetailClient({ shop, items }) {
       <h1 className="text-2xl font-bold mt-4">{shop.name}</h1>
 
       {/* ITEMS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isShopping ? "lg:grid-cols-5" : "lg:grid-cols-3"} gap-4 mt-6`}>
         {visibleItems.length === 0 ? (
           <p className="text-sm text-gray-500">No available rooms right now.</p>
         ) : null}
@@ -107,7 +108,7 @@ export default function ShopDetailClient({ shop, items }) {
             key={item._id}
             className="border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition"
           >
-            <div className="relative h-52 md:h-56 bg-gray-100">
+            <div className="relative h-44 md:h-48 bg-gray-100">
               {item.image ? (
                 <Image src={item.image} alt={item.name} fill className="object-cover" />
               ) : null}
