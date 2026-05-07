@@ -66,6 +66,21 @@ const SHOPPING_CATEGORIES = [
 
 const FORM_TITLE = { shopping: "Add New Products", hotel: "Add New Room", transportation: "Create Transportation Ticket", spa: "Add New Service" };
 
+const SHOPPING_CATEGORIES = [
+  "electronics",
+  "fashion",
+  "food & beverage",
+  "DIY",
+  "hardware",
+  "furniture",
+  "Media",
+  "Beauty & personal care",
+  "Tobacco products",
+  "Toy and hobbies",
+];
+
+const TAG_OPTIONS = ["NewArrival", "BestSellers", "TopPicks", "RecomendedForYou"];
+
 export default function AddItemForm({ serviceType, shop, onCreated, setMessage }) {
   const [form, setForm] = useState({ ...INITIAL_FORM, category: SHOPPING_CATEGORIES[0] });
   const [routeForm, setRouteForm] = useState(INITIAL_ROUTE_FORM);
@@ -151,6 +166,21 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
       );
     if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
     if (serviceType === "spa") return <input name="duration" placeholder="Duration (e.g. 60 min)" value={form.duration || ""} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
+    if (serviceType === "shopping") {
+      return (
+        <>
+          <input name="name" placeholder="Product name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
+          <input name="quantity" type="number" min="0" placeholder="Quantity" value={form.quantity} onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" />
+          <select name="category" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
+            <option value="" disabled>Select category</option>
+            {SHOPPING_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+          </select>
+          <select name="tagName" value={form.tagName} onChange={(e) => setForm((p) => ({ ...p, tagName: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2">
+            {TAG_OPTIONS.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+          </select>
+        </>
+      );
+    }
     if (serviceType !== "transportation") return null;
 
     return (
@@ -193,11 +223,15 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
       price: Number(form.price),
       image: form.image,
       type: TYPE_MAP[serviceType] || "service",
-      category: TYPE_MAP[serviceType] === "product" ? (form.category || SHOPPING_CATEGORIES[0]) : undefined,
-      tagName: form.tagName,
+      category: serviceType === "shopping" ? form.category : undefined,
+      tagName: serviceType === "shopping" ? form.tagName : undefined,
       extra: {},
       isAvailable: true,
     };
+
+    if (serviceType === "shopping") {
+      payload.extra = { quantity: Number(form.quantity || 0) };
+    }
 
     if (serviceType === "transportation") {
       payload.name = `Ticket ${form.departureDate} ${form.departureTime}`;
