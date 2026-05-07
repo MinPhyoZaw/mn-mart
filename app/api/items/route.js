@@ -7,6 +7,21 @@ import Vendor from "../../models/Vendor";
 import { requireAuth } from "../../lib/routeAuth";
 
 const REQUIRED_FIELDS = ["shopId", "name", "price", "type"];
+
+const TAG_NAME_ALIASES = {
+  newarrival: "NewArrival",
+  bestsellers: "BestSellers",
+  toppicks: "TopPicks",
+  recomendedforyou: "RecomendedForYou",
+  recommendedforyou: "RecomendedForYou",
+  recommended: "RecomendedForYou",
+};
+
+function normalizeTagName(tagName) {
+  if (typeof tagName !== "string") return undefined;
+  const normalized = tagName.trim().toLowerCase().replace(/\s+/g, "");
+  return TAG_NAME_ALIASES[normalized] || tagName.trim();
+}
 const SHOPPING_CATEGORIES = [
   "electronics",
   "fashion",
@@ -27,6 +42,7 @@ export async function POST(req) {
 
     const body = await req.json();
     const normalizedCategory = typeof body.category === "string" ? body.category.trim() : "";
+    const normalizedTagName = normalizeTagName(body.tagName);
 
     const missingFields = REQUIRED_FIELDS.filter((field) => {
       const value = body?.[field];
@@ -86,7 +102,7 @@ export async function POST(req) {
       image: body.image,
       type: body.type,
       category: body.type === "product" ? normalizedCategory : undefined,
-      tagName: body.tagName,
+      tagName: normalizedTagName,
       extra: body.extra,
       isAvailable: body.isAvailable,
     });
@@ -135,7 +151,7 @@ export async function GET(req) {
     }
 
     if (tagName) {
-      filter.tagName = tagName;
+      filter.tagName = normalizeTagName(tagName);
     }
 
     if (shopCategory) {
