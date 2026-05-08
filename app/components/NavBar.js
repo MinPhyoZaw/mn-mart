@@ -8,6 +8,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 import SearchBar from "./SearchBar";
 
+import { Raleway } from "next/font/google";
+
+const raleway = Raleway({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
 const MAX_IMAGE_SIDE = 320;
 const OUTPUT_QUALITY = 0.72;
 
@@ -156,10 +163,37 @@ export default function Navbar() {
       <nav className="sticky top-0 z-50 border-b border-gray-100/80 bg-white/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              <span className="font-[var(--font-raleway)] text-green-600">MN</span>
-              <span className="font-[var(--font-raleway)] text-red-500">Mart</span>
-            </Link>
+            <Link
+  href="/"
+  className="group flex items-center gap-3"
+>
+  {/* Logo Container */}
+  <div className="relative h-19 w-19 rounded-2xl overflow-hidden bg-white transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl">
+
+    {/* Glow Effect */}
+    <div className="absolute "></div>
+
+    <Image
+      src="/images/logo.jpg"
+      alt="MN Mart"
+      fill
+      className="object-cover relative z-10"
+    />
+  </div>
+
+  {/* Brand Text */}
+  <div className="flex flex-col leading-tight">
+    <h1 className={`${raleway.className} text-xl md:text-2xl font-black tracking-tight`}>
+  <span className="text-green-700">MN</span>
+
+  <span className="text-red-600">Mart</span>
+</h1>
+
+    <p className="text-[11px] text-gray-500 font-medium tracking-wide">
+      Myanmar Digital Marketplace
+    </p>
+  </div>
+</Link>
 
             <div className="hidden items-center gap-2 md:flex">
               {!user ? (
