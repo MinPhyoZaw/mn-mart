@@ -11,6 +11,14 @@ const toNotification = (order) => {
     };
   }
 
+  if (order.orderStatus === "confirmed" && order.serviceType === "transportation" && order.vendorStatus === "accepted") {
+    return {
+      type: "confirmed",
+      text: "Your transportation ticket is accepted by vendor.",
+      thankYouMessage: "Download your ticket and show it to vendor on ride day.",
+    };
+  }
+
   if (order.orderStatus === "confirmed") {
     return {
       type: "confirmed",
