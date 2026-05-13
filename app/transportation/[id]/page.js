@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { ArrowRight, CalendarDays, CheckCircle2, MapPin, Snowflake, Sofa, Users } from "lucide-react";
 import connectDB from "../../lib/mongodb";
 import Item from "../../models/Item";
 import Shop from "../../models/Shop";
 import TransportationRoute from "../../models/TransportationRoute";
+import TransportationTicketCard from "../../components/transportation/TransportationTicketCard";
 
 function formatDate(value) {
   if (!value) return "";
@@ -207,19 +207,19 @@ export default async function TransportationTicketPage({ params }) {
         </p>
       </div>
 
-     <a
-  href={`tel:${(shop?.phone || '').replace(/\s+/g, '')}`}
-  className="inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
->
-  Call To Book
-</a>
-
-      {/* <Link
-        href={`/transportation/${id}?ticket=${ticket.id}`}
-        className="inline-flex items-center justify-center rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+      <a
+        href={`tel:${(shop?.phone || "").replace(/\s+/g, "")}`}
+        className="inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
       >
-        Details
-      </Link> */}
+        Call To Book
+      </a>
+
+      <TransportationTicketCard
+        shopId={id}
+        shopPhone={shop?.phone}
+        ticket={ticket}
+        rightSide={null}
+      />
     </div>
 
   </div>

@@ -35,6 +35,15 @@ const orderSchema = new mongoose.Schema(
       note: { type: String, default: "" },
     },
 
+    transportationDetails: {
+      fromCity: { type: String, default: "" },
+      toCity: { type: String, default: "" },
+      departureDate: { type: String, default: "" },
+      departureTime: { type: String, default: "" },
+      depositAmount: { type: Number, default: 0 },
+      leftToPayAmount: { type: Number, default: 0 },
+    },
+
     serviceType: {
       type: String,
       enum: ["shopping", "transportation", "hotel", "spa"],

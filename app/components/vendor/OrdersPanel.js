@@ -45,6 +45,14 @@ export default function OrdersPanel({ orders = [], onAction, messageSetter }) {
                   <p className="text-sm">Requested time: {order.bookingDetails?.note?.replace("Requested order time: ", "") || "-"}</p>
                 </>
               ) : null}
+              {order.serviceType === "transportation" ? (
+                <>
+                  <p className="text-sm">Route: {order.transportationDetails?.fromCity || "-"} - {order.transportationDetails?.toCity || "-"}</p>
+                  <p className="text-sm">Date/Time: {order.transportationDetails?.departureDate || "-"} {order.transportationDetails?.departureTime || ""}</p>
+                  <p className="text-sm font-medium text-emerald-700">Paid 5000MMK as Deposit</p>
+                  <p className="text-sm">Left to pay: {Number(order.transportationDetails?.leftToPayAmount || 0).toLocaleString()} MMK</p>
+                </>
+              ) : null}
               <div className="mt-2 text-sm">
                 <p className="font-medium">Items</p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
