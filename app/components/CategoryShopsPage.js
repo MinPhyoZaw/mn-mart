@@ -23,12 +23,12 @@ export default function CategoryShopsPage(param) {
         setIsLoading(true);
         const res = await fetch(
           `/api/shops?category=${encodeURIComponent(category)}&page=1&limit=20`,
-          { cache: "force-cache" }
+          { cache: "no-store" }
         );
         const data = await res.json();
 
         if (isMounted) {
-          setShops(data.data || []);
+          setShops(res.ok && data?.success ? data.data || [] : []);
         }
       } catch (error) {
         console.error(`Failed to fetch ${category} shops:`, error);
