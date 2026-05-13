@@ -217,6 +217,8 @@ export default async function TransportationTicketPage({ params }) {
       <TransportationTicketCard
         shopId={id}
         shopPhone={shop?.phone}
+        shopKbzPayNumber={shop?.kbzPayNumber}
+        shopWavePayNumber={shop?.wavePayNumber}
         ticket={ticket}
         rightSide={null}
       />
