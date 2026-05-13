@@ -153,8 +153,8 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <aside className="order-1 lg:order-2 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 h-fit">
+      <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+        <aside className="order-2 lg:order-2 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 h-fit">
           <h2 className="text-lg font-bold text-gray-900">Payment Receipt</h2>
           <p className="mt-1 text-xs text-gray-500">Please verify your order details before checkout.</p>
           <div className="mt-4 space-y-3">
@@ -195,11 +195,11 @@ export default function CheckoutPage() {
           </div>
         </aside>
 
-        <section className="order-2 lg:order-1 lg:col-span-2 bg-white rounded-2xl p-5 sm:p-7 shadow-sm border border-gray-100">
-          <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
+        <section className="order-1 lg:order-1 lg:col-span-2 w-full max-w-3xl lg:max-w-none mx-auto bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Checkout</h1>
           <p className="mt-1 text-sm text-gray-600">Upload payment receipt and confirm your order.</p>
 
-          <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+          <form className="mt-4 sm:mt-6 space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 required
