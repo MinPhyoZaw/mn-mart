@@ -62,6 +62,12 @@ export default function AdminOrderManager() {
                   <p>Phone: {order.customerPhone}</p>
                   <p className="md:col-span-2">Address: {order.customerAddress}</p>
                   <p>Total amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
+                  {order.serviceType === "spa" ? (
+                    <p className="md:col-span-2 rounded-md bg-amber-50 px-2 py-1 text-amber-800">
+                      Customer left to pay: {Math.max(Number(order.totalAmount || 0) - 3000, 0).toLocaleString()} MMK
+                      {" "}({Number(order.totalAmount || 0).toLocaleString()} - 3,000 MMK deposit)
+                    </p>
+                  ) : null}
                   <p>Status: {order.orderStatus?.toUpperCase() || "PENDING"}</p>
                 </div>
               </div>

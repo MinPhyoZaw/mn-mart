@@ -203,20 +203,20 @@ export default function ShopDetailClient({ shop, items }) {
           />
 
           {/* modal */}
-          <div className="relative w-full max-w-5xl bg-white rounded-xl shadow-xl flex flex-col md:flex-row overflow-hidden">
+          <div className={`relative w-full ${isSpa ? "max-w-lg" : "max-w-5xl"} bg-white rounded-2xl shadow-xl ${isSpa ? "p-6" : "flex flex-col md:flex-row overflow-hidden"}`}>
 
             {/* LEFT IMAGE */}
-            <div className="md:w-1/2 h-64 md:h-auto relative">
+            {!isSpa ? <div className="md:w-1/2 h-64 md:h-auto relative">
               <Image
                 src={activeBookingItem.image}
                 alt={activeBookingItem.name}
                 fill
                 className="object-cover"
               />
-            </div>
+            </div> : null}
 
             {/* RIGHT FORM */}
-            <div className="md:w-1/2 p-6 overflow-y-auto">
+            <div className={isSpa ? "w-full" : "md:w-1/2 p-6 overflow-y-auto"}>
 
               <button
                 onClick={() => setActiveBookingItemId(null)}
@@ -230,24 +230,26 @@ export default function ShopDetailClient({ shop, items }) {
               </h2>
 
               {/* Amenities */}
-              <div className="flex flex-wrap gap-2 mb-3">
+              {!isSpa ? <div className="flex flex-wrap gap-2 mb-3">
                 {getAmenityList(activeBookingItem).map((a, i) => (
                   <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">
                     {a.label}
                   </span>
                 ))}
-              </div>
+              </div> : null}
 
-              <div className="space-y-3">
+              <div className="space-y-4">
 
+                <label className="block text-sm font-semibold text-gray-700">Your Name
                 <input
-                  placeholder="Enter name"
-                  className="w-full border px-3 py-2 rounded"
+                  placeholder="Enter your name"
+                  className="mt-1 w-full border px-3 py-2 rounded-lg"
                   value={bookingForm.customerName}
                   onChange={(e) =>
                     setBookingForm({ ...bookingForm, customerName: e.target.value })
                   }
                 />
+                </label>
 
                 {isHotel ? <input
                   placeholder="Enter phone number"
@@ -305,7 +307,9 @@ export default function ShopDetailClient({ shop, items }) {
                   <Image src="/images/logo.png" alt="QR" fill />
                 </div>
 
-                <input type="file" onChange={handleReceiptUpload} />
+                <label className="block text-sm font-semibold text-gray-700">Upload the receipt
+                  <input type="file" onChange={handleReceiptUpload} className="mt-1 w-full rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-white" />
+                </label>
 
                 <button
                   onClick={isSpa ? submitSpaBooking : submitHotelBooking}
