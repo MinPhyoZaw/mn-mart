@@ -259,7 +259,7 @@ export default function ShopDetailClient({ shop, items }) {
                     setBookingForm({ ...bookingForm, customerPhone: e.target.value })
                   }
                 /> : null}
-                {isSpa ? <label className="block text-sm font-semibold text-gray-700">Order Time<input type="time" className="mt-1 w-full border px-3 py-2 rounded-lg" value={bookingForm.orderTime} onChange={(e) => setBookingForm({ ...bookingForm, orderTime: e.target.value })} /></label> : null}
+                {isSpa ? <input type="time" className="w-full border px-3 py-2 rounded" value={bookingForm.orderTime} onChange={(e) => setBookingForm({ ...bookingForm, orderTime: e.target.value })} /> : null}
 
                 {isHotel ? <div className="grid grid-cols-2 gap-2">
                   <input
