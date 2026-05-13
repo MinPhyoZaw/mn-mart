@@ -41,6 +41,17 @@ export default function AdminOrderManager() {
     await loadOrders();
   };
 
+  const getServiceTag = (serviceType) => {
+    const label = serviceType || "shopping";
+    const colorMap = {
+      shopping: "bg-blue-100 text-blue-700",
+      hotel: "bg-purple-100 text-purple-700",
+      spa: "bg-amber-100 text-amber-700",
+      transportation: "bg-emerald-100 text-emerald-700",
+    };
+    return { label, color: colorMap[label] || "bg-gray-100 text-gray-700" };
+  };
+
   if (loading) return <p className="text-sm text-gray-500 mt-3">Loading orders...</p>;
 
   return (
@@ -52,7 +63,10 @@ export default function AdminOrderManager() {
       ) : (
         <div className="mt-4 grid grid-cols-1 gap-4">
           {orders.map((order) => (
-            <div key={order._id} className="border rounded-xl p-4 flex flex-col md:grid md:grid-cols-12 md:gap-4 md:items-start">
+            <div key={order._id} className="relative border rounded-xl p-4 flex flex-col md:grid md:grid-cols-12 md:gap-4 md:items-start">
+              <span className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getServiceTag(order.serviceType).color}`}>
+                {getServiceTag(order.serviceType).label}
+              </span>
               <div className="md:col-span-8">
                 <p className="text-sm font-semibold">Order: {order.orderId}</p>
                 <div className="mt-2 grid gap-x-4 gap-y-1 text-sm md:grid-cols-2">
@@ -60,7 +74,13 @@ export default function AdminOrderManager() {
                   <p>Shop name: {order.shopId?.name || "Unknown"}</p>
                   <p>Customer: {order.customerName}</p>
                   <p>Phone: {order.customerPhone}</p>
-                  <p className="md:col-span-2">Address: {order.customerAddress}</p>
+                  {order.serviceType !== "spa" ? <p className="md:col-span-2">Address: {order.customerAddress}</p> : null}
+                  {order.serviceType === "spa" ? (
+                    <>
+                      <p>Service type: {order.items?.[0]?.name || "-"}</p>
+                      <p>Requested time: {order.bookingDetails?.note?.replace("Requested order time: ", "") || "-"}</p>
+                    </>
+                  ) : null}
                   <p>Total amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
                   {order.serviceType === "spa" ? (
                     <p className="md:col-span-2 rounded-md bg-amber-50 px-2 py-1 text-amber-800">

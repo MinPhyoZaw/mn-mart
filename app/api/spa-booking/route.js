@@ -15,8 +15,8 @@ export async function POST(req) {
     if (!auth.ok) return auth.response;
 
     const body = await req.json();
-    const { serviceItemId, shopId, customerName, orderTime, receiptImage } = body;
-    if (!serviceItemId || !shopId || !customerName || !orderTime || !receiptImage) {
+    const { serviceItemId, shopId, customerName, customerPhone, orderTime, receiptImage } = body;
+    if (!serviceItemId || !shopId || !customerName || !customerPhone || !orderTime || !receiptImage) {
       return NextResponse.json({ success: false, message: "Missing required booking fields." }, { status: 400 });
     }
 
@@ -38,8 +38,8 @@ export async function POST(req) {
       shopId: shop._id,
       customerId: auth.user.userId,
       customerName,
-      customerPhone: "-",
-      customerAddress: "Spa service booking",
+      customerPhone,
+      customerAddress: "-",
       serviceType: "spa",
       items: [{ itemId: service._id, name: service.name, image: service.image || null, price: totalAmount, quantity: 1, lineTotal: totalAmount }],
       bookingDetails: { note: `Requested order time: ${orderTime}` },

@@ -3,6 +3,17 @@
 import Image from "next/image";
 
 export default function OrdersPanel({ orders = [], onAction, messageSetter }) {
+  const getServiceTag = (serviceType) => {
+    const label = serviceType || "shopping";
+    const colorMap = {
+      shopping: "bg-blue-100 text-blue-700",
+      hotel: "bg-purple-100 text-purple-700",
+      spa: "bg-amber-100 text-amber-700",
+      transportation: "bg-emerald-100 text-emerald-700",
+    };
+    return { label, color: colorMap[label] || "bg-gray-100 text-gray-700" };
+  };
+
   return (
     <div className="bg-white rounded-xl shadow p-5 mb-6 max-w-3xl mx-auto">
       <h2 className="text-lg font-semibold">Orders</h2>
@@ -11,7 +22,10 @@ export default function OrdersPanel({ orders = [], onAction, messageSetter }) {
       ) : (
         <div className="mt-4 space-y-4">
           {orders.map((order) => (
-            <div key={order._id} className="rounded-xl border border-gray-200 p-4">
+            <div key={order._id} className="relative rounded-xl border border-gray-200 p-4">
+              <span className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getServiceTag(order.serviceType).color}`}>
+                {getServiceTag(order.serviceType).label}
+              </span>
               <p className="text-sm font-semibold">Order ID: {order.orderId}</p>
               {order.orderStatus === "pending" && (
                 <p className="mt-1 text-sm font-medium text-amber-700">Order pending state: wait for admin confirmation for payment.</p>
@@ -24,7 +38,13 @@ export default function OrdersPanel({ orders = [], onAction, messageSetter }) {
               )}
               <p className="text-sm">Customer: {order.customerName}</p>
               <p className="text-sm">Phone: {order.customerPhone}</p>
-              <p className="text-sm">Delivery info: {order.customerAddress}</p>
+              {order.serviceType !== "spa" ? <p className="text-sm">Delivery info: {order.customerAddress}</p> : null}
+              {order.serviceType === "spa" ? (
+                <>
+                  <p className="text-sm">Service type: {order.items?.[0]?.name || "-"}</p>
+                  <p className="text-sm">Requested time: {order.bookingDetails?.note?.replace("Requested order time: ", "") || "-"}</p>
+                </>
+              ) : null}
               <div className="mt-2 text-sm">
                 <p className="font-medium">Items</p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">

@@ -93,7 +93,7 @@ export default function ShopDetailClient({ shop, items }) {
   };
 
   const submitSpaBooking = async () => {
-    if (!bookingForm.customerName || !bookingForm.orderTime || !bookingForm.receiptImage) {
+    if (!bookingForm.customerName || !bookingForm.customerPhone || !bookingForm.orderTime || !bookingForm.receiptImage) {
       setBookingMessage("Please fill all required fields.");
       return;
     }
@@ -103,6 +103,7 @@ export default function ShopDetailClient({ shop, items }) {
         method: "POST",
         body: JSON.stringify({
           customerName: bookingForm.customerName,
+          customerPhone: bookingForm.customerPhone,
           orderTime: bookingForm.orderTime,
           receiptImage: bookingForm.receiptImage,
           serviceItemId: activeBookingItem._id,
@@ -259,7 +260,17 @@ export default function ShopDetailClient({ shop, items }) {
                     setBookingForm({ ...bookingForm, customerPhone: e.target.value })
                   }
                 /> : null}
-                {isSpa ? <input type="time" className="w-full border px-3 py-2 rounded" value={bookingForm.orderTime} onChange={(e) => setBookingForm({ ...bookingForm, orderTime: e.target.value })} /> : null}
+                {isSpa ? <input
+                  placeholder="Enter phone number"
+                  className="w-full border px-3 py-2 rounded"
+                  value={bookingForm.customerPhone}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, customerPhone: e.target.value })
+                  }
+                /> : null}
+                {isSpa ? <label className="block text-sm font-semibold text-gray-700">Order တင်လိုသည့်အချိန်
+                  <input type="time" className="mt-1 w-full border px-3 py-2 rounded" value={bookingForm.orderTime} onChange={(e) => setBookingForm({ ...bookingForm, orderTime: e.target.value })} />
+                </label> : null}
 
                 {isHotel ? <div className="grid grid-cols-2 gap-2">
                   <input
