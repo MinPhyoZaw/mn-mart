@@ -14,6 +14,8 @@ const AMENITY_META = {
 
 const HOTEL_BOOKING_TEXT =
   "Room booking တင်ရန်အတွက် အခန်းခကျသင့်ငွေမှ 5000MMK (၅ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
+const SPA_BOOKING_TEXT =
+  "Spa Service booking တင်ရန်အတွက် ကျသင့်ငွေမှ 3000MMK (၃ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
 
 export default function ShopDetailClient({ shop, items }) {
   const [activeBookingItemId, setActiveBookingItemId] = useState(null);
@@ -26,6 +28,7 @@ export default function ShopDetailClient({ shop, items }) {
     guestCount: "1",
     note: "",
     receiptImage: "",
+    orderTime: "",
   });
 
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
@@ -36,6 +39,7 @@ export default function ShopDetailClient({ shop, items }) {
     : null;
 
   const isHotel = shop?.category === "hotel";
+  const isSpa = shop?.category === "spa";
   const isShopping = shop?.category === "shopping";
   const visibleItems = isHotel ? items.filter((item) => item.isAvailable !== false) : items;
 
@@ -88,6 +92,32 @@ export default function ShopDetailClient({ shop, items }) {
     }
   };
 
+  const submitSpaBooking = async () => {
+    if (!bookingForm.customerName || !bookingForm.orderTime || !bookingForm.receiptImage) {
+      setBookingMessage("Please fill all required fields.");
+      return;
+    }
+    setBookingSubmitting(true);
+    try {
+      await fetch("/api/spa-booking", {
+        method: "POST",
+        body: JSON.stringify({
+          customerName: bookingForm.customerName,
+          orderTime: bookingForm.orderTime,
+          receiptImage: bookingForm.receiptImage,
+          serviceItemId: activeBookingItem._id,
+          shopId: shop._id,
+        }),
+      });
+      setBookingMessage("Spa booking submitted successfully");
+      setActiveBookingItemId(null);
+    } catch {
+      setBookingMessage("Error submitting booking");
+    } finally {
+      setBookingSubmitting(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
 
@@ -99,7 +129,7 @@ export default function ShopDetailClient({ shop, items }) {
       <h1 className="text-2xl font-bold mt-4">{shop.name}</h1>
 
       {/* ITEMS */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isShopping ? "lg:grid-cols-5" : "lg:grid-cols-3"} gap-4 mt-6`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isShopping || isSpa ? "lg:grid-cols-5" : "lg:grid-cols-3"} gap-4 mt-6`}>
         {visibleItems.length === 0 ? (
           <p className="text-sm text-gray-500">No available rooms right now.</p>
         ) : null}
@@ -127,8 +157,9 @@ export default function ShopDetailClient({ shop, items }) {
                 ) : null}
               </div>
 
-              {isHotel ? (
+              {isHotel || isSpa ? (
                 <>
+                  {isSpa ? <p className="mt-2 text-sm text-gray-600">Duration: {item?.extra?.durationMinutes || "-"} min</p> : null}
                   <div className="flex items-center gap-3 mt-3 text-gray-600">
                     {item?.extra?.amenities?.wifi && <Wifi size={18} />}
                     {item?.extra?.amenities?.extraBed && <BedDouble size={18} />}
@@ -140,7 +171,7 @@ export default function ShopDetailClient({ shop, items }) {
                     onClick={() => setActiveBookingItemId(item._id)}
                     className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
                   >
-                    Book Now
+                    Order Now
                   </button>
                 </>
               ) : (
@@ -162,7 +193,7 @@ export default function ShopDetailClient({ shop, items }) {
       </div>
 
       {/* MODAL */}
-      {isHotel && activeBookingItem && (
+      {(isHotel || isSpa) && activeBookingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
 
           {/* overlay */}
@@ -172,20 +203,20 @@ export default function ShopDetailClient({ shop, items }) {
           />
 
           {/* modal */}
-          <div className="relative w-full max-w-5xl bg-white rounded-xl shadow-xl flex flex-col md:flex-row overflow-hidden">
+          <div className={`relative w-full ${isSpa ? "max-w-lg" : "max-w-5xl"} bg-white rounded-2xl shadow-xl ${isSpa ? "p-6" : "flex flex-col md:flex-row overflow-hidden"}`}>
 
             {/* LEFT IMAGE */}
-            <div className="md:w-1/2 h-64 md:h-auto relative">
+            {!isSpa ? <div className="md:w-1/2 h-64 md:h-auto relative">
               <Image
                 src={activeBookingItem.image}
                 alt={activeBookingItem.name}
                 fill
                 className="object-cover"
               />
-            </div>
+            </div> : null}
 
             {/* RIGHT FORM */}
-            <div className="md:w-1/2 p-6 overflow-y-auto">
+            <div className={isSpa ? "w-full" : "md:w-1/2 p-6 overflow-y-auto"}>
 
               <button
                 onClick={() => setActiveBookingItemId(null)}
@@ -199,35 +230,38 @@ export default function ShopDetailClient({ shop, items }) {
               </h2>
 
               {/* Amenities */}
-              <div className="flex flex-wrap gap-2 mb-3">
+              {!isSpa ? <div className="flex flex-wrap gap-2 mb-3">
                 {getAmenityList(activeBookingItem).map((a, i) => (
                   <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">
                     {a.label}
                   </span>
                 ))}
-              </div>
+              </div> : null}
 
-              <div className="space-y-3">
+              <div className="space-y-4">
 
+                <label className="block text-sm font-semibold text-gray-700">Your Name
                 <input
-                  placeholder="Enter name"
-                  className="w-full border px-3 py-2 rounded"
+                  placeholder="Enter your name"
+                  className="mt-1 w-full border px-3 py-2 rounded-lg"
                   value={bookingForm.customerName}
                   onChange={(e) =>
                     setBookingForm({ ...bookingForm, customerName: e.target.value })
                   }
                 />
+                </label>
 
-                <input
+                {isHotel ? <input
                   placeholder="Enter phone number"
                   className="w-full border px-3 py-2 rounded"
                   value={bookingForm.customerPhone}
                   onChange={(e) =>
                     setBookingForm({ ...bookingForm, customerPhone: e.target.value })
                   }
-                />
+                /> : null}
+                {isSpa ? <label className="block text-sm font-semibold text-gray-700">Order Time<input type="time" className="mt-1 w-full border px-3 py-2 rounded-lg" value={bookingForm.orderTime} onChange={(e) => setBookingForm({ ...bookingForm, orderTime: e.target.value })} /></label> : null}
 
-                <div className="grid grid-cols-2 gap-2">
+                {isHotel ? <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     placeholder="Enter guest number"
@@ -250,7 +284,7 @@ export default function ShopDetailClient({ shop, items }) {
                       })
                     }
                   />
-                </div>
+                </div> : null}
 
                 <textarea
                   placeholder="Note"
@@ -261,8 +295,8 @@ export default function ShopDetailClient({ shop, items }) {
                   }
                 />
 
-                <div className="border p-3 bg-gray-50 text-sm">
-                  {HOTEL_BOOKING_TEXT}
+                <div className="border p-3 bg-gray-50 text-sm leading-7 min-h-28">
+                  {isSpa ? SPA_BOOKING_TEXT : HOTEL_BOOKING_TEXT}
                 </div>
 
                 {/* QR */}
@@ -273,14 +307,16 @@ export default function ShopDetailClient({ shop, items }) {
                   <Image src="/images/logo.png" alt="QR" fill />
                 </div>
 
-                <input type="file" onChange={handleReceiptUpload} />
+                <label className="block text-sm font-semibold text-gray-700">Upload the receipt
+                  <input type="file" onChange={handleReceiptUpload} className="mt-1 w-full rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-white" />
+                </label>
 
                 <button
-                  onClick={submitHotelBooking}
+                  onClick={isSpa ? submitSpaBooking : submitHotelBooking}
                   disabled={bookingSubmitting}
                   className="w-full bg-yellow-500 text-white py-2 rounded"
                 >
-                  {bookingSubmitting ? "Submitting..." : "Confirm Order"}
+                  {bookingSubmitting ? "Submitting..." : "Submit Order"}
                 </button>
 
                 {bookingMessage && (

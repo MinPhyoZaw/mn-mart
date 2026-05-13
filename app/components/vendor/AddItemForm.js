@@ -12,6 +12,9 @@ const TYPE_MAP = {
 
 const INITIAL_FORM = {
   name: "",
+  duration: "",
+  customDuration: "",
+  availableTime: "",
   price: "",
   quantity: "",
   category: "",
@@ -154,7 +157,35 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
         </>
       );
     if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
-    if (serviceType === "spa") return <input name="duration" placeholder="Duration (e.g. 60 min)" value={form.duration || ""} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
+    if (serviceType === "spa")
+      return (
+        <>
+          <input name="name" placeholder="Service Name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
+          <select name="duration" value={form.duration || ""} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required>
+            <option value="" disabled>Select duration</option>
+            <option value="30">30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">60 minutes</option>
+            <option value="custom">Custom</option>
+          </select>
+          {form.duration === "custom" ? (
+            <input
+              name="customDuration"
+              type="number"
+              min="1"
+              placeholder="Custom duration (minutes)"
+              value={form.customDuration || ""}
+              onChange={(e) => setForm((p) => ({ ...p, customDuration: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              required
+            />
+          ) : null}
+          <div>
+            <label className="block text-sm font-medium mb-1">Available time</label>
+            <input name="availableTime" type="time" value={form.availableTime || ""} onChange={(e) => setForm((p) => ({ ...p, availableTime: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />
+          </div>
+        </>
+      );
     if (serviceType === "shopping") {
       return (
         <>
@@ -208,7 +239,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     setSubmitting(true);
     const defaultNameByServiceType = {
       hotel: form.roomType,
-      spa: "Spa Service",
+      spa: form.name,
       shopping: form.name,
       transportation: "Transportation Ticket",
     };
@@ -227,6 +258,13 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
     if (serviceType === "shopping") {
       payload.extra = { quantity: Number(form.quantity || 0) };
+    }
+    if (serviceType === "spa") {
+      const durationMinutes = form.duration === "custom" ? Number(form.customDuration) : Number(form.duration);
+      payload.extra = {
+        durationMinutes,
+        availableTime: form.availableTime,
+      };
     }
 
     if (serviceType === "transportation") {
@@ -257,5 +295,5 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     } catch { setMessage?.("Server error while creating item/service"); } finally { setSubmitting(false); }
   };
 
-  return <div className="bg-white rounded-xl shadow p-5"><h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2>{routeTemplateForm}<form onSubmit={handleSubmit} className="space-y-3"><input name="price" type="number" min="0" step="0.01" placeholder="Price" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /><input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 rounded-lg px-4 py-2" required={!form.image} />{dynamicFields}<button type="submit" disabled={submitting || uploadingImage} className="bg-green-600 text-white px-4 py-2 rounded-lg">{submitting ? "Saving..." : "Create"}</button></form></div>;
+  return <div className="bg-white rounded-xl shadow p-5"><h2 className="text-lg font-semibold mb-3">{FORM_TITLE[serviceType] || "Add New Service/Item"}</h2>{routeTemplateForm}<form onSubmit={handleSubmit} className="space-y-3">{serviceType === "spa" ? <><input name="name" placeholder="Service Name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /><input name="price" type="number" min="0" step="0.01" placeholder="Price" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /><input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 rounded-lg px-4 py-2" required={!form.image} /><select name="duration" value={form.duration || ""} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required><option value="" disabled>Select duration</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option><option value="custom">Custom</option></select>{form.duration === "custom" ? <input name="customDuration" type="number" min="1" placeholder="Custom duration (minutes)" value={form.customDuration || ""} onChange={(e) => setForm((p) => ({ ...p, customDuration: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /> : null}<div><label className="block text-sm font-medium mb-1">Available time</label><input name="availableTime" type="time" value={form.availableTime || ""} onChange={(e) => setForm((p) => ({ ...p, availableTime: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /></div></> : <><input name="price" type="number" min="0" step="0.01" placeholder="Price" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required /><input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 rounded-lg px-4 py-2" required={!form.image} />{dynamicFields}</>}<button type="submit" disabled={submitting || uploadingImage} className="bg-green-600 text-white px-4 py-2 rounded-lg">{submitting ? "Saving..." : "Create"}</button></form></div>;
 }
