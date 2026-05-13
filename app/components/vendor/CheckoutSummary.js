@@ -1,6 +1,7 @@
 "use client";
 
 export default function CheckoutSummary({ vendor, shop, checkoutSummary, serviceType }) {
+  const isSpa = serviceType === "spa";
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-2">Vendor Dashboard</h1>
@@ -19,7 +20,7 @@ export default function CheckoutSummary({ vendor, shop, checkoutSummary, service
         Today Payment Summary
       </h2>
       <p className="text-sm text-gray-500 mt-1">
-        Overview of today’s shop earnings and admin commission
+        {isSpa ? "Overview of today’s shop earnings and fixed spa admin fee" : "Overview of today’s shop earnings and admin commission"}
       </p>
     </div>
 
@@ -42,14 +43,14 @@ export default function CheckoutSummary({ vendor, shop, checkoutSummary, service
 
     {/* Admin Profit */}
     <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-100 rounded-xl p-4 hover:shadow-md transition">
-      <p className="text-sm text-gray-500">Admin Commission</p>
+      <p className="text-sm text-gray-500">{isSpa ? "Admin Fee" : "Admin Commission"}</p>
       <h3 className="text-2xl font-bold text-orange-600 mt-2">
         {Number(checkoutSummary?.todayAmountToAdmin || 0).toLocaleString()}
         <span className="text-sm ml-1 font-medium">MMK</span>
       </h3>
 
       <p className="text-xs text-gray-400 mt-1">
-        1.5% service fee
+        {isSpa ? "Fixed 3000 MMK per approved spa service booking" : "1.5% service fee"}
       </p>
     </div>
   </div>
