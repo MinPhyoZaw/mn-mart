@@ -49,6 +49,8 @@ export default function VendorForm() {
     address: "",
     description: "",
     shopImage: "",
+    kbzPayNumber: "",
+    wavePayNumber: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -195,6 +197,33 @@ export default function VendorForm() {
               <option value="spa">Spa</option>
             </select>
           </div>
+
+          {formData.vendorType === "transportation" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">KBZ Pay Number</label>
+                <input
+                  type="text"
+                  name="kbzPayNumber"
+                  value={formData.kbzPayNumber}
+                  onChange={handleChange}
+                  placeholder="e.g. 09xxxxxxxxx"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Wave Pay Number</label>
+                <input
+                  type="text"
+                  name="wavePayNumber"
+                  value={formData.wavePayNumber}
+                  onChange={handleChange}
+                  placeholder="e.g. 09xxxxxxxxx"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Business Phone</label>

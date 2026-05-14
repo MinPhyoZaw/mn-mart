@@ -63,6 +63,8 @@ export async function PATCH(req, context) {
         address,
         description: vr.description || "",
         image: vr.shopImage || null,
+        kbzPayNumber: vr.kbzPayNumber || "",
+        wavePayNumber: vr.wavePayNumber || "",
       };
 
       const shop = existingShop

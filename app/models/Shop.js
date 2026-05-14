@@ -35,6 +35,16 @@ const shopSchema = new mongoose.Schema({
     default: null
   },
 
+  kbzPayNumber: {
+    type: String,
+    default: ""
+  },
+
+  wavePayNumber: {
+    type: String,
+    default: ""
+  },
+
   // ✅ Main Image (single)
   image: {
     type: String,
