@@ -160,7 +160,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 border-b border-gray-100/80 bg-white/95 backdrop-blur">
+      <nav className="sticky top-0 z-50 border-b border-gray-100/80 bg-white backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex h-16 items-center justify-between">
             <Link
