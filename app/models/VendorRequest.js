@@ -10,6 +10,8 @@ const vendorRequestSchema = new mongoose.Schema(
     description: String,
     shopImage: String,
     contactPerson: String,
+    kbzPayNumber: { type: String, default: "" },
+    wavePayNumber: { type: String, default: "" },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
