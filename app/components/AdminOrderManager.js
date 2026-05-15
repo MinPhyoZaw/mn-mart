@@ -52,6 +52,17 @@ export default function AdminOrderManager() {
     return { label, color: colorMap[label] || "bg-gray-100 text-gray-700" };
   };
 
+  const getTransportLocation = (order, type) => {
+    const detailsValue =
+      type === "from" ? order?.transportationDetails?.fromCity : order?.transportationDetails?.toCity;
+    if (detailsValue) return detailsValue;
+
+    const note = order?.bookingDetails?.note || "";
+    const match = note.match(/From\s+(.+?)\s+to\s+(.+)/i);
+    if (!match) return "-";
+    return type === "from" ? match[1]?.trim() || "-" : match[2]?.trim() || "-";
+  };
+
   if (loading) return <p className="text-sm text-gray-500 mt-3">Loading orders...</p>;
 
   return (
@@ -84,8 +95,8 @@ export default function AdminOrderManager() {
                   {order.serviceType === "transportation" ? (
                     <>
                       <p className="md:col-span-2 font-medium text-emerald-700">Ticket information</p>
-                      <p>From city: {order.transportationDetails?.fromCity || "-"}</p>
-                      <p>To city: {order.transportationDetails?.toCity || "-"}</p>
+                      <p>From city: {getTransportLocation(order, "from")}</p>
+                      <p>To city: {getTransportLocation(order, "to")}</p>
                       <p>Departure date: {order.transportationDetails?.departureDate || "-"}</p>
                       <p>Departure time: {order.transportationDetails?.departureTime || "-"}</p>
                     </>

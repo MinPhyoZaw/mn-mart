@@ -2,8 +2,23 @@ import { NextResponse } from "next/server";
 import connectDB from "../../../lib/mongodb";
 import { requireAuth } from "../../../lib/routeAuth";
 import Order from "../../../models/Order";
+import Vendor from "../../../models/Vendor";
 
 const toNotification = (order) => {
+  if (order.role === "admin") {
+    return {
+      type: "new-order",
+      text: `New order ${order.orderId} from ${order.customerName || "customer"} is waiting for admin review.`,
+    };
+  }
+
+  if (order.role === "vendor") {
+    return {
+      type: "new-order",
+      text: `New order ${order.orderId} is ready for vendor action.`,
+    };
+  }
+
   if (order.orderStatus === "confirmed" && order.vendorStatus === "accepted" && order.serviceType === "hotel") {
     return {
       type: "confirmed",
@@ -47,10 +62,32 @@ export async function GET(req) {
 
     await connectDB();
 
-    const orders = await Order.find({ customerId: auth.user.userId, customerNotificationRead: false })
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .lean();
+    let orders = [];
+
+    if (auth.user.role === "customer") {
+      orders = await Order.find({ customerId: auth.user.userId, customerNotificationRead: { $ne: true } })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
+    }
+
+    if (auth.user.role === "admin") {
+      orders = await Order.find({ orderStatus: "pending", adminNotificationRead: { $ne: true } })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
+      orders = orders.map((order) => ({ ...order, role: "admin" }));
+    }
+
+    if (auth.user.role === "vendor") {
+      const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
+      if (!vendor) return NextResponse.json({ success: true, data: [] });
+      orders = await Order.find({ vendorId: vendor._id, orderStatus: "pending", vendorNotificationRead: { $ne: true } })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
+      orders = orders.map((order) => ({ ...order, role: "vendor" }));
+    }
 
     const notifications = orders.map((order) => ({
       _id: order._id,
@@ -69,7 +106,7 @@ export async function GET(req) {
 
 export async function PATCH(req) {
   try {
-    const auth = requireAuth(req, ["customer"]);
+    const auth = requireAuth(req, ["customer", "admin", "vendor"]);
     if (!auth.ok) return auth.response;
 
     const { orderId } = await req.json();
@@ -79,11 +116,25 @@ export async function PATCH(req) {
 
     await connectDB();
 
-    const updatedOrder = await Order.findOneAndUpdate(
-      { _id: orderId, customerId: auth.user.userId },
-      { customerNotificationRead: true },
-      { new: true }
-    ).lean();
+    let query = {};
+    let update = {};
+
+    if (auth.user.role === "customer") {
+      query = { _id: orderId, customerId: auth.user.userId };
+      update = { customerNotificationRead: true };
+    } else if (auth.user.role === "admin") {
+      query = { _id: orderId };
+      update = { adminNotificationRead: true };
+    } else if (auth.user.role === "vendor") {
+      const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
+      if (!vendor) {
+        return NextResponse.json({ success: false, message: "Vendor profile not found." }, { status: 404 });
+      }
+      query = { _id: orderId, vendorId: vendor._id };
+      update = { vendorNotificationRead: true };
+    }
+
+    const updatedOrder = await Order.findOneAndUpdate(query, update, { new: true }).lean();
 
     if (!updatedOrder) {
       return NextResponse.json({ success: false, message: "Notification not found." }, { status: 404 });
