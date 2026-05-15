@@ -269,6 +269,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
     if (serviceType === "transportation") {
       payload.name = `Ticket ${form.departureDate} ${form.departureTime}`;
+      const selectedRoute = routes.find((r) => String(r._id) === String(form.routeId));
       payload.extra = {
         routeId: form.routeId,
         companyId: form.companyId,
@@ -282,6 +283,8 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
         instantConfirm: Boolean(form.instantConfirm),
         status: form.status,
         driverPhone: form.driverPhone || null,
+        fromCity: selectedRoute?.fromCity || (form.fromCity || ""),
+        toCity: selectedRoute?.toCity || (form.toCity || ""),
       };
     }
 

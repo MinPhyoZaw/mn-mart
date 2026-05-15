@@ -4,6 +4,7 @@ import { requireAuth } from "../../lib/routeAuth";
 import Order from "../../models/Order";
 import Item from "../../models/Item";
 import Shop from "../../models/Shop";
+import TransportationRoute from "../../models/TransportationRoute";
 
 const DEPOSIT_AMOUNT = 5000;
 
@@ -31,6 +32,21 @@ export async function POST(req) {
     const ticketPrice = Number(ticketItem.price || 0);
     const leftToPay = Math.max(ticketPrice - DEPOSIT_AMOUNT, 0);
 
+    // Ensure ticketItem.extra contains route details (for older items that stored only routeId)
+    let fromCity = ticketItem?.extra?.fromCity || null;
+    let toCity = ticketItem?.extra?.toCity || null;
+    if ((!fromCity || !toCity) && ticketItem?.extra?.routeId) {
+      try {
+        const route = await TransportationRoute.findById(ticketItem.extra.routeId).lean();
+        if (route) {
+          fromCity = route.fromCity;
+          toCity = route.toCity;
+        }
+      } catch (e) {
+        // ignore lookup failure and fallback to ticketItem.extra values
+      }
+    }
+
     const order = await Order.create({
       orderId: `ORD-${Date.now()}`,
       vendorId: shop.vendorId,
@@ -50,10 +66,10 @@ export async function POST(req) {
       vendorEarning: ticketPrice,
       orderStatus: "confirmed",
       adminNotificationRead: true,
-      bookingDetails: { note: `From ${ticketItem?.extra?.fromCity || "-"} to ${ticketItem?.extra?.toCity || "-"}` },
+      bookingDetails: { note: `From ${fromCity || "-"} to ${toCity || "-"}` },
       transportationDetails: {
-        fromCity: ticketItem?.extra?.fromCity || "-",
-        toCity: ticketItem?.extra?.toCity || "-",
+        fromCity: fromCity || "-",
+        toCity: toCity || "-",
         departureDate: ticketItem?.extra?.departureDate || "",
         departureTime: ticketItem?.extra?.departureTime || "",
         depositAmount: DEPOSIT_AMOUNT,
