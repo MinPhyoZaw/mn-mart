@@ -13,6 +13,13 @@ const getDayRange = () => {
   return { start, end };
 };
 
+const getMonthRange = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+};
+
 export async function GET(req) {
   try {
     const auth = requireAuth(req, ["vendor", "admin"]);
@@ -34,8 +41,17 @@ export async function GET(req) {
       createdAt: { $gte: start, $lte: end },
     }).lean();
 
+    const { start: monthStart, end: monthEnd } = getMonthRange();
+    const monthlyOrders = await Order.find({
+      vendorId: vendor._id,
+      orderStatus: "confirmed",
+      vendorStatus: "accepted",
+      createdAt: { $gte: monthStart, $lte: monthEnd },
+    }).lean();
+
     const salesAmount = todayOrders.reduce((sum, order) => sum + (order.vendorEarning || 0), 0);
     const commissionAmount = todayOrders.reduce((sum, order) => sum + (order.commissionAmount || 0), 0);
+    const monthlyCommissionAmount = monthlyOrders.reduce((sum, order) => sum + (order.commissionAmount || 0), 0);
 
     return NextResponse.json({
       success: true,
@@ -43,6 +59,7 @@ export async function GET(req) {
         vendorName: vendor.vendorName,
         todaySalesAmount: salesAmount,
         todayAmountToAdmin: commissionAmount,
+        monthAmountToAdmin: monthlyCommissionAmount,
         todayOrderCount: todayOrders.length,
       },
     });

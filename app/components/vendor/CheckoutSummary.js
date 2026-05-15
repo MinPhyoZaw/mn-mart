@@ -43,15 +43,11 @@ export default function CheckoutSummary({ vendor, shop, checkoutSummary, service
 
     {/* Admin Profit */}
     <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-100 rounded-xl p-4 hover:shadow-md transition">
-      <p className="text-sm text-gray-500">{isSpa ? "Admin Fee" : "Admin Commission"}</p>
+      <p className="text-sm text-gray-500">Monthly Pay to Admin</p>
       <h3 className="text-2xl font-bold text-orange-600 mt-2">
-        {Number(checkoutSummary?.todayAmountToAdmin || 0).toLocaleString()}
+        {Number(checkoutSummary?.monthAmountToAdmin || 0).toLocaleString()}
         <span className="text-sm ml-1 font-medium">MMK</span>
       </h3>
-
-      <p className="text-xs text-gray-400 mt-1">
-        {isSpa ? "Fixed 3000 MMK per approved spa service booking" : "1.5% service fee"}
-      </p>
     </div>
   </div>
 
