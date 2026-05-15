@@ -43,10 +43,13 @@ export async function POST(req) {
       items: [{ itemId: ticketItem._id, name: ticketItem.name, image: ticketItem.image || null, price: ticketPrice, quantity: 1, lineTotal: ticketPrice }],
       receiptImage,
       paymentProvider: "kbzpay",
+      paymentStatus: "paid",
       totalAmount: ticketPrice,
       commissionRate: 1.5,
       commissionAmount: 0,
       vendorEarning: ticketPrice,
+      orderStatus: "confirmed",
+      adminNotificationRead: true,
       bookingDetails: { note: `From ${ticketItem?.extra?.fromCity || "-"} to ${ticketItem?.extra?.toCity || "-"}` },
       transportationDetails: {
         fromCity: ticketItem?.extra?.fromCity || "-",

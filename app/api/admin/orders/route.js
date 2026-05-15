@@ -10,7 +10,7 @@ export async function GET(req) {
 
     await connectDB();
 
-    const orders = await Order.find({})
+    const orders = await Order.find({ serviceType: { $ne: "transportation" } })
       .populate("vendorId", "vendorName")
       .populate("shopId", "name")
       .sort({ createdAt: -1 })
