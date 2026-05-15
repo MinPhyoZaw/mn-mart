@@ -66,7 +66,7 @@ export default function TransportationTicketCard({ shopId, shopPhone, shopKbzPay
           </div>
           <div className="mt-2 grid grid-cols-1 gap-2 rounded border border-green-200 bg-white p-2">
             <label className="text-xs font-semibold">Route</label>
-            <input className="rounded border px-2 py-2 text-xs" value={form.route} onChange={(e) => setForm({ ...form, route: e.target.value })} />
+            <input className="rounded border px-2 py-2 text-xs bg-gray-100 text-gray-600" value={form.route} readOnly />
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-xs font-semibold">Date</label>
@@ -74,7 +74,7 @@ export default function TransportationTicketCard({ shopId, shopPhone, shopKbzPay
               </div>
               <div>
                 <label className="text-xs font-semibold">Time</label>
-                <input className="mt-1 w-full rounded border px-2 py-2 text-xs" value={form.departureTime} onChange={(e) => setForm({ ...form, departureTime: e.target.value })} />
+                <input className="mt-1 w-full rounded border px-2 py-2 text-xs bg-gray-100 text-gray-600" value={form.departureTime} readOnly />
               </div>
             </div>
           </div>

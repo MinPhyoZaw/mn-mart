@@ -162,25 +162,59 @@ export default function Navbar() {
     const detail = notice?.ticketDetails;
     if (!detail) return;
 
-    const content = [
+    const escapePdfText = (text) => String(text || "").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+    const routeText = `${detail.fromCity || "-"} -> ${detail.toCity || "-"}`;
+    const lines = [
       "MN Mart Transportation E-Ticket",
-      "================================",
       `Order ID: ${detail.orderId || "-"}`,
       `Ticket: ${detail.ticketName || "Transportation Ticket"}`,
       `Customer: ${detail.customerName || "-"}`,
       `Phone: ${detail.customerPhone || "-"}`,
-      `Route: ${detail.fromCity || "-"} -> ${detail.toCity || "-"}`,
+      `Route: ${routeText}`,
       `Departure Date: ${detail.departureDate || "-"}`,
       `Departure Time: ${detail.departureTime || "-"}`,
       `Paid Deposit: ${Number(detail.paidDeposit || 0).toLocaleString()} MMK`,
       `Left To Pay: ${Number(detail.leftToPay || 0).toLocaleString()} MMK`,
-    ].join("\n");
+    ];
 
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    let y = 790;
+    const textOps = lines
+      .map((line) => {
+        const op = `1 0 0 1 50 ${y} Tm (${escapePdfText(line)}) Tj`;
+        y -= 24;
+        return op;
+      })
+      .join("\n");
+    const stream = `BT\n/F1 12 Tf\n${textOps}\nET`;
+    const streamLength = new TextEncoder().encode(stream).length;
+    const pdf = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length ${streamLength} >>
+stream
+${stream}
+endstream
+endobj
+trailer
+<< /Root 1 0 R >>
+%%EOF`;
+
+    const blob = new Blob([pdf], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${detail.orderId || "transport-ticket"}.txt`;
+    link.download = `${detail.orderId || "transport-ticket"}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
