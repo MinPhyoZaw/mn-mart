@@ -74,11 +74,20 @@ export default function AdminOrderManager() {
                   <p>Shop name: {order.shopId?.name || "Unknown"}</p>
                   <p>Customer: {order.customerName}</p>
                   <p>Phone: {order.customerPhone}</p>
-                  {order.serviceType !== "spa" ? <p className="md:col-span-2">Address: {order.customerAddress}</p> : null}
+                  {["shopping", "hotel"].includes(order.serviceType) ? <p className="md:col-span-2">Address: {order.customerAddress}</p> : null}
                   {order.serviceType === "spa" ? (
                     <>
                       <p>Service type: {order.items?.[0]?.name || "-"}</p>
                       <p>Requested time: {order.bookingDetails?.note?.replace("Requested order time: ", "") || "-"}</p>
+                    </>
+                  ) : null}
+                  {order.serviceType === "transportation" ? (
+                    <>
+                      <p className="md:col-span-2 font-medium text-emerald-700">Ticket information</p>
+                      <p>From city: {order.transportationDetails?.fromCity || "-"}</p>
+                      <p>To city: {order.transportationDetails?.toCity || "-"}</p>
+                      <p>Departure date: {order.transportationDetails?.departureDate || "-"}</p>
+                      <p>Departure time: {order.transportationDetails?.departureTime || "-"}</p>
                     </>
                   ) : null}
                   <p>Total amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
