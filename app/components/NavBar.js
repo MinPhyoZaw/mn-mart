@@ -156,6 +156,37 @@ export default function Navbar() {
     }
   };
 
+
+
+  const downloadTransportationTicket = (notice) => {
+    const detail = notice?.ticketDetails;
+    if (!detail) return;
+
+    const content = [
+      "MN Mart Transportation E-Ticket",
+      "================================",
+      `Order ID: ${detail.orderId || "-"}`,
+      `Ticket: ${detail.ticketName || "Transportation Ticket"}`,
+      `Customer: ${detail.customerName || "-"}`,
+      `Phone: ${detail.customerPhone || "-"}`,
+      `Route: ${detail.fromCity || "-"} -> ${detail.toCity || "-"}`,
+      `Departure Date: ${detail.departureDate || "-"}`,
+      `Departure Time: ${detail.departureTime || "-"}`,
+      `Paid Deposit: ${Number(detail.paidDeposit || 0).toLocaleString()} MMK`,
+      `Left To Pay: ${Number(detail.leftToPay || 0).toLocaleString()} MMK`,
+    ].join("\n");
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${detail.orderId || "transport-ticket"}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
   return (
@@ -269,6 +300,22 @@ export default function Navbar() {
                                       <span className="mt-1 block rounded border border-green-200 bg-green-50 px-2 py-1 text-green-700">
                                         {notice.thankYouMessage}
                                       </span>
+                                    )}
+                                    {notice.ticketDetails && (
+                                      <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-900">
+                                        <p className="font-semibold">{notice.ticketDetails.ticketName}</p>
+                                        <p>Route: {notice.ticketDetails.fromCity} → {notice.ticketDetails.toCity}</p>
+                                        <p>Departure: {notice.ticketDetails.departureDate} {notice.ticketDetails.departureTime}</p>
+                                        <p>Deposit Paid: {Number(notice.ticketDetails.paidDeposit || 0).toLocaleString()} MMK</p>
+                                        <p>Left to Pay: {Number(notice.ticketDetails.leftToPay || 0).toLocaleString()} MMK</p>
+                                        <button
+                                          type="button"
+                                          onClick={() => downloadTransportationTicket(notice)}
+                                          className="mt-2 rounded-md bg-emerald-600 px-2 py-1 text-white hover:bg-emerald-700"
+                                        >
+                                          Download ticket
+                                        </button>
+                                      </div>
                                     )}
                                   </span>
                                 </label>

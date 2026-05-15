@@ -47,6 +47,7 @@ export default function OrdersPanel({ orders = [], onAction, messageSetter }) {
               ) : null}
               {order.serviceType === "transportation" ? (
                 <>
+                  <p className="text-sm font-semibold text-emerald-700">Ticket: {order.items?.[0]?.name || "Transportation Ticket"}</p>
                   <p className="text-sm">Route: {order.transportationDetails?.fromCity || "-"} - {order.transportationDetails?.toCity || "-"}</p>
                   <p className="text-sm">Date/Time: {order.transportationDetails?.departureDate || "-"} {order.transportationDetails?.departureTime || ""}</p>
                   <p className="text-sm font-medium text-emerald-700">Paid 5000MMK as Deposit</p>

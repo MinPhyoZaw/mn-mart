@@ -29,8 +29,20 @@ const toNotification = (order) => {
   if (order.orderStatus === "confirmed" && order.serviceType === "transportation" && order.vendorStatus === "accepted") {
     return {
       type: "confirmed",
-      text: "Your transportation ticket is accepted by vendor.",
-      thankYouMessage: "Download your ticket and show it to vendor on ride day.",
+      text: "Your ticket buying is successfully.",
+      thankYouMessage: "Please download your ticket and show it to the vendor on ride day.",
+      ticketDetails: {
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        ticketName: order.items?.[0]?.name || "Transportation Ticket",
+        fromCity: order.transportationDetails?.fromCity || "-",
+        toCity: order.transportationDetails?.toCity || "-",
+        departureDate: order.transportationDetails?.departureDate || "-",
+        departureTime: order.transportationDetails?.departureTime || "-",
+        paidDeposit: Number(order.transportationDetails?.depositAmount || 0),
+        leftToPay: Number(order.transportationDetails?.leftToPayAmount || 0),
+        orderId: order.orderId,
+      },
     };
   }
 
@@ -72,7 +84,7 @@ export async function GET(req) {
     }
 
     if (auth.user.role === "admin") {
-      orders = await Order.find({ orderStatus: "pending", adminNotificationRead: { $ne: true } })
+      orders = await Order.find({ orderStatus: "pending", serviceType: { $ne: "transportation" }, adminNotificationRead: { $ne: true } })
         .sort({ createdAt: -1 })
         .limit(20)
         .lean();
