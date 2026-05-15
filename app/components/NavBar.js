@@ -67,7 +67,7 @@ export default function Navbar() {
         const data = await res.json();
         setUser(data.user);
 
-        if (data.user?.role === "customer") {
+        if (["customer", "admin", "vendor"].includes(data.user?.role)) {
           const noticeRes = await fetch("/api/orders/notifications", { cache: "no-store" });
           const noticeData = await noticeRes.json();
           if (noticeData.success) {
@@ -235,7 +235,7 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  {user.role === "customer" && (
+                  {["customer", "admin", "vendor"].includes(user.role) && (
                     <div className="relative">
                       <button
                         type="button"
@@ -359,7 +359,7 @@ export default function Navbar() {
                   )}
 
                   <div className="grid grid-cols-2 gap-2">
-                    {user.role === "customer" && (
+                    {["customer", "admin", "vendor"].includes(user.role) && (
                       <button
                         type="button"
                         onClick={() => setIsNotificationsOpen((prev) => !prev)}
@@ -395,7 +395,7 @@ export default function Navbar() {
                     </button>
                   </div>
 
-                  {user.role === "customer" && isNotificationsOpen && (
+                  {["customer", "admin", "vendor"].includes(user.role) && isNotificationsOpen && (
                     <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
                       {notifications.length === 0 ? (
                         <p className="text-xs text-gray-500">No notifications yet.</p>
