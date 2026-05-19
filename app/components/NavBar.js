@@ -227,23 +227,11 @@ trailer
     <>
       <nav className="sticky top-0 z-50 border-b border-gray-100/80 bg-white backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex h-16 items-center justify-between">
-            <Link
-  href="/"
-  className="group flex items-center gap-3"
->
+          <div className="flex h-20 items-center justify-between">
+            <Link href="/" className="flex items-center gap-3">
   {/* Logo Container */}
-  <div className="relative h-19 w-19 rounded-2xl overflow-hidden bg-white transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl">
-
-    {/* Glow Effect */}
-    <div className="absolute "></div>
-
-    <Image
-      src="/images/logo.jpg"
-      alt="MN Mart"
-      fill
-      className="object-cover relative z-10"
-    />
+  <div className="relative h-15 w-15  overflow-hidden bg-white ">
+    <Image src="/images/logo.jpg" alt="MN Mart" fill className="object-cover relative z-10" />
   </div>
 
   {/* Brand Text */}
