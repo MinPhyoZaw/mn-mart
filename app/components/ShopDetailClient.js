@@ -1,6 +1,7 @@
 "use client";
 import { Wifi, BedDouble, Tv, Coffee } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
+import { normalizeWholesaleTiers } from "../lib/pricing";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -153,6 +154,7 @@ export default function ShopDetailClient({ shop, items }) {
                 <span className="text-black font-semibold text-lg">
                   {Number(item.price || 0).toLocaleString()} MMK
                 </span>
+                {isShopping ? <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-2 text-xs text-green-800"><p className="font-semibold">Retail Price: {Number(item.retailPrice ?? item.price ?? 0).toLocaleString()} MMK</p>{normalizeWholesaleTiers(item.wholesaleTiers).length ? <div className="mt-1 space-y-1">{normalizeWholesaleTiers(item.wholesaleTiers).map((tier) => <p key={tier.minQty}>{tier.minQty}+ pcs → {Number(tier.price).toLocaleString()} MMK</p>)}</div> : <p className="mt-1 text-green-700/80">No wholesale tiers</p>}</div> : null}
                 {isHotel ? (
                   <span className="text-gray-400 text-sm font-light ml-1">/ night</span>
                 ) : null}
@@ -181,6 +183,8 @@ export default function ShopDetailClient({ shop, items }) {
                     _id: item._id,
                     name: item.name,
                     price: Number(item.price) || 0,
+                    retailPrice: Number(item.retailPrice ?? item.price) || 0,
+                    wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
                     image: item.image,
                     shopId: shop._id,
                     shopName: shop.name,

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { getWholesalePrice, normalizeWholesaleTiers } from "../lib/pricing";
 
 const CART_STORAGE_PREFIX = "mn-mart-cart";
 
@@ -23,6 +24,8 @@ export function CartProvider({ children }) {
       vendorName: item.vendorName || "Unknown Vendor",
       name: item.name || "Unnamed Item",
       price: Number(item.price) || 0,
+      retailPrice: Number(item.retailPrice ?? item.price) || 0,
+      wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
       image: item.image || null,
       quantity,
     };
@@ -94,6 +97,8 @@ export function CartProvider({ children }) {
           vendorName: item.vendorName,
           name: item.name,
           price: Number(item.price) || 0,
+      retailPrice: Number(item.retailPrice ?? item.price) || 0,
+      wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
           image: item.image || null,
           quantity: 1,
         },
@@ -103,11 +108,11 @@ export function CartProvider({ children }) {
 
   const incrementItem = (itemId, shopId) => {
     setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === itemId && item.shopId === shopId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
+      prevItems.map((item) => {
+        if (item._id !== itemId || item.shopId !== shopId) return item;
+        const quantity = item.quantity + 1;
+        return { ...item, quantity, price: getWholesalePrice(item, quantity) };
+      })
     );
   };
 
@@ -116,7 +121,10 @@ export function CartProvider({ children }) {
       prevItems
         .map((item) =>
           item._id === itemId && item.shopId === shopId
-            ? { ...item, quantity: Math.max(item.quantity - 1, 0) }
+            ? (() => {
+                const quantity = Math.max(item.quantity - 1, 0);
+                return { ...item, quantity, price: getWholesalePrice(item, quantity || 1) };
+              })()
             : item
         )
         .filter((item) => item.quantity > 0)
