@@ -22,6 +22,14 @@ function normalizeTagName(tagName) {
   const normalized = tagName.trim().toLowerCase().replace(/\s+/g, "");
   return TAG_NAME_ALIASES[normalized] || tagName.trim();
 }
+
+function normalizeWholesaleTiers(tiers = []) {
+  return (Array.isArray(tiers) ? tiers : [])
+    .map((tier) => ({ minQty: Number(tier?.minQty), price: Number(tier?.price) }))
+    .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price >= 0)
+    .sort((a, b) => a.minQty - b.minQty);
+}
+
 const SHOPPING_CATEGORIES = [
   "electronics",
   "fashion",
@@ -94,11 +102,16 @@ export async function POST(req) {
       }
     }
 
+    const retailPrice = body.type === "product" ? Number(body.retailPrice ?? body.price) : undefined;
+    const wholesaleTiers = body.type === "product" ? normalizeWholesaleTiers(body.wholesaleTiers ?? body?.extra?.wholesaleTiers ?? []) : [];
+
     const createdItem = await Item.create({
       shopId: body.shopId,
       name: body.name,
       price: body.price,
       description: body.description,
+      retailPrice: body.type === "product" ? retailPrice : undefined,
+      wholesaleTiers: body.type === "product" ? wholesaleTiers.filter((tier) => tier.price < retailPrice) : [],
       image: body.image,
       type: body.type,
       category: body.type === "product" ? normalizedCategory : undefined,

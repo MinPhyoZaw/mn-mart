@@ -8,6 +8,8 @@ type Props = {
     _id: string;
     name: string;
     price: number;
+    retailPrice?: number;
+    wholesaleTiers?: { minQty: number; price: number }[];
     image?: string;
     shopId?: string;
     shopName?: string;
@@ -24,6 +26,8 @@ export default function AddToCartButton({ product }: Props) {
       name: product.name,
       price: product.price,
       image: product.image || null,
+      retailPrice: product.retailPrice ?? product.price,
+      wholesaleTiers: product.wholesaleTiers || [],
       shopId: product.shopId || "",
       shopName: product.shopName || "",
       vendorId: product.vendorId || product.shopId || "",
