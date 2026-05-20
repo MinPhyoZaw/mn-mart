@@ -58,7 +58,7 @@ export default function CartDrawer() {
 
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold line-clamp-1">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.price.toLocaleString()} MMK</p>
+                      <p className="text-sm text-gray-600">{item.price.toLocaleString()} MMK / item</p>{item.retailPrice > item.price ? <p className="text-xs text-green-700">You save {((item.retailPrice - item.price) * item.quantity).toLocaleString()} MMK</p> : null}
 
                       <div className="mt-2 inline-flex items-center border rounded-md overflow-hidden">
                         <button
@@ -68,7 +68,7 @@ export default function CartDrawer() {
                         >
                           <Minus size={15} />
                         </button>
-                        <span className="px-3 py-1 text-sm">{item.quantity}</span>
+                        <span className="px-3 py-1 text-sm transition-all duration-200">{item.quantity}</span>
                         <button
                           onClick={() => incrementItem(item._id, item.shopId)}
                           className="px-2 py-1 hover:bg-gray-100"

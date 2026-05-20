@@ -35,6 +35,8 @@ const INITIAL_FORM = {
   status: "active",
   driverPhone: "",
   image: "",
+  retailPrice: "",
+  wholesaleTiers: [],
 };
 
 const INITIAL_ROUTE_FORM = {
@@ -132,30 +134,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
   }, [serviceType, routeForm, creatingRoute]);
 
   const dynamicFields = useMemo(() => {
-    if (serviceType === "shopping")
-      return (
-        <>
-          <input
-            name="name"
-            placeholder="Product Name"
-            value={form.name}
-            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            required
-          />
-
-          <select
-            name="tagName"
-            value={form.tagName}
-            onChange={(e) => setForm((p) => ({ ...p, tagName: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-          >
-            <option value="NewArrival">New Arrival</option>
-            <option value="TopPicks">Top Picks</option>
-            <option value="Recommended">Recommended for you</option>
-          </select>
-        </>
-      );
     if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
     if (serviceType === "spa")
       return (
@@ -198,6 +176,22 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
           <select name="tagName" value={form.tagName} onChange={(e) => setForm((p) => ({ ...p, tagName: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2">
             {TAG_OPTIONS.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
           </select>
+
+          <div className="rounded-lg border border-green-200 bg-green-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-green-800">Wholesale Pricing</h3>
+              <button type="button" onClick={addWholesaleTier} className="text-sm font-medium text-green-700 hover:text-green-900">+ Add Tier</button>
+            </div>
+            {(form.wholesaleTiers || []).map((tier, idx) => (
+              <div key={idx} className="grid grid-cols-2 gap-2">
+                <input type="number" min="2" placeholder="Min Qty" value={tier.minQty} onChange={(e) => updateWholesaleTier(idx, "minQty", e.target.value)} className="border border-green-300 rounded-lg px-3 py-2" />
+                <div className="flex gap-2">
+                  <input type="number" min="0" step="0.01" placeholder="Wholesale Price" value={tier.price} onChange={(e) => updateWholesaleTier(idx, "price", e.target.value)} className="w-full border border-green-300 rounded-lg px-3 py-2" />
+                  <button type="button" onClick={() => removeWholesaleTier(idx)} className="px-3 rounded-lg border border-red-200 text-red-600">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
         </>
       );
     }
@@ -234,6 +228,17 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
   const handleImageUpload = async (e) => { const file = e.target.files?.[0]; if (!file) return; setUploadingImage(true); try { const image = await compressItemImage(file); setForm((p) => ({ ...p, image })); } finally { setUploadingImage(false); } };
 
+
+
+  const addWholesaleTier = () => setForm((p) => ({ ...p, wholesaleTiers: [...(p.wholesaleTiers || []), { minQty: "", price: "" }] }));
+  const removeWholesaleTier = (index) => setForm((p) => ({ ...p, wholesaleTiers: (p.wholesaleTiers || []).filter((_, i) => i !== index) }));
+  const updateWholesaleTier = (index, field, value) => {
+    setForm((p) => ({
+      ...p,
+      wholesaleTiers: (p.wholesaleTiers || []).map((tier, i) => (i === index ? { ...tier, [field]: value } : tier)),
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -248,6 +253,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
       shopId: shop._id,
       name: defaultNameByServiceType[serviceType] || form.name || "Item",
       price: Number(form.price),
+      retailPrice: serviceType === "shopping" ? Number(form.price) : undefined,
       image: form.image,
       type: TYPE_MAP[serviceType] || "service",
       category: serviceType === "shopping" ? form.category : undefined,
@@ -257,7 +263,12 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     };
 
     if (serviceType === "shopping") {
-      payload.extra = { quantity: Number(form.quantity || 0) };
+      const retailPrice = Number(form.price);
+      const wholesaleTiers = (form.wholesaleTiers || [])
+        .map((tier) => ({ minQty: Number(tier.minQty), price: Number(tier.price) }))
+        .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price < retailPrice)
+        .sort((a, b) => a.minQty - b.minQty);
+      payload.extra = { quantity: Number(form.quantity || 0), retailPrice, wholesaleTiers };
     }
     if (serviceType === "spa") {
       const durationMinutes = form.duration === "custom" ? Number(form.customDuration) : Number(form.duration);

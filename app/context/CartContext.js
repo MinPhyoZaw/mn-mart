@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { getWholesalePrice, normalizeWholesaleTiers } from "../lib/pricing";
 
 const CART_STORAGE_PREFIX = "mn-mart-cart";
 
@@ -23,6 +24,8 @@ export function CartProvider({ children }) {
       vendorName: item.vendorName || "Unknown Vendor",
       name: item.name || "Unnamed Item",
       price: Number(item.price) || 0,
+      retailPrice: Number(item.retailPrice ?? item.price) || 0,
+      wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
       image: item.image || null,
       quantity,
     };
@@ -77,37 +80,38 @@ export function CartProvider({ children }) {
       );
 
       if (existing) {
-        return prevItems.map((cartItem) =>
-          cartItem._id === item._id && cartItem.shopId === item.shopId
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
+        return prevItems.map((cartItem) => {
+          if (cartItem._id !== item._id || cartItem.shopId !== item.shopId) return cartItem;
+          const quantity = cartItem.quantity + 1;
+          return { ...cartItem, quantity, price: getWholesalePrice(cartItem, quantity) };
+        });
       }
 
-      return [
-        ...prevItems,
-        {
-          _id: item._id,
-          shopId: item.shopId,
-          shopName: item.shopName,
-          vendorId: item.vendorId,
-          vendorName: item.vendorName,
-          name: item.name,
-          price: Number(item.price) || 0,
-          image: item.image || null,
-          quantity: 1,
-        },
-      ];
+      const baseItem = {
+        _id: item._id,
+        shopId: item.shopId,
+        shopName: item.shopName,
+        vendorId: item.vendorId,
+        vendorName: item.vendorName,
+        name: item.name,
+        price: Number(item.price) || 0,
+        retailPrice: Number(item.retailPrice ?? item.price) || 0,
+        wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
+        image: item.image || null,
+        quantity: 1,
+      };
+
+      return [...prevItems, { ...baseItem, price: getWholesalePrice(baseItem, 1) }];
     });
   };
 
   const incrementItem = (itemId, shopId) => {
     setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === itemId && item.shopId === shopId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
+      prevItems.map((item) => {
+        if (item._id !== itemId || item.shopId !== shopId) return item;
+        const quantity = item.quantity + 1;
+        return { ...item, quantity, price: getWholesalePrice(item, quantity) };
+      })
     );
   };
 
@@ -116,7 +120,10 @@ export function CartProvider({ children }) {
       prevItems
         .map((item) =>
           item._id === itemId && item.shopId === shopId
-            ? { ...item, quantity: Math.max(item.quantity - 1, 0) }
+            ? (() => {
+                const quantity = Math.max(item.quantity - 1, 0);
+                return { ...item, quantity, price: getWholesalePrice(item, quantity || 1) };
+              })()
             : item
         )
         .filter((item) => item.quantity > 0)

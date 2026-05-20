@@ -35,6 +35,20 @@ const itemSchema = new mongoose.Schema(
       min: 0, // 🔥 prevent negative price
     },
 
+    retailPrice: {
+      type: Number,
+      min: 0,
+      default: null,
+    },
+
+    wholesaleTiers: {
+      type: [{
+        minQty: { type: Number, min: 2, required: true },
+        price: { type: Number, min: 0, required: true },
+      }],
+      default: [],
+    },
+
     description: {
       type: String,
       default: null,
