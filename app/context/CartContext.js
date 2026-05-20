@@ -87,21 +87,22 @@ export function CartProvider({ children }) {
         });
       }
 
-      const baseItem = {
-        _id: item._id,
-        shopId: item.shopId,
-        shopName: item.shopName,
-        vendorId: item.vendorId,
-        vendorName: item.vendorName,
-        name: item.name,
-        price: Number(item.price) || 0,
-        retailPrice: Number(item.retailPrice ?? item.price) || 0,
-        wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
-        image: item.image || null,
-        quantity: 1,
-      };
-
-      return [...prevItems, { ...baseItem, price: getWholesalePrice(baseItem, 1) }];
+      return [
+        ...prevItems,
+        {
+          _id: item._id,
+          shopId: item.shopId,
+          shopName: item.shopName,
+          vendorId: item.vendorId,
+          vendorName: item.vendorName,
+          name: item.name,
+          price: Number(item.price) || 0,
+      retailPrice: Number(item.retailPrice ?? item.price) || 0,
+      wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
+          image: item.image || null,
+          quantity: 1,
+        },
+      ];
     });
   };
 

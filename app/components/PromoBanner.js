@@ -39,8 +39,8 @@ export default function PromoBanner() {
           <div className="max-w-md text-left text-white">
             
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="text-green-400 w-6 h-6" />
-              <span className="text-xl font-bold">MN Mart</span>
+              <CheckCircle className="text-green-400 w-8 h-8" />
+              <span className="text-3xl font-bold">MN Mart</span>
             </div>
 
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 font-['Raleway']">
