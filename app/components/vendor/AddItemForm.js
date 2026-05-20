@@ -134,30 +134,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
   }, [serviceType, routeForm, creatingRoute]);
 
   const dynamicFields = useMemo(() => {
-    if (serviceType === "shopping")
-      return (
-        <>
-          <input
-            name="name"
-            placeholder="Product Name"
-            value={form.name}
-            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            required
-          />
-
-          <select
-            name="tagName"
-            value={form.tagName}
-            onChange={(e) => setForm((p) => ({ ...p, tagName: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-          >
-            <option value="NewArrival">New Arrival</option>
-            <option value="TopPicks">Top Picks</option>
-            <option value="Recommended">Recommended for you</option>
-          </select>
-        </>
-      );
     if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
     if (serviceType === "spa")
       return (

@@ -80,11 +80,11 @@ export function CartProvider({ children }) {
       );
 
       if (existing) {
-        return prevItems.map((cartItem) =>
-          cartItem._id === item._id && cartItem.shopId === item.shopId
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
+        return prevItems.map((cartItem) => {
+          if (cartItem._id !== item._id || cartItem.shopId !== item.shopId) return cartItem;
+          const quantity = cartItem.quantity + 1;
+          return { ...cartItem, quantity, price: getWholesalePrice(cartItem, quantity) };
+        });
       }
 
       return [
