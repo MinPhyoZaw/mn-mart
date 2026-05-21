@@ -153,6 +153,15 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
               min="1"
               placeholder="Custom duration (minutes)"
               value={form.customDuration || ""}
+              const addWholesaleTier = () => setForm((p) => ({ ...p, wholesaleTiers: [...(p.wholesaleTiers || []), { minQty: "", price: "" }] }));
+              const removeWholesaleTier = (index) => setForm((p) => ({ ...p, wholesaleTiers: (p.wholesaleTiers || []).filter((_, i) => i !== index) }));
+              const updateWholesaleTier = (index, field, value) => {
+                setForm((p) => ({
+                  ...p,
+                  wholesaleTiers: (p.wholesaleTiers || []).map((tier, i) => (i === index ? { ...tier, [field]: value } : tier)),
+                }));
+              };
+
               onChange={(e) => setForm((p) => ({ ...p, customDuration: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
               required
