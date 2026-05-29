@@ -133,6 +133,8 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     );
   }, [serviceType, routeForm, creatingRoute]);
 
+
+
   const dynamicFields = useMemo(() => {
     if (serviceType === "hotel") return <input name="roomType" placeholder="Room Type" value={form.roomType} onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-4 py-2" required />;
     if (serviceType === "spa")
@@ -153,15 +155,6 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
               min="1"
               placeholder="Custom duration (minutes)"
               value={form.customDuration || ""}
-              const addWholesaleTier = () => setForm((p) => ({ ...p, wholesaleTiers: [...(p.wholesaleTiers || []), { minQty: "", price: "" }] }));
-              const removeWholesaleTier = (index) => setForm((p) => ({ ...p, wholesaleTiers: (p.wholesaleTiers || []).filter((_, i) => i !== index) }));
-              const updateWholesaleTier = (index, field, value) => {
-                setForm((p) => ({
-                  ...p,
-                  wholesaleTiers: (p.wholesaleTiers || []).map((tier, i) => (i === index ? { ...tier, [field]: value } : tier)),
-                }));
-              };
-
               onChange={(e) => setForm((p) => ({ ...p, customDuration: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
               required
@@ -239,14 +232,20 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
 
 
-  const addWholesaleTier = () => setForm((p) => ({ ...p, wholesaleTiers: [...(p.wholesaleTiers || []), { minQty: "", price: "" }] }));
-  const removeWholesaleTier = (index) => setForm((p) => ({ ...p, wholesaleTiers: (p.wholesaleTiers || []).filter((_, i) => i !== index) }));
-  const updateWholesaleTier = (index, field, value) => {
+  function addWholesaleTier() {
+    setForm((p) => ({ ...p, wholesaleTiers: [...(p.wholesaleTiers || []), { minQty: "", price: "" }] }));
+  }
+
+  function removeWholesaleTier(index) {
+    setForm((p) => ({ ...p, wholesaleTiers: (p.wholesaleTiers || []).filter((_, i) => i !== index) }));
+  }
+
+  function updateWholesaleTier(index, field, value) {
     setForm((p) => ({
       ...p,
       wholesaleTiers: (p.wholesaleTiers || []).map((tier, i) => (i === index ? { ...tier, [field]: value } : tier)),
     }));
-  };
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
