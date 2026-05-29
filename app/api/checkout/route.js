@@ -4,8 +4,9 @@ import { requireAuth } from "../../lib/routeAuth";
 import Vendor from "../../models/Vendor";
 import Shop from "../../models/Shop";
 import Order from "../../models/Order";
+import { getShoppingCommissionRate } from "../../lib/shoppingCommission";
 
-const COMMISSION_RATE = 1.5;
+const DEFAULT_COMMISSION_RATE = 1.5;
 
 const makeOrderId = () => `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
@@ -40,6 +41,7 @@ export async function POST(req) {
     }
 
     const createdOrders = [];
+    const shoppingCommissionRate = await getShoppingCommissionRate();
 
     for (const [shopId, shopItems] of ordersByShop.entries()) {
       const vendorId = shopItems[0].vendorId;
@@ -69,7 +71,8 @@ export async function POST(req) {
       });
 
       const totalAmount = normalizedItems.reduce((sum, item) => sum + item.lineTotal, 0);
-      const commissionAmount = Number(((totalAmount * COMMISSION_RATE) / 100).toFixed(2));
+      const commissionRate = shop.category === "shopping" ? shoppingCommissionRate : DEFAULT_COMMISSION_RATE;
+      const commissionAmount = Number(((totalAmount * commissionRate) / 100).toFixed(2));
       const vendorEarning = Number((totalAmount - commissionAmount).toFixed(2));
 
       const order = await Order.create({
@@ -85,7 +88,7 @@ export async function POST(req) {
         receiptImage,
         paymentProvider,
         totalAmount,
-        commissionRate: COMMISSION_RATE,
+        commissionRate,
         commissionAmount,
         vendorEarning,
       });

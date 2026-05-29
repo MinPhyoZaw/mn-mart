@@ -8,6 +8,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyToken } from "../lib/jwt";
 import AdminDashboardClient from "../components/AdminDashboardClient";
+import CommissionSetting from "../models/CommissionSetting";
+import { DEFAULT_SHOPPING_COMMISSION_RATE } from "../lib/shoppingCommission";
 
 const getTodayRange = () => {
   const now = new Date();
@@ -39,23 +41,32 @@ export default async function AdminDashboardPage() {
   const requestPageSize = 20;
   const { start, end } = getTodayRange();
 
-  const [shops, vendors, vendorRequestsRaw, usersRaw, pendingRequestsCount, totalRequestsCount, todayOrders] =
-    await Promise.all([
-      Shop.find({}).lean(),
-      Vendor.find({}).lean(),
-      VendorRequest.find({}).sort({ createdAt: -1 }).limit(requestPageSize).lean(),
-      User.find({}).select("-password").sort({ createdAt: -1 }).lean(),
-      VendorRequest.countDocuments({ status: "pending" }),
-      VendorRequest.countDocuments({}),
-      Order.find({
-        createdAt: { $gte: start, $lte: end },
-        orderStatus: "confirmed",
-        vendorStatus: "accepted",
-      })
-        .populate("vendorId", "vendorName")
-        .sort({ createdAt: -1 })
-        .lean(),
-    ]);
+  const [
+    shops,
+    vendors,
+    vendorRequestsRaw,
+    usersRaw,
+    pendingRequestsCount,
+    totalRequestsCount,
+    todayOrders,
+    shoppingCommissionRaw,
+  ] = await Promise.all([
+    Shop.find({}).lean(),
+    Vendor.find({}).lean(),
+    VendorRequest.find({}).sort({ createdAt: -1 }).limit(requestPageSize).lean(),
+    User.find({}).select("-password").sort({ createdAt: -1 }).lean(),
+    VendorRequest.countDocuments({ status: "pending" }),
+    VendorRequest.countDocuments({}),
+    Order.find({
+      createdAt: { $gte: start, $lte: end },
+      orderStatus: "confirmed",
+      vendorStatus: "accepted",
+    })
+      .populate("vendorId", "vendorName")
+      .sort({ createdAt: -1 })
+      .lean(),
+    CommissionSetting.findOne({ serviceType: "shopping" }).lean(),
+  ]);
 
   const vendorProfitMap = new Map();
   for (const order of todayOrders) {
@@ -69,6 +80,14 @@ export default async function AdminDashboardPage() {
   }));
 
   const totalTodayProfit = todayProfitByVendor.reduce((sum, row) => sum + row.amount, 0);
+
+  const shoppingCommissionSetting = {
+    _id: shoppingCommissionRaw?._id ? String(shoppingCommissionRaw._id) : null,
+    serviceType: "shopping",
+    rate: shoppingCommissionRaw?.rate ?? DEFAULT_SHOPPING_COMMISSION_RATE,
+    isDefault: !shoppingCommissionRaw,
+    updatedAt: shoppingCommissionRaw?.updatedAt ? shoppingCommissionRaw.updatedAt.toISOString() : null,
+  };
 
   const vendorRequests = vendorRequestsRaw.map((r) => ({
     ...r,
@@ -98,6 +117,7 @@ export default async function AdminDashboardPage() {
       requestPageSize={requestPageSize}
       totalRequestsCount={totalRequestsCount}
       users={users}
+      shoppingCommissionSetting={shoppingCommissionSetting}
     />
   );
 }

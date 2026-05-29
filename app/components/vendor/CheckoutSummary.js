@@ -2,6 +2,12 @@
 
 export default function CheckoutSummary({ vendor, shop, checkoutSummary, serviceType }) {
   const isSpa = serviceType === "spa";
+  const isTransportation = serviceType === "transportation";
+  const adminPaymentLabel = isTransportation ? "Monthly Pay to Admin" : "Today Pay to Admin";
+  const adminPaymentAmount = isTransportation
+    ? checkoutSummary?.monthAmountToAdmin
+    : checkoutSummary?.todayAmountToAdmin;
+
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-2">Vendor Dashboard</h1>
@@ -20,7 +26,11 @@ export default function CheckoutSummary({ vendor, shop, checkoutSummary, service
         Today Payment Summary
       </h2>
       <p className="text-sm text-gray-500 mt-1">
-        {isSpa ? "Overview of today’s shop earnings and fixed spa admin fee" : "Overview of today’s shop earnings and admin commission"}
+        {isSpa
+          ? "Overview of today’s shop earnings and fixed spa admin fee"
+          : isTransportation
+            ? "Overview of today’s shop earnings and transportation monthly admin payment"
+            : "Overview of today’s shop earnings and shopping admin percentage"}
       </p>
     </div>
 
@@ -43,9 +53,9 @@ export default function CheckoutSummary({ vendor, shop, checkoutSummary, service
 
     {/* Admin Profit */}
     <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-100 rounded-xl p-4 hover:shadow-md transition">
-      <p className="text-sm text-gray-500">Monthly Pay to Admin</p>
+      <p className="text-sm text-gray-500">{adminPaymentLabel}</p>
       <h3 className="text-2xl font-bold text-orange-600 mt-2">
-        {Number(checkoutSummary?.monthAmountToAdmin || 0).toLocaleString()}
+        {Number(adminPaymentAmount || 0).toLocaleString()}
         <span className="text-sm ml-1 font-medium">MMK</span>
       </h3>
     </div>

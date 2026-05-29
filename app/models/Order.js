@@ -68,7 +68,7 @@ const orderSchema = new mongoose.Schema(
 
     paymentProvider: {
       type: String,
-      enum: ["kbzpay", "wave"],
+      enum: ["kbzpay", "wave", "kbzpay_1", "kbzpay_2", "mmqr_1", "mmqr_2"],
       required: true,
     },
 

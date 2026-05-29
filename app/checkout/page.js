@@ -5,10 +5,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 
-const OWNER_KBZPAY_NUMBER = "09-880000001";
-const OWNER_WAVE_NUMBER = "09-770000001";
-const OWNER_KBZPAY_QR = "/images/logo.png";
-const OWNER_WAVE_QR = "/images/logo.png";
+const ADMIN_PAYMENT_ACCOUNTS = [
+  { id: "kbzpay_1", label: "KBZ Pay (1)", number: "09-880000001", qr: "/images/logo.png", theme: "yellow" },
+  { id: "kbzpay_2", label: "KBZ Pay (2)", number: "09-880000002", qr: "/images/logo.png", theme: "yellow" },
+  { id: "mmqr_1", label: "MMQR (1)", number: "09-770000001", qr: "/images/logo.png", theme: "emerald" },
+  { id: "mmqr_2", label: "MMQR (2)", number: "09-770000002", qr: "/images/logo.png", theme: "emerald" },
+];
+
+const PAYMENT_CARD_STYLES = {
+  yellow: "border-yellow-300 bg-yellow-50 text-yellow-700",
+  emerald: "border-emerald-300 bg-emerald-50 text-emerald-700",
+};
+
+const PAYMENT_QR_BORDER_STYLES = {
+  yellow: "border-yellow-200",
+  emerald: "border-emerald-200",
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -17,7 +29,7 @@ export default function CheckoutPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
-  const [paymentProvider, setPaymentProvider] = useState("kbzpay");
+  const [paymentProvider, setPaymentProvider] = useState(ADMIN_PAYMENT_ACCOUNTS[0].id);
   const [receiptImage, setReceiptImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -225,49 +237,32 @@ export default function CheckoutPage() {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="rounded-xl border border-yellow-300 p-4 bg-yellow-50">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-yellow-700">KBZPay</p>
-                  <input
-                    type="radio"
-                    name="paymentProvider"
-                    checked={paymentProvider === "kbzpay"}
-                    onChange={() => setPaymentProvider("kbzpay")}
-                  />
-                </div>
-                <p className="text-sm mt-2">Number: {OWNER_KBZPAY_NUMBER}</p>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedQr(OWNER_KBZPAY_QR)}
-                  onKeyDown={(e) => e.key === "Enter" && setSelectedQr(OWNER_KBZPAY_QR)}
-                  className="mt-3 relative w-24 h-24 rounded overflow-hidden cursor-zoom-in border border-yellow-200"
+              {ADMIN_PAYMENT_ACCOUNTS.map((account) => (
+                <label
+                  key={account.id}
+                  className={`rounded-xl border p-4 ${PAYMENT_CARD_STYLES[account.theme]}`}
                 >
-                  <Image src={OWNER_KBZPAY_QR} alt="KBZPay QR" fill className="object-cover" />
-                </div>
-              </label>
-
-              <label className="rounded-xl border border-cyan-300 p-4 bg-cyan-50">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-cyan-700">Wave</p>
-                  <input
-                    type="radio"
-                    name="paymentProvider"
-                    checked={paymentProvider === "wave"}
-                    onChange={() => setPaymentProvider("wave")}
-                  />
-                </div>
-                <p className="text-sm mt-2">Number: {OWNER_WAVE_NUMBER}</p>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedQr(OWNER_WAVE_QR)}
-                  onKeyDown={(e) => e.key === "Enter" && setSelectedQr(OWNER_WAVE_QR)}
-                  className="mt-3 relative w-24 h-24 rounded overflow-hidden cursor-zoom-in border border-cyan-200"
-                >
-                  <Image src={OWNER_WAVE_QR} alt="Wave QR" fill className="object-cover" />
-                </div>
-              </label>
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold">{account.label}</p>
+                    <input
+                      type="radio"
+                      name="paymentProvider"
+                      checked={paymentProvider === account.id}
+                      onChange={() => setPaymentProvider(account.id)}
+                    />
+                  </div>
+                  <p className="text-sm mt-2">Number: {account.number}</p>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedQr(account.qr)}
+                    onKeyDown={(e) => e.key === "Enter" && setSelectedQr(account.qr)}
+                    className={`mt-3 relative w-24 h-24 rounded overflow-hidden cursor-zoom-in border ${PAYMENT_QR_BORDER_STYLES[account.theme]}`}
+                  >
+                    <Image src={account.qr} alt={`${account.label} QR`} fill className="object-cover" />
+                  </div>
+                </label>
+              ))}
             </div>
 
             <div>
