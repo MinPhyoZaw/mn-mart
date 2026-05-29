@@ -12,6 +12,7 @@ import {
 import AdminOrderManager from "./AdminOrderManager";
 import AdminVendorRequests from "./AdminVendorRequests";
 import AdminUserRoles from "./AdminUserRoles";
+import AdminShoppingCommission from "./AdminShoppingCommission";
 
 export default function AdminDashboardClient({
   shopsCount,
@@ -24,6 +25,7 @@ export default function AdminDashboardClient({
   requestPageSize,
   totalRequestsCount,
   users,
+  shoppingCommissionSetting,
 }) {
   const [activeScreen, setActiveScreen] = useState("orders");
 
@@ -32,6 +34,7 @@ export default function AdminDashboardClient({
       { id: "orders", label: "Order List", icon: ClipboardDocumentListIcon },
       { id: "requests", label: "Vendor Request", icon: UserGroupIcon },
       { id: "profit", label: "Profit Notification", icon: CurrencyDollarIcon },
+      { id: "commission", label: "Shopping Percentage", icon: ChartBarSquareIcon },
       { id: "roles", label: "User Role Management", icon: ShieldCheckIcon },
     ],
     []
@@ -126,6 +129,8 @@ export default function AdminDashboardClient({
               </div>
             </section>
           )}
+
+          {activeScreen === "commission" && <AdminShoppingCommission initialSetting={shoppingCommissionSetting} />}
 
           {activeScreen === "roles" && <AdminUserRoles initialUsers={users} />}
         </main>
