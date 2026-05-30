@@ -49,7 +49,7 @@ export default function VendorDashboard() {
     fetchVendor();
   }, []);
 
-  const serviceType = shop?.category || vendor?.serviceType || "";
+  const serviceType = vendor?.serviceType || shop?.category || "";
 
   const handleOrderAction = async (id, action) => {
     const res = await fetch(`/api/vendor/orders/${id}`, {

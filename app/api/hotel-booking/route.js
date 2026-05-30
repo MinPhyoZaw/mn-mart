@@ -24,6 +24,7 @@ export async function POST(req) {
       extraBedAmount,
       note,
       receiptImage,
+      paymentProvider = "kbzpay_1",
     } = body;
 
     if (!roomItemId || !shopId || !customerName || !customerPhone || !receiptImage) {
@@ -78,7 +79,7 @@ export async function POST(req) {
         note: note || "",
       },
       receiptImage,
-      paymentProvider: "kbzpay",
+      paymentProvider,
       totalAmount,
       commissionRate: COMMISSION_RATE,
       commissionAmount,
