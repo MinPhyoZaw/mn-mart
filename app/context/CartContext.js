@@ -15,7 +15,10 @@ export function CartProvider({ children }) {
 
   const sanitizeItem = (item) => {
     if (!item || !item._id || !item.shopId || !item.vendorId) return null;
-    const quantity = Math.max(Number(item.quantity) || 0, 1);
+    const selectedWholesaleTier = item.selectedWholesaleTier
+      ? { minQty: Number(item.selectedWholesaleTier.minQty), price: Number(item.selectedWholesaleTier.price) }
+      : null;
+    const quantity = Math.max(Number(item.quantity) || 0, selectedWholesaleTier?.minQty || 1);
     return {
       _id: String(item._id),
       shopId: String(item.shopId),
@@ -26,6 +29,10 @@ export function CartProvider({ children }) {
       price: Number(item.price) || 0,
       retailPrice: Number(item.retailPrice ?? item.price) || 0,
       wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
+      selectedWholesaleTier:
+        selectedWholesaleTier && Number.isFinite(selectedWholesaleTier.minQty) && Number.isFinite(selectedWholesaleTier.price)
+          ? selectedWholesaleTier
+          : null,
       image: item.image || null,
       quantity,
     };
@@ -75,6 +82,27 @@ export function CartProvider({ children }) {
 
   const addToCart = (item) => {
     setCartItems((prevItems) => {
+      const selectedWholesaleTier = item.selectedWholesaleTier
+        ? { minQty: Number(item.selectedWholesaleTier.minQty), price: Number(item.selectedWholesaleTier.price) }
+        : null;
+      const requestedQuantity = Math.max(Number(item.quantity) || 0, selectedWholesaleTier?.minQty || 1);
+      const baseCartItem = {
+        _id: item._id,
+        shopId: item.shopId,
+        shopName: item.shopName,
+        vendorId: item.vendorId,
+        vendorName: item.vendorName,
+        name: item.name,
+        retailPrice: Number(item.retailPrice ?? item.price) || 0,
+        wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
+        selectedWholesaleTier:
+          selectedWholesaleTier && Number.isFinite(selectedWholesaleTier.minQty) && Number.isFinite(selectedWholesaleTier.price)
+            ? selectedWholesaleTier
+            : null,
+        image: item.image || null,
+      };
+      const price = baseCartItem.selectedWholesaleTier?.price ?? getWholesalePrice(baseCartItem, requestedQuantity);
+
       const existing = prevItems.find(
         (cartItem) => cartItem._id === item._id && cartItem.shopId === item.shopId
       );
@@ -82,25 +110,24 @@ export function CartProvider({ children }) {
       if (existing) {
         return prevItems.map((cartItem) => {
           if (cartItem._id !== item._id || cartItem.shopId !== item.shopId) return cartItem;
-          const quantity = cartItem.quantity + 1;
-          return { ...cartItem, quantity, price: getWholesalePrice(cartItem, quantity) };
+          const quantity = cartItem.quantity + requestedQuantity;
+          const selectedTier = baseCartItem.selectedWholesaleTier || cartItem.selectedWholesaleTier || null;
+          return {
+            ...cartItem,
+            ...baseCartItem,
+            selectedWholesaleTier: selectedTier,
+            quantity,
+            price: selectedTier?.price ?? getWholesalePrice({ ...cartItem, ...baseCartItem }, quantity),
+          };
         });
       }
 
       return [
         ...prevItems,
         {
-          _id: item._id,
-          shopId: item.shopId,
-          shopName: item.shopName,
-          vendorId: item.vendorId,
-          vendorName: item.vendorName,
-          name: item.name,
-          price: Number(item.price) || 0,
-      retailPrice: Number(item.retailPrice ?? item.price) || 0,
-      wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
-          image: item.image || null,
-          quantity: 1,
+          ...baseCartItem,
+          price,
+          quantity: requestedQuantity,
         },
       ];
     });
@@ -111,7 +138,7 @@ export function CartProvider({ children }) {
       prevItems.map((item) => {
         if (item._id !== itemId || item.shopId !== shopId) return item;
         const quantity = item.quantity + 1;
-        return { ...item, quantity, price: getWholesalePrice(item, quantity) };
+        return { ...item, quantity, price: item.selectedWholesaleTier?.price ?? getWholesalePrice(item, quantity) };
       })
     );
   };
@@ -123,7 +150,7 @@ export function CartProvider({ children }) {
           item._id === itemId && item.shopId === shopId
             ? (() => {
                 const quantity = Math.max(item.quantity - 1, 0);
-                return { ...item, quantity, price: getWholesalePrice(item, quantity || 1) };
+                return { ...item, quantity, price: item.selectedWholesaleTier?.price ?? getWholesalePrice(item, quantity || 1) };
               })()
             : item
         )

@@ -58,6 +58,10 @@ const orderSchema = new mongoose.Schema(
         price: { type: Number, required: true },
         quantity: { type: Number, required: true },
         lineTotal: { type: Number, required: true },
+        selectedWholesaleTier: {
+          minQty: { type: Number, default: null },
+          price: { type: Number, default: null },
+        },
       },
     ],
 

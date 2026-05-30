@@ -3,31 +3,51 @@
 import React from "react";
 import { useCart } from "../context/CartContext";
 
+type WholesaleTier = { minQty: number; price: number };
+
+type ProductForCart = {
+  _id: string;
+  name: string;
+  price: number;
+  retailPrice?: number;
+  wholesaleTiers?: WholesaleTier[];
+  selectedWholesaleTier?: WholesaleTier | null;
+  image?: string;
+  shopId?: string;
+  shopName?: string;
+  vendorId?: string;
+};
+
+type CartProduct = Omit<ProductForCart, "image"> & {
+  image: string | null;
+  quantity: number;
+  vendorName: string;
+};
+
+type CartContextValue = {
+  addToCart: (item: CartProduct) => void;
+  openCart: () => void;
+};
+
 type Props = {
-  product: {
-    _id: string;
-    name: string;
-    price: number;
-    retailPrice?: number;
-    wholesaleTiers?: { minQty: number; price: number }[];
-    image?: string;
-    shopId?: string;
-    shopName?: string;
-    vendorId?: string;
-  };
+  product: ProductForCart;
 };
 
 export default function AddToCartButton({ product }: Props) {
-  const { addToCart, openCart } = useCart();
+  const { addToCart, openCart } = useCart() as CartContextValue;
 
   const handle = () => {
+    const selectedWholesaleTier = product.selectedWholesaleTier || null;
+
     addToCart({
       _id: product._id,
       name: product.name,
-      price: product.price,
+      price: selectedWholesaleTier?.price ?? product.price,
       image: product.image || null,
       retailPrice: product.retailPrice ?? product.price,
       wholesaleTiers: product.wholesaleTiers || [],
+      selectedWholesaleTier,
+      quantity: selectedWholesaleTier?.minQty || 1,
       shopId: product.shopId || "",
       shopName: product.shopName || "",
       vendorId: product.vendorId || product.shopId || "",

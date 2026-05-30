@@ -181,14 +181,19 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
 
           <div className="rounded-lg border border-green-200 bg-green-50/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-green-800">Wholesale Pricing</h3>
-              <button type="button" onClick={addWholesaleTier} className="text-sm font-medium text-green-700 hover:text-green-900">+ Add Tier</button>
+              <h3 className="font-semibold text-green-800">လက်ကားဈေး</h3>
+              <button type="button" onClick={addWholesaleTier} className="text-sm font-medium text-green-700 hover:text-green-900">+ Add</button>
             </div>
+            {(form.wholesaleTiers || []).length === 0 ? (
+              <button type="button" onClick={addWholesaleTier} className="w-full rounded-lg border border-dashed border-green-300 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100">
+                လက်ကားဈေး ထည့်ရန်
+              </button>
+            ) : null}
             {(form.wholesaleTiers || []).map((tier, idx) => (
-              <div key={idx} className="grid grid-cols-2 gap-2">
-                <input type="number" min="2" placeholder="Min Qty" value={tier.minQty} onChange={(e) => updateWholesaleTier(idx, "minQty", e.target.value)} className="border border-green-300 rounded-lg px-3 py-2" />
+              <div key={idx} className="space-y-2 rounded-lg border border-green-100 bg-white/70 p-3">
+                <input type="number" min="2" placeholder="အရေအတွက်" value={tier.minQty} onChange={(e) => updateWholesaleTier(idx, "minQty", e.target.value)} className="w-full border border-green-300 rounded-lg px-3 py-2" />
                 <div className="flex gap-2">
-                  <input type="number" min="0" step="0.01" placeholder="Wholesale Price" value={tier.price} onChange={(e) => updateWholesaleTier(idx, "price", e.target.value)} className="w-full border border-green-300 rounded-lg px-3 py-2" />
+                  <input type="number" min="0" step="0.01" placeholder="Price" value={tier.price} onChange={(e) => updateWholesaleTier(idx, "price", e.target.value)} className="w-full border border-green-300 rounded-lg px-3 py-2" />
                   <button type="button" onClick={() => removeWholesaleTier(idx)} className="px-3 rounded-lg border border-red-200 text-red-600">✕</button>
                 </div>
               </div>
@@ -263,6 +268,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
       name: defaultNameByServiceType[serviceType] || enteredName || "Item",
       price: Number(form.price),
       retailPrice: serviceType === "shopping" ? Number(form.price) : undefined,
+      wholesaleTiers: [],
       image: form.image,
       type: TYPE_MAP[serviceType] || "service",
       category: serviceType === "shopping" ? form.category : undefined,
@@ -277,6 +283,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
         .map((tier) => ({ minQty: Number(tier.minQty), price: Number(tier.price) }))
         .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price < retailPrice)
         .sort((a, b) => a.minQty - b.minQty);
+      payload.wholesaleTiers = wholesaleTiers;
       payload.extra = { quantity: Number(form.quantity || 0), retailPrice, wholesaleTiers };
     }
     if (serviceType === "spa") {

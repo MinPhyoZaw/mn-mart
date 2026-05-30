@@ -1,10 +1,21 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import AddToCartButton from "../AddToCartButton";
+import { normalizeWholesaleTiers } from "../../lib/pricing";
 
 export default function ShoppingItemCard({ item }) {
   const numericPrice = typeof item.price === "number" ? item.price : Number(item.price) || 0;
+  const retailPrice = Number(item.retailPrice ?? numericPrice) || 0;
   const formattedPrice = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericPrice);
+  const wholesaleTiers = useMemo(
+    () => normalizeWholesaleTiers(item.wholesaleTiers ?? item.extra?.wholesaleTiers ?? []),
+    [item.wholesaleTiers, item.extra?.wholesaleTiers]
+  );
+  const [selectedWholesaleQty, setSelectedWholesaleQty] = useState(null);
+  const selectedWholesaleTier = wholesaleTiers.find((tier) => tier.minQty === selectedWholesaleQty) || null;
 
   return (
     <div className="h-full bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition duration-200">
@@ -32,16 +43,35 @@ export default function ShoppingItemCard({ item }) {
 
         <p className="mt-2 text-sm md:text-base font-bold text-gray-900">{formattedPrice}</p>
 
+        {wholesaleTiers.length ? (
+          <div className="mt-2 space-y-1 rounded-lg border border-green-100 bg-green-50/70 p-2 text-xs text-green-800">
+            {wholesaleTiers.map((tier) => (
+              <label key={tier.minQty} className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedWholesaleQty === tier.minQty}
+                  onChange={(e) => setSelectedWholesaleQty(e.target.checked ? tier.minQty : null)}
+                  className="h-4 w-4 accent-green-600"
+                />
+                <span>လက်ကားဈေး : {tier.minQty} - {Number(tier.price).toLocaleString()} MMK</span>
+              </label>
+            ))}
+          </div>
+        ) : null}
+
         <div className="mt-auto">
           <AddToCartButton
             product={{
               _id: item._id,
               name: item.name,
               price: numericPrice,
+              retailPrice,
+              wholesaleTiers,
+              selectedWholesaleTier,
               image: item.image,
               shopId: item.shop?._id,
               shopName: item.shop?.name,
-              vendorId: item.vendor?._id,
+              vendorId: item.vendor?._id || item.shop?.vendorId,
             }}
           />
         </div>
