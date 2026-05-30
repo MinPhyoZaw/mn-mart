@@ -1,26 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
-
-const ADMIN_PAYMENT_ACCOUNTS = [
-  { id: "kbzpay_1", label: "KBZ Pay (1)", number: "09-880000001", qr: "/images/logo.png", theme: "yellow" },
-  { id: "kbzpay_2", label: "KBZ Pay (2)", number: "09-880000002", qr: "/images/logo.png", theme: "yellow" },
-  { id: "mmqr_1", label: "MMQR (1)", number: "09-770000001", qr: "/images/logo.png", theme: "emerald" },
-  { id: "mmqr_2", label: "MMQR (2)", number: "09-770000002", qr: "/images/logo.png", theme: "emerald" },
-];
-
-const PAYMENT_CARD_STYLES = {
-  yellow: "border-yellow-300 bg-yellow-50 text-yellow-700",
-  emerald: "border-emerald-300 bg-emerald-50 text-emerald-700",
-};
-
-const PAYMENT_QR_BORDER_STYLES = {
-  yellow: "border-yellow-200",
-  emerald: "border-emerald-200",
-};
+import PaymentQrSelector from "../components/PaymentQrSelector";
+import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -29,12 +13,11 @@ export default function CheckoutPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
-  const [paymentProvider, setPaymentProvider] = useState(ADMIN_PAYMENT_ACCOUNTS[0].id);
+  const [paymentProvider, setPaymentProvider] = useState(DEFAULT_PAYMENT_PROVIDER);
   const [receiptImage, setReceiptImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [authChecking, setAuthChecking] = useState(true);
-  const [selectedQr, setSelectedQr] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -236,34 +219,7 @@ export default function CheckoutPage() {
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {ADMIN_PAYMENT_ACCOUNTS.map((account) => (
-                <label
-                  key={account.id}
-                  className={`rounded-xl border p-4 ${PAYMENT_CARD_STYLES[account.theme]}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold">{account.label}</p>
-                    <input
-                      type="radio"
-                      name="paymentProvider"
-                      checked={paymentProvider === account.id}
-                      onChange={() => setPaymentProvider(account.id)}
-                    />
-                  </div>
-                  <p className="text-sm mt-2">Number: {account.number}</p>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedQr(account.qr)}
-                    onKeyDown={(e) => e.key === "Enter" && setSelectedQr(account.qr)}
-                    className={`mt-3 relative w-24 h-24 rounded overflow-hidden cursor-zoom-in border ${PAYMENT_QR_BORDER_STYLES[account.theme]}`}
-                  >
-                    <Image src={account.qr} alt={`${account.label} QR`} fill className="object-cover" />
-                  </div>
-                </label>
-              ))}
-            </div>
+            <PaymentQrSelector value={paymentProvider} onChange={setPaymentProvider} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Upload payment receipt</label>
@@ -290,20 +246,6 @@ export default function CheckoutPage() {
         </section>
       </div>
 
-      {selectedQr && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex flex-col items-center justify-center gap-5 p-4">
-          <div className="relative w-[80vw] max-w-md aspect-square rounded-2xl overflow-hidden border-2 border-white shadow-2xl bg-white">
-            <Image src={selectedQr} alt="Payment QR enlarged" fill className="object-contain p-2" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setSelectedQr(null)}
-            className="bg-white text-gray-900 px-6 py-2.5 rounded-full font-semibold shadow"
-          >
-            X
-          </button>
-        </div>
-      )}
     </main>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import PaymentQrSelector from "../PaymentQrSelector";
+import { DEFAULT_PAYMENT_PROVIDER } from "../../lib/paymentAccounts";
 
 const DEPOSIT_NOTICE = "ကားလက်မှတ် ၀ယ်ရန်အတွက် ကျသင့်ငွေမှ 5000MMK (၅ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
 
@@ -8,7 +10,7 @@ export default function TransportationTicketCard({ shopId, shopPhone, shopKbzPay
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ customerName: "", customerPhone: "", route: `${ticket.from} - ${ticket.to}`, departureDate: ticket.date || "", departureTime: ticket.time || "", receiptImage: "" });
+  const [form, setForm] = useState({ customerName: "", customerPhone: "", route: `${ticket.from} - ${ticket.to}`, departureDate: ticket.date || "", departureTime: ticket.time || "", receiptImage: "", paymentProvider: DEFAULT_PAYMENT_PROVIDER });
 
   const onReceiptFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -64,6 +66,10 @@ export default function TransportationTicketCard({ shopId, shopPhone, shopKbzPay
             <p><span className="font-semibold">Wave Pay</span> - {shopWavePayNumber || ""}</p>
             {!shopKbzPayNumber && !shopWavePayNumber ? <p className="text-[11px] text-gray-500">Vendor online banking numbers are not provided yet{shopPhone ? ` (contact: ${shopPhone})` : ""}.</p> : null}
           </div>
+          <PaymentQrSelector
+            value={form.paymentProvider}
+            onChange={(paymentProvider) => setForm({ ...form, paymentProvider })}
+          />
           <div className="mt-2 grid grid-cols-1 gap-2 rounded border border-green-200 bg-white p-2">
             <label className="text-xs font-semibold">Route</label>
             <input className="rounded border px-2 py-2 text-xs bg-gray-100 text-gray-600" value={form.route} readOnly />

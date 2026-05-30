@@ -4,6 +4,8 @@ import AddToCartButton from "./AddToCartButton";
 import { normalizeWholesaleTiers } from "../lib/pricing";
 import Image from "next/image";
 import { useState } from "react";
+import PaymentQrSelector from "./PaymentQrSelector";
+import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
 
 const AMENITY_META = {
   wifi: { label: "WiFi" },
@@ -20,8 +22,6 @@ const SPA_BOOKING_TEXT =
 
 export default function ShopDetailClient({ shop, items }) {
   const [activeBookingItemId, setActiveBookingItemId] = useState(null);
-  const [showQrLarge, setShowQrLarge] = useState(false);
-
   const [bookingForm, setBookingForm] = useState({
     customerName: "",
     customerPhone: "",
@@ -30,6 +30,7 @@ export default function ShopDetailClient({ shop, items }) {
     note: "",
     receiptImage: "",
     orderTime: "",
+    paymentProvider: DEFAULT_PAYMENT_PROVIDER,
   });
 
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
@@ -81,6 +82,7 @@ export default function ShopDetailClient({ shop, items }) {
           ...bookingForm,
           roomItemId: activeBookingItem._id,
           shopId: shop._id,
+          paymentProvider: bookingForm.paymentProvider,
         }),
       });
 
@@ -107,6 +109,7 @@ export default function ShopDetailClient({ shop, items }) {
           customerPhone: bookingForm.customerPhone,
           orderTime: bookingForm.orderTime,
           receiptImage: bookingForm.receiptImage,
+          paymentProvider: bookingForm.paymentProvider,
           serviceItemId: activeBookingItem._id,
           shopId: shop._id,
         }),
@@ -314,13 +317,10 @@ export default function ShopDetailClient({ shop, items }) {
                   {isSpa ? SPA_BOOKING_TEXT : HOTEL_BOOKING_TEXT}
                 </div>
 
-                {/* QR */}
-                <div
-                  className="h-32 w-32 mx-auto border cursor-pointer relative"
-                  onClick={() => setShowQrLarge(true)}
-                >
-                  <Image src="/images/logo.png" alt="QR" fill />
-                </div>
+                <PaymentQrSelector
+                  value={bookingForm.paymentProvider}
+                  onChange={(paymentProvider) => setBookingForm({ ...bookingForm, paymentProvider })}
+                />
 
                 <label className="block text-sm font-semibold text-gray-700">Upload the receipt
                   <input type="file" onChange={handleReceiptUpload} className="mt-1 w-full rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-white" />
@@ -343,25 +343,6 @@ export default function ShopDetailClient({ shop, items }) {
         </div>
       )}
 
-      {/* LARGE QR */}
-      {showQrLarge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-
-          <div
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setShowQrLarge(false)}
-          />
-
-          <div className="relative z-50 bg-white p-4 rounded">
-            <Image
-              src="/images/logo.png"
-              alt="QR Large"
-              width={400}
-              height={400}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

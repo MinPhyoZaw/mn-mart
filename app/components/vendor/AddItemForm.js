@@ -250,16 +250,17 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    const enteredName = (form.name || "").trim();
     const defaultNameByServiceType = {
       hotel: form.roomType,
-      spa: form.name,
-      shopping: form.name,
+      spa: enteredName,
+      shopping: enteredName,
       transportation: "Transportation Ticket",
     };
 
     const payload = {
       shopId: shop._id,
-      name: defaultNameByServiceType[serviceType] || form.name || "Item",
+      name: defaultNameByServiceType[serviceType] || enteredName || "Item",
       price: Number(form.price),
       retailPrice: serviceType === "shopping" ? Number(form.price) : undefined,
       image: form.image,
@@ -280,6 +281,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
     }
     if (serviceType === "spa") {
       const durationMinutes = form.duration === "custom" ? Number(form.customDuration) : Number(form.duration);
+      payload.name = enteredName;
       payload.extra = {
         durationMinutes,
         availableTime: form.availableTime,

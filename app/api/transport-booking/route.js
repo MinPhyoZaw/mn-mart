@@ -13,7 +13,7 @@ export async function POST(req) {
     const auth = requireAuth(req, ["customer", "admin", "vendor"]);
     if (!auth.ok) return auth.response;
 
-    const { shopId, ticketId, customerName, customerPhone, receiptImage } = await req.json();
+    const { shopId, ticketId, customerName, customerPhone, receiptImage, paymentProvider = "kbzpay_1" } = await req.json();
 
     if (!shopId || !ticketId || !customerName || !customerPhone || !receiptImage) {
       return NextResponse.json({ success: false, message: "Missing required booking fields." }, { status: 400 });
@@ -42,7 +42,7 @@ export async function POST(req) {
           fromCity = route.fromCity;
           toCity = route.toCity;
         }
-      } catch (e) {
+      } catch {
         // ignore lookup failure and fallback to ticketItem.extra values
       }
     }
@@ -58,7 +58,7 @@ export async function POST(req) {
       serviceType: "transportation",
       items: [{ itemId: ticketItem._id, name: ticketItem.name, image: ticketItem.image || null, price: ticketPrice, quantity: 1, lineTotal: ticketPrice }],
       receiptImage,
-      paymentProvider: "kbzpay",
+      paymentProvider,
       paymentStatus: "paid",
       totalAmount: ticketPrice,
       commissionRate: 1.5,

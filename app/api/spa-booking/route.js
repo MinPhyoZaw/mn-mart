@@ -15,7 +15,7 @@ export async function POST(req) {
     if (!auth.ok) return auth.response;
 
     const body = await req.json();
-    const { serviceItemId, shopId, customerName, customerPhone, orderTime, receiptImage } = body;
+    const { serviceItemId, shopId, customerName, customerPhone, orderTime, receiptImage, paymentProvider = "kbzpay_1" } = body;
     if (!serviceItemId || !shopId || !customerName || !customerPhone || !orderTime || !receiptImage) {
       return NextResponse.json({ success: false, message: "Missing required booking fields." }, { status: 400 });
     }
@@ -23,7 +23,7 @@ export async function POST(req) {
     await connectDB();
     const [shop, service] = await Promise.all([Shop.findById(shopId).lean(), Item.findById(serviceItemId).lean()]);
     if (!shop || shop.category !== "spa") return NextResponse.json({ success: false, message: "Spa shop not found." }, { status: 404 });
-    if (!service || String(service.shopId) !== String(shopId)) return NextResponse.json({ success: false, message: "Service not found." }, { status: 404 });
+    if (!service || String(service.shopId) !== String(shopId) || service.type !== "service") return NextResponse.json({ success: false, message: "Service not found." }, { status: 404 });
 
     const vendor = await Vendor.findById(shop.vendorId).lean();
     if (!vendor) return NextResponse.json({ success: false, message: "Vendor not found." }, { status: 404 });
@@ -44,7 +44,7 @@ export async function POST(req) {
       items: [{ itemId: service._id, name: service.name, image: service.image || null, price: totalAmount, quantity: 1, lineTotal: totalAmount }],
       bookingDetails: { note: `Requested order time: ${orderTime}` },
       receiptImage,
-      paymentProvider: "kbzpay",
+      paymentProvider,
       totalAmount,
       commissionRate: 0,
       commissionAmount,
