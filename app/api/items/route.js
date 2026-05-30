@@ -23,9 +23,13 @@ function normalizeTagName(tagName) {
   return TAG_NAME_ALIASES[normalized] || tagName.trim();
 }
 
+function getTierQuantity(tier) {
+  return tier?.minQty ?? tier?.qty ?? tier?.quantity ?? tier?.minQuantity ?? tier?.minimumQuantity;
+}
+
 function normalizeWholesaleTiers(tiers = []) {
   return (Array.isArray(tiers) ? tiers : [])
-    .map((tier) => ({ minQty: Number(tier?.minQty), price: Number(tier?.price) }))
+    .map((tier) => ({ minQty: Number(getTierQuantity(tier)), price: Number(tier?.price) }))
     .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price >= 0)
     .sort((a, b) => a.minQty - b.minQty);
 }
@@ -111,7 +115,7 @@ export async function POST(req) {
       price: body.price,
       description: body.description,
       retailPrice: body.type === "product" ? retailPrice : undefined,
-      wholesaleTiers: body.type === "product" ? wholesaleTiers.filter((tier) => tier.price < retailPrice) : [],
+      wholesaleTiers: body.type === "product" ? wholesaleTiers : [],
       image: body.image,
       type: body.type,
       category: body.type === "product" ? normalizedCategory : undefined,

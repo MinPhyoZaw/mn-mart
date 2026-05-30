@@ -1,7 +1,9 @@
+const getTierQuantity = (tier) => tier?.minQty ?? tier?.qty ?? tier?.quantity ?? tier?.minQuantity ?? tier?.minimumQuantity;
+
 export function normalizeWholesaleTiers(tiers = []) {
   return (Array.isArray(tiers) ? tiers : [])
     .map((tier) => ({
-      minQty: Number(tier?.minQty),
+      minQty: Number(getTierQuantity(tier)),
       price: Number(tier?.price),
     }))
     .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price >= 0)

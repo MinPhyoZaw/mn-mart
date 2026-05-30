@@ -281,7 +281,7 @@ export default function AddItemForm({ serviceType, shop, onCreated, setMessage }
       const retailPrice = Number(form.price);
       const wholesaleTiers = (form.wholesaleTiers || [])
         .map((tier) => ({ minQty: Number(tier.minQty), price: Number(tier.price) }))
-        .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price < retailPrice)
+        .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price >= 0)
         .sort((a, b) => a.minQty - b.minQty);
       payload.wholesaleTiers = wholesaleTiers;
       payload.extra = { quantity: Number(form.quantity || 0), retailPrice, wholesaleTiers };
