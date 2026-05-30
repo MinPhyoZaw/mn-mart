@@ -67,6 +67,7 @@ export async function POST(req) {
           price,
           quantity: qty,
           lineTotal: price * qty,
+          selectedWholesaleTier: item.selectedWholesaleTier || null,
         };
       });
 

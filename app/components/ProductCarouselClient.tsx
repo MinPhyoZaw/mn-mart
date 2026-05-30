@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import AddToCartButton from "./AddToCartButton";
+import { normalizeWholesaleTiers } from "../lib/pricing";
 
 type ProductType = {
   _id: string;
@@ -13,7 +14,52 @@ type ProductType = {
   shopName?: string;
   shopId?: string;
   vendorId?: string;
+  retailPrice?: number;
+  wholesaleTiers?: { minQty: number; price: number }[];
 };
+
+function CarouselProductCard({ product }: { product: ProductType }) {
+  const [selectedWholesaleQty, setSelectedWholesaleQty] = useState<number | null>(null);
+  const wholesaleTiers = useMemo(() => normalizeWholesaleTiers(product.wholesaleTiers || []), [product.wholesaleTiers]);
+  const selectedWholesaleTier = wholesaleTiers.find((tier) => tier.minQty === selectedWholesaleQty) || null;
+
+  return (
+    <div className="w-[160px] md:w-[200px] snap-start rounded-xl bg-white shadow-sm hover:shadow-md transition p-3 group">
+      <div className="relative w-full h-[120px] md:h-[150px] mb-3">
+        <Image
+          src={product.image || "/images/placeholder.png"}
+          alt={product.name}
+          fill
+          className="object-cover rounded-lg group-hover:scale-105 transition"
+        />
+      </div>
+
+      <h3 className="text-xs md:text-sm font-medium text-gray-800 line-clamp-2">{product.name}</h3>
+
+      <p className="text-[10px] text-red-400 mt-1">{product.shopName}</p>
+
+      <p className="mt-2 text-sm md:text-base text-gray-500">{Number(product.price || 0).toLocaleString()} MMK</p>
+
+      {wholesaleTiers.length ? (
+        <div className="mt-2 space-y-1 rounded-lg border border-green-100 bg-green-50/70 p-2 text-[10px] text-green-800">
+          {wholesaleTiers.map((tier) => (
+            <label key={tier.minQty} className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={selectedWholesaleQty === tier.minQty}
+                onChange={(e) => setSelectedWholesaleQty(e.target.checked ? tier.minQty : null)}
+                className="h-3.5 w-3.5 accent-green-600"
+              />
+              <span>လက်ကားဈေး : {tier.minQty} - {Number(tier.price).toLocaleString()} MMK</span>
+            </label>
+          ))}
+        </div>
+      ) : null}
+
+      <AddToCartButton product={{ ...product, selectedWholesaleTier }} />
+    </div>
+  );
+}
 
 export default function ProductCarouselClient({ products, heading }: { products: ProductType[]; heading?: string }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -44,27 +90,7 @@ export default function ProductCarouselClient({ products, heading }: { products:
         <div ref={scrollerRef} className="overflow-x-auto hide-scrollbar pb-2">
           <div className="flex gap-4 min-w-max snap-x snap-mandatory">
             {products.map((product) => (
-              <div
-                key={product._id}
-                className="w-[160px] md:w-[200px] snap-start rounded-xl bg-white shadow-sm hover:shadow-md transition p-3 group"
-              >
-                <div className="relative w-full h-[120px] md:h-[150px] mb-3">
-                  <Image
-                    src={product.image || "/images/placeholder.png"}
-                    alt={product.name}
-                    fill
-                    className="object-cover rounded-lg group-hover:scale-105 transition"
-                  />
-                </div>
-
-                <h3 className="text-xs md:text-sm font-medium text-gray-800 line-clamp-2">{product.name}</h3>
-
-                <p className="text-[10px] text-red-400 mt-1">{product.shopName}</p>
-
-                <p className="mt-2 text-sm md:text-base  text-gray-500">{Number(product.price || 0).toLocaleString()} MMK</p>
-
-                <AddToCartButton product={product} />
-              </div>
+              <CarouselProductCard key={product._id} product={product} />
             ))}
           </div>
         </div>

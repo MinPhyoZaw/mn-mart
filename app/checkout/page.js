@@ -62,6 +62,7 @@ export default function CheckoutPage() {
         name: item.name || "Unnamed Item",
         quantity: qty,
         price,
+        selectedWholesaleTier: item.selectedWholesaleTier || null,
       });
       map.set(key, prev);
     }
@@ -169,6 +170,11 @@ export default function CheckoutPage() {
                     <div key={`${item.name}-${itemIdx}`} className="flex items-center justify-between text-xs text-gray-700">
                       <span className="pr-3 break-words">
                         {item.name} × {item.quantity}
+                        {item.selectedWholesaleTier ? (
+                          <span className="mt-0.5 block text-[11px] text-green-700">
+                            လက်ကားဈေး : {item.selectedWholesaleTier.minQty} - {Number(item.selectedWholesaleTier.price).toLocaleString()} MMK
+                          </span>
+                        ) : null}
                       </span>
                       <span className="font-medium">{(item.price * item.quantity).toLocaleString()} MMK</span>
                     </div>

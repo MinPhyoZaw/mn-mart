@@ -173,7 +173,7 @@ export async function GET(req) {
     }
 
     const items = await Item.find(filter)
-      .populate({ path: "shopId", select: "name category" })
+      .populate({ path: "shopId", select: "name category vendorId" })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -184,6 +184,7 @@ export async function GET(req) {
             _id: item.shopId._id,
             name: item.shopId.name,
             category: item.shopId.category,
+            vendorId: item.shopId.vendorId,
           }
         : null,
     }));

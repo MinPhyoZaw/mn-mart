@@ -3,7 +3,7 @@ import { Wifi, BedDouble, Tv, Coffee } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
 import { normalizeWholesaleTiers } from "../lib/pricing";
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PaymentQrSelector from "./PaymentQrSelector";
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
 
@@ -20,6 +20,31 @@ const HOTEL_BOOKING_TEXT =
 const SPA_BOOKING_TEXT =
   "Spa Service booking တင်ရန်အတွက် ကျသင့်ငွေမှ 3000MMK (၃ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
 
+function ShoppingWholesaleOptions({ item, selectedWholesaleQty, onSelectWholesaleQty }) {
+  const wholesaleTiers = useMemo(
+    () => normalizeWholesaleTiers(item.wholesaleTiers ?? item.extra?.wholesaleTiers ?? []),
+    [item.wholesaleTiers, item.extra?.wholesaleTiers]
+  );
+
+  if (!wholesaleTiers.length) return null;
+
+  return (
+    <div className="mt-2 space-y-1 rounded-lg border border-green-100 bg-green-50/70 p-2 text-xs text-green-800">
+      {wholesaleTiers.map((tier) => (
+        <label key={tier.minQty} className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={selectedWholesaleQty === tier.minQty}
+            onChange={(e) => onSelectWholesaleQty(e.target.checked ? tier.minQty : null)}
+            className="h-4 w-4 accent-green-600"
+          />
+          <span>လက်ကားဈေး : {tier.minQty} - {Number(tier.price).toLocaleString()} MMK</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export default function ShopDetailClient({ shop, items }) {
   const [activeBookingItemId, setActiveBookingItemId] = useState(null);
   const [bookingForm, setBookingForm] = useState({
@@ -35,6 +60,7 @@ export default function ShopDetailClient({ shop, items }) {
 
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState("");
+  const [selectedWholesaleQtyByItem, setSelectedWholesaleQtyByItem] = useState({});
 
   const activeBookingItem = activeBookingItemId
     ? items.find((i) => i._id === activeBookingItemId)
@@ -44,6 +70,13 @@ export default function ShopDetailClient({ shop, items }) {
   const isSpa = shop?.category === "spa";
   const isShopping = shop?.category === "shopping";
   const visibleItems = isHotel ? items.filter((item) => item.isAvailable !== false) : items;
+
+  const setSelectedWholesaleQty = (itemId, quantity) => {
+    setSelectedWholesaleQtyByItem((prev) => ({
+      ...prev,
+      [itemId]: quantity,
+    }));
+  };
 
   const getAmenityList = (item) =>
     Object.entries(item?.extra?.amenities || {})
@@ -157,7 +190,13 @@ export default function ShopDetailClient({ shop, items }) {
                 <span className="text-black font-semibold text-lg">
                   {Number(item.price || 0).toLocaleString()} MMK
                 </span>
-                {isShopping ? <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-2 text-xs text-green-800"><p className="font-semibold">Retail Price: {Number(item.retailPrice ?? item.price ?? 0).toLocaleString()} MMK</p>{normalizeWholesaleTiers(item.wholesaleTiers).length ? <div className="mt-1 space-y-1">{normalizeWholesaleTiers(item.wholesaleTiers).map((tier) => <p key={tier.minQty}>{tier.minQty}+ pcs → {Number(tier.price).toLocaleString()} MMK</p>)}</div> : <p className="mt-1 text-green-700/80">No wholesale tiers</p>}</div> : null}
+                {isShopping ? (
+                  <ShoppingWholesaleOptions
+                    item={item}
+                    selectedWholesaleQty={selectedWholesaleQtyByItem[item._id] || null}
+                    onSelectWholesaleQty={(quantity) => setSelectedWholesaleQty(item._id, quantity)}
+                  />
+                ) : null}
                 {isHotel ? (
                   <span className="text-gray-400 text-sm font-light ml-1">/ night</span>
                 ) : null}
@@ -180,21 +219,27 @@ export default function ShopDetailClient({ shop, items }) {
                     Order Now
                   </button>
                 </>
-              ) : (
-                <AddToCartButton
-                  product={{
-                    _id: item._id,
-                    name: item.name,
-                    price: Number(item.price) || 0,
-                    retailPrice: Number(item.retailPrice ?? item.price) || 0,
-                    wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
-                    image: item.image,
-                    shopId: shop._id,
-                    shopName: shop.name,
-                    vendorId: item.vendorId || shop.vendorId,
-                  }}
-                />
-              )}
+              ) : (() => {
+                const wholesaleTiers = normalizeWholesaleTiers(item.wholesaleTiers ?? item.extra?.wholesaleTiers ?? []);
+                const selectedWholesaleTier = wholesaleTiers.find((tier) => tier.minQty === selectedWholesaleQtyByItem[item._id]) || null;
+
+                return (
+                  <AddToCartButton
+                    product={{
+                      _id: item._id,
+                      name: item.name,
+                      price: Number(item.price) || 0,
+                      retailPrice: Number(item.retailPrice ?? item.price) || 0,
+                      wholesaleTiers,
+                      selectedWholesaleTier,
+                      image: item.image,
+                      shopId: shop._id,
+                      shopName: shop.name,
+                      vendorId: item.vendorId || shop.vendorId,
+                    }}
+                  />
+                );
+              })()}
             </div>
           </div>
         ))}

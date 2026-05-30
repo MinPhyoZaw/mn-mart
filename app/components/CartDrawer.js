@@ -58,7 +58,7 @@ export default function CartDrawer() {
 
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold line-clamp-1">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.price.toLocaleString()} MMK / item</p>{item.retailPrice > item.price ? <p className="text-xs text-green-700">You save {((item.retailPrice - item.price) * item.quantity).toLocaleString()} MMK</p> : null}
+                      <p className="text-sm text-gray-600">{item.price.toLocaleString()} MMK / item</p>{item.selectedWholesaleTier ? <p className="text-xs text-green-700">လက်ကားဈေး : {item.selectedWholesaleTier.minQty} - {Number(item.selectedWholesaleTier.price).toLocaleString()} MMK</p> : null}{item.retailPrice > item.price ? <p className="text-xs text-green-700">You save {((item.retailPrice - item.price) * item.quantity).toLocaleString()} MMK</p> : null}
 
                       <div className="mt-2 inline-flex items-center border rounded-md overflow-hidden">
                         <button

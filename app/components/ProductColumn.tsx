@@ -4,6 +4,8 @@ import Item from "../models/Item";
 import Shop from "../models/Shop"; // 👈 THIS LINE FIXES IT
 import ProductCarouselClient from "./ProductCarouselClient";
 
+type WholesaleTier = { minQty: number; price: number };
+
 type ProductType = {
   _id: string;
   name: string;
@@ -13,6 +15,36 @@ type ProductType = {
   shopName?: string;
   shopId?: string;
   vendorId?: string;
+  retailPrice?: number;
+  wholesaleTiers?: WholesaleTier[];
+};
+
+type LeanShop = {
+  _id: unknown;
+  name?: string;
+  vendorId?: unknown;
+};
+
+type LeanItem = {
+  _id: unknown;
+  shopId?: unknown;
+  name?: string;
+  description?: string;
+  price?: number;
+  retailPrice?: number;
+  wholesaleTiers?: WholesaleTier[];
+  image?: string;
+  shopName?: string;
+};
+
+type LeanProduct = {
+  _id: unknown;
+  shopId?: unknown;
+  name?: string;
+  description?: string;
+  price?: number;
+  image?: string;
+  shopName?: string;
 };
 
 const normalizeTagName = (tagName?: string) => (tagName || "").trim().toLowerCase();
@@ -35,7 +67,7 @@ const getTagAliases = (tagName?: string): string[] => {
 async function fetchProductsByTag(tagName?: string, limit = 10): Promise<ProductType[]> {
   await connectDB();
 
-  const itemQuery: any = { type: "product", isAvailable: true };
+  const itemQuery: Record<string, unknown> = { type: "product", isAvailable: true };
   const tagAliases = getTagAliases(tagName);
   if (tagAliases.length) itemQuery.tagName = { $in: tagAliases };
 
@@ -44,16 +76,18 @@ async function fetchProductsByTag(tagName?: string, limit = 10): Promise<Product
   if (items.length) {
     const shopIds = Array.from(new Set(items.map((it) => String(it.shopId)).filter(Boolean)));
     const shops = shopIds.length ? await Shop.find({ _id: { $in: shopIds } }).lean() : [];
-    const shopMap = shops.reduce((acc, s) => ({ ...acc, [String(s._id)]: s }), {} as Record<string, any>);
+    const shopMap = (shops as LeanShop[]).reduce((acc, s) => ({ ...acc, [String(s._id)]: s }), {} as Record<string, LeanShop>);
 
-    return items.map((item) => {
+    return (items as LeanItem[]).map((item) => {
       const sid = item.shopId ? String(item.shopId) : "";
       const shop = shopMap[sid] || {};
       return {
         _id: String(item._id),
-        name: item.name,
+        name: item.name || "",
         description: item.description,
-        price: item.price,
+        price: Number(item.price) || 0,
+        retailPrice: item.retailPrice ?? item.price,
+        wholesaleTiers: Array.isArray(item.wholesaleTiers) ? item.wholesaleTiers : [],
         image: item.image,
         shopId: sid,
         shopName: shop.name || item.shopName || "",
@@ -62,7 +96,7 @@ async function fetchProductsByTag(tagName?: string, limit = 10): Promise<Product
     });
   }
 
-  const productQuery: any = { isActive: true };
+  const productQuery: Record<string, unknown> = { isActive: true };
   if (tagAliases.length && Product.schema.path("tagName")) {
     productQuery.tagName = { $in: tagAliases };
   }
@@ -72,16 +106,16 @@ async function fetchProductsByTag(tagName?: string, limit = 10): Promise<Product
 
   const shopIds = Array.from(new Set(products.map((p) => String(p.shopId)).filter(Boolean)));
   const shops = shopIds.length ? await Shop.find({ _id: { $in: shopIds } }).lean() : [];
-  const shopMap = shops.reduce((acc, s) => ({ ...acc, [String(s._id)]: s }), {} as Record<string, any>);
+  const shopMap = (shops as LeanShop[]).reduce((acc, s) => ({ ...acc, [String(s._id)]: s }), {} as Record<string, LeanShop>);
 
-  return products.map((product) => {
+  return (products as LeanProduct[]).map((product) => {
     const sid = product.shopId ? String(product.shopId) : "";
     const shop = shopMap[sid] || {};
     return {
       _id: String(product._id),
-      name: product.name,
+      name: product.name || "",
       description: product.description,
-      price: product.price,
+      price: Number(product.price) || 0,
       image: product.image,
       shopId: sid,
       shopName: shop.name || product.shopName || "",
