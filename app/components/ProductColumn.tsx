@@ -4,7 +4,8 @@ import Item from "../models/Item";
 import Shop from "../models/Shop"; // 👈 THIS LINE FIXES IT
 import ProductCarouselClient from "./ProductCarouselClient";
 
-type WholesaleTier = { minQty: number; price: number };
+type WholesaleTier = { minQty?: unknown; qty?: unknown; quantity?: unknown; minQuantity?: unknown; price?: unknown };
+type SerializedWholesaleTier = { minQty: number; price: number };
 
 type ProductType = {
   _id: string;
@@ -16,7 +17,7 @@ type ProductType = {
   shopId?: string;
   vendorId?: string;
   retailPrice?: number;
-  wholesaleTiers?: WholesaleTier[];
+  wholesaleTiers?: SerializedWholesaleTier[];
 };
 
 type LeanShop = {
@@ -46,6 +47,18 @@ type LeanProduct = {
   image?: string;
   shopName?: string;
 };
+
+
+const getTierQuantity = (tier: WholesaleTier) => tier.minQty ?? tier.qty ?? tier.quantity ?? tier.minQuantity;
+
+const serializeWholesaleTiers = (tiers?: WholesaleTier[]): SerializedWholesaleTier[] =>
+  (Array.isArray(tiers) ? tiers : [])
+    .map((tier) => ({
+      minQty: Number(getTierQuantity(tier)),
+      price: Number(tier.price),
+    }))
+    .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price >= 0)
+    .sort((a, b) => a.minQty - b.minQty);
 
 const normalizeTagName = (tagName?: string) => (tagName || "").trim().toLowerCase();
 
@@ -86,8 +99,8 @@ async function fetchProductsByTag(tagName?: string, limit = 10): Promise<Product
         name: item.name || "",
         description: item.description,
         price: Number(item.price) || 0,
-        retailPrice: item.retailPrice ?? item.price,
-        wholesaleTiers: Array.isArray(item.wholesaleTiers) ? item.wholesaleTiers : [],
+        retailPrice: Number(item.retailPrice ?? item.price) || 0,
+        wholesaleTiers: serializeWholesaleTiers(item.wholesaleTiers),
         image: item.image,
         shopId: sid,
         shopName: shop.name || item.shopName || "",
