@@ -23,7 +23,11 @@ export const compressItemImage = async (file) => {
   const sourceDataUrl = await fileToDataUrl(file);
   const image = await loadImageElement(sourceDataUrl);
 
-  const scale = Math.min(MAX_IMAGE_SIDE / image.width, MAX_IMAGE_SIDE / image.height, 1);
+  const scale = Math.min(
+    MAX_IMAGE_SIDE / image.width,
+    MAX_IMAGE_SIDE / image.height,
+    1,
+  );
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(image.width * scale));
   canvas.height = Math.max(1, Math.round(image.height * scale));
@@ -32,6 +36,16 @@ export const compressItemImage = async (file) => {
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
   return canvas.toDataURL("image/webp", OUTPUT_QUALITY);
+};
+
+export const dataUrlToBlob = async (dataUrl) => {
+  const response = await fetch(dataUrl);
+  return response.blob();
+};
+
+export const compressItemImageBlob = async (file) => {
+  const dataUrl = await compressItemImage(file);
+  return dataUrlToBlob(dataUrl);
 };
 
 export default null;
