@@ -8,7 +8,11 @@ const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5cHhtc2p5enBsdnRua21udmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzIyNDAsImV4cCI6MjA5NTgwODI0MH0.CFsBlIHMUtryxFn_vkdWtAJT1GT03lrS_e4AcIhDnZ0";
 
 export const ITEM_IMAGE_BUCKET =
-  process.env.NEXT_PUBLIC_SUPABASE_ITEM_IMAGE_BUCKET || "mn-mart-image";
+  process.env.NEXT_PUBLIC_SUPABASE_ITEM_IMAGE_BUCKET || "item-images";
+export const PROFILE_IMAGE_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_PROFILE_IMAGE_BUCKET || ITEM_IMAGE_BUCKET;
+export const RECEIPT_IMAGE_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_RECEIPT_IMAGE_BUCKET || ITEM_IMAGE_BUCKET;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
