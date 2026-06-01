@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PaymentQrSelector from "../PaymentQrSelector";
 import { DEFAULT_PAYMENT_PROVIDER } from "../../lib/paymentAccounts";
+import { RECEIPT_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../../lib/supabase";
 
 const DEPOSIT_NOTICE = "ကားလက်မှတ် ၀ယ်ရန်အတွက် ကျသင့်ငွေမှ 5000MMK (၅ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
 
@@ -10,21 +11,42 @@ export default function TransportationTicketCard({ shopId, shopPhone, shopKbzPay
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [receiptUploading, setReceiptUploading] = useState(false);
   const [form, setForm] = useState({ customerName: "", customerPhone: "", route: `${ticket.from} - ${ticket.to}`, departureDate: ticket.date || "", departureTime: ticket.time || "", receiptImage: "", paymentProvider: DEFAULT_PAYMENT_PROVIDER });
 
-  const onReceiptFileChange = (e) => {
+  const onReceiptFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setMessage("Please upload an image file.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setForm((prev) => ({ ...prev, receiptImage: reader.result }));
-    reader.readAsDataURL(file);
+
+    setReceiptUploading(true);
+    setMessage("Uploading receipt image...");
+    setForm((prev) => ({ ...prev, receiptImage: "" }));
+
+    try {
+      const receiptImage = await uploadImageToSupabaseStorage(file, {
+        bucket: RECEIPT_IMAGE_BUCKET,
+        folder: `receipts/transportation/${shopId || "shops"}`,
+      });
+      setForm((prev) => ({ ...prev, receiptImage }));
+      setMessage("Receipt image uploaded successfully.");
+    } catch (error) {
+      setMessage(error.message || "Unable to upload receipt image.");
+      e.target.value = "";
+    } finally {
+      setReceiptUploading(false);
+    }
   };
 
   const onSubmit = async () => {
+    if (receiptUploading) {
+      setMessage("Please wait for the receipt upload to finish.");
+      return;
+    }
+
     if (!form.customerName || !form.customerPhone || !form.receiptImage) {
       setMessage("Please fill all fields.");
       return;
@@ -86,7 +108,9 @@ export default function TransportationTicketCard({ shopId, shopPhone, shopKbzPay
           </div>
           <label className="mt-2 block text-xs font-semibold">Upload Receipt Image</label>
           <input type="file" accept="image/*" className="mt-1 w-full rounded border px-2 py-2" onChange={onReceiptFileChange} />
-          <button type="button" onClick={onSubmit} disabled={loading} className="mt-3 w-full rounded bg-green-700 px-3 py-2 text-white">{loading ? "Submitting..." : "Confirm Buy"}</button>
+          {receiptUploading ? <p className="mt-1 text-xs text-blue-700">Uploading receipt to Supabase...</p> : null}
+          {form.receiptImage ? <p className="mt-1 text-xs text-green-700">Receipt uploaded to Supabase ✅</p> : null}
+          <button type="button" onClick={onSubmit} disabled={loading || receiptUploading} className="mt-3 w-full rounded bg-green-700 px-3 py-2 text-white">{loading ? "Submitting..." : receiptUploading ? "Uploading receipt..." : "Confirm Buy"}</button>
           {message ? <p className="mt-2 text-xs font-medium text-green-700">{message}</p> : null}
         </div>
       ) : null}

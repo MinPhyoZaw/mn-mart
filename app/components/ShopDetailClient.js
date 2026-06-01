@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import PaymentQrSelector from "./PaymentQrSelector";
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
+import { RECEIPT_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supabase";
 
 const AMENITY_META = {
   wifi: { label: "WiFi" },
@@ -59,6 +60,7 @@ export default function ShopDetailClient({ shop, items }) {
   });
 
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [receiptUploading, setReceiptUploading] = useState(false);
   const [bookingMessage, setBookingMessage] = useState("");
   const [selectedWholesaleQtyByItem, setSelectedWholesaleQtyByItem] = useState({});
 
@@ -83,20 +85,39 @@ export default function ShopDetailClient({ shop, items }) {
       .filter(([, enabled]) => enabled)
       .map(([key]) => AMENITY_META[key] || { label: key });
 
-  const handleReceiptUpload = (e) => {
+  const handleReceiptUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setBookingMessage("Please upload an image file.");
+      return;
+    }
 
-    const reader = new FileReader();
-    reader.onload = () =>
-      setBookingForm((prev) => ({
-        ...prev,
-        receiptImage: reader.result,
-      }));
-    reader.readAsDataURL(file);
+    setReceiptUploading(true);
+    setBookingMessage("Uploading receipt image...");
+    setBookingForm((prev) => ({ ...prev, receiptImage: "" }));
+
+    try {
+      const receiptImage = await uploadImageToSupabaseStorage(file, {
+        bucket: RECEIPT_IMAGE_BUCKET,
+        folder: `receipts/${shop?.category || "booking"}/${shop?._id || "shops"}`,
+      });
+      setBookingForm((prev) => ({ ...prev, receiptImage }));
+      setBookingMessage("Receipt image uploaded successfully.");
+    } catch (error) {
+      setBookingMessage(error.message || "Unable to upload receipt image.");
+      e.target.value = "";
+    } finally {
+      setReceiptUploading(false);
+    }
   };
 
   const submitHotelBooking = async () => {
+    if (receiptUploading) {
+      setBookingMessage("Please wait for the receipt upload to finish.");
+      return;
+    }
+
     if (
       !bookingForm.customerName ||
       !bookingForm.customerPhone ||
@@ -129,6 +150,11 @@ export default function ShopDetailClient({ shop, items }) {
   };
 
   const submitSpaBooking = async () => {
+    if (receiptUploading) {
+      setBookingMessage("Please wait for the receipt upload to finish.");
+      return;
+    }
+
     if (!bookingForm.customerName || !bookingForm.customerPhone || !bookingForm.orderTime || !bookingForm.receiptImage) {
       setBookingMessage("Please fill all required fields.");
       return;
@@ -368,15 +394,17 @@ export default function ShopDetailClient({ shop, items }) {
                 />
 
                 <label className="block text-sm font-semibold text-gray-700">Upload the receipt
-                  <input type="file" onChange={handleReceiptUpload} className="mt-1 w-full rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-white" />
+                  <input type="file" accept="image/*" onChange={handleReceiptUpload} className="mt-1 w-full rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-white" />
                 </label>
+                {receiptUploading ? <p className="text-xs text-blue-600">Uploading receipt to Supabase...</p> : null}
+                {bookingForm.receiptImage ? <p className="text-xs text-green-700">Receipt uploaded to Supabase ✅</p> : null}
 
                 <button
                   onClick={isSpa ? submitSpaBooking : submitHotelBooking}
-                  disabled={bookingSubmitting}
+                  disabled={bookingSubmitting || receiptUploading}
                   className="w-full bg-yellow-500 text-white py-2 rounded"
                 >
-                  {bookingSubmitting ? "Submitting..." : "Submit Order"}
+                  {bookingSubmitting ? "Submitting..." : receiptUploading ? "Uploading receipt..." : "Submit Order"}
                 </button>
 
                 {bookingMessage && (

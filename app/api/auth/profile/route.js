@@ -3,6 +3,18 @@ import User from "../../../models/User";
 import connectDB from "../../../lib/mongodb";
 import { verifyToken } from "../../../lib/jwt";
 
+const isValidImageReference = (value) => {
+  if (typeof value !== "string") return false;
+  if (value.startsWith("data:image/")) return true;
+
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+};
+
 export async function PATCH(req) {
   try {
     await connectDB();
@@ -15,7 +27,7 @@ export async function PATCH(req) {
     const decoded = verifyToken(token);
     const { profileImage } = await req.json();
 
-    if (typeof profileImage !== "string" || !profileImage.startsWith("data:image/")) {
+    if (!isValidImageReference(profileImage)) {
       return NextResponse.json({ error: "Invalid profile image." }, { status: 400 });
     }
 
