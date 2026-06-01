@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 import PaymentQrSelector from "../components/PaymentQrSelector";
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
+import { RECEIPT_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supabase";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function CheckoutPage() {
   const [paymentProvider, setPaymentProvider] = useState(DEFAULT_PAYMENT_PROVIDER);
   const [receiptImage, setReceiptImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [message, setMessage] = useState("");
   const [authChecking, setAuthChecking] = useState(true);
 
@@ -69,14 +71,6 @@ export default function CheckoutPage() {
     return [...map.values()];
   }, [cartItems]);
 
-  const readFile = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("Unable to read receipt image."));
-      reader.readAsDataURL(file);
-    });
-
   const onReceiptChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -85,12 +79,22 @@ export default function CheckoutPage() {
       return;
     }
 
+    setUploadingReceipt(true);
+    setReceiptImage("");
+    setMessage("Uploading receipt image...");
+
     try {
-      const imageData = await readFile(file);
-      setReceiptImage(imageData);
-      setMessage("");
+      const receiptImageUrl = await uploadImageToSupabaseStorage(file, {
+        bucket: RECEIPT_IMAGE_BUCKET,
+        folder: "receipts/checkout",
+      });
+      setReceiptImage(receiptImageUrl);
+      setMessage("Receipt image uploaded successfully.");
     } catch (error) {
-      setMessage(error.message || "Unable to read image");
+      setMessage(error.message || "Unable to upload receipt image.");
+      e.target.value = "";
+    } finally {
+      setUploadingReceipt(false);
     }
   };
 
@@ -98,6 +102,11 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (cartItems.length === 0) {
       setMessage("Your cart is empty.");
+      return;
+    }
+
+    if (uploadingReceipt) {
+      setMessage("Please wait for the receipt upload to finish.");
       return;
     }
 
@@ -236,17 +245,18 @@ export default function CheckoutPage() {
                 onChange={onReceiptChange}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2"
               />
-              {receiptImage && <p className="mt-2 text-xs text-green-700">Receipt image ready ✅</p>}
+              {uploadingReceipt && <p className="mt-2 text-xs text-blue-700">Uploading receipt to Supabase...</p>}
+              {receiptImage && <p className="mt-2 text-xs text-green-700">Receipt uploaded to Supabase ✅</p>}
             </div>
 
             {message && <p className="text-sm text-blue-700">{message}</p>}
 
             <button
               type="submit"
-              disabled={submitting || cartItems.length === 0}
+              disabled={submitting || uploadingReceipt || cartItems.length === 0}
               className="w-full sm:w-auto bg-green-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
-              {submitting ? "Submitting..." : "Confirm Checkout"}
+              {submitting ? "Submitting..." : uploadingReceipt ? "Uploading receipt..." : "Confirm Checkout"}
             </button>
           </form>
         </section>

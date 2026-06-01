@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 import SearchBar from "./SearchBar";
+import { PROFILE_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supabase";
 
 import { Raleway } from "next/font/google";
 
@@ -31,6 +32,11 @@ const loadImageElement = (src) => new Promise((resolve, reject) => {
   img.onerror = () => reject(new Error("Unable to load selected image."));
   img.src = src;
 });
+
+const dataUrlToBlob = async (dataUrl) => {
+  const response = await fetch(dataUrl);
+  return response.blob();
+};
 
 const compressProfileImage = async (file) => {
   const sourceDataUrl = await fileToDataUrl(file);
@@ -134,7 +140,13 @@ export default function Navbar() {
     setIsUploading(true);
 
     try {
-      const profileImage = await compressProfileImage(file);
+      const compressedProfileImage = await compressProfileImage(file);
+      const profileImageBlob = await dataUrlToBlob(compressedProfileImage);
+      const profileImage = await uploadImageToSupabaseStorage(profileImageBlob, {
+        bucket: PROFILE_IMAGE_BUCKET,
+        folder: `profiles/${user?._id || "users"}`,
+      });
+
       const res = await fetch("/api/auth/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -566,7 +578,7 @@ trailer
 
                 {uploadError && <p className="mt-2 text-sm text-red-500">{uploadError}</p>}
                 <p className="mt-2 text-xs text-gray-500">
-                  Images are auto-resized and compressed for fast loading and consistent quality.
+Images are auto-resized, compressed, and stored in Supabase for fast loading and consistent quality.
                 </p>
               </div>
 
