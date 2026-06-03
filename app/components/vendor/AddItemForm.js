@@ -375,7 +375,7 @@ export default function AddItemForm({
                     type="number"
                     min="0"
                     step="0.01"
-                    placeholder="Price"
+                    placeholder="တစ်ခုချင်းဈေးနှုန်း"
                     value={tier.price}
                     onChange={(e) =>
                       updateWholesaleTier(idx, "price", e.target.value)

@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "./components/NavBar";
 import MobileBottomBar from "./components/MobileBottomBar";
 import CartDrawer from "./components/CartDrawer";
+import SplashVideo from "./components/SplashVideo";
 import { CartProvider } from "./context/CartContext";
 import { Raleway, Inter } from "next/font/google";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${raleway.variable} font-[var(--font-inter)]`}>
+        <SplashVideo />
         <CartProvider>
           <Navbar />
           <main className="min-h-screen bg-gray-50">{children}</main>

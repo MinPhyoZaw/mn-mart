@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Menu, ShoppingCart, User, X, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Bell, Menu, ShoppingCart, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 import SearchBar from "./SearchBar";
-import { PROFILE_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supabase";
 
 import { Raleway } from "next/font/google";
 
@@ -16,52 +15,15 @@ const raleway = Raleway({
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-const MAX_IMAGE_SIDE = 320;
-const OUTPUT_QUALITY = 0.72;
-
-const fileToDataUrl = (file) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve(reader.result);
-  reader.onerror = () => reject(new Error("Unable to read the image file."));
-  reader.readAsDataURL(file);
-});
-
-const loadImageElement = (src) => new Promise((resolve, reject) => {
-  const img = new window.Image();
-  img.onload = () => resolve(img);
-  img.onerror = () => reject(new Error("Unable to load selected image."));
-  img.src = src;
-});
-
-const dataUrlToBlob = async (dataUrl) => {
-  const response = await fetch(dataUrl);
-  return response.blob();
-};
-
-const compressProfileImage = async (file) => {
-  const sourceDataUrl = await fileToDataUrl(file);
-  const image = await loadImageElement(sourceDataUrl);
-
-  const scale = Math.min(MAX_IMAGE_SIDE / image.width, MAX_IMAGE_SIDE / image.height, 1);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(image.width * scale));
-  canvas.height = Math.max(1, Math.round(image.height * scale));
-
-  const ctx = canvas.getContext("2d", { alpha: false });
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-  return canvas.toDataURL("image/webp", OUTPUT_QUALITY);
-};
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
+  
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const fileInputRef = useRef(null);
+  
   const router = useRouter();
   const pathname = usePathname();
   const { totalItems, toggleCart } = useCart();
@@ -124,49 +86,9 @@ export default function Navbar() {
   const openAccountPane = () => {
     closeMenu();
     setIsAccountOpen(true);
-    setUploadError("");
   };
 
-  const handleProfileImageChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Please upload a valid image file.");
-      return;
-    }
-
-    setUploadError("");
-    setIsUploading(true);
-
-    try {
-      const compressedProfileImage = await compressProfileImage(file);
-      const profileImageBlob = await dataUrlToBlob(compressedProfileImage);
-      const profileImage = await uploadImageToSupabaseStorage(profileImageBlob, {
-        bucket: PROFILE_IMAGE_BUCKET,
-        folder: `profiles/${user?._id || "users"}`,
-      });
-
-      const res = await fetch("/api/auth/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileImage }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Unable to update your profile image.");
-      }
-
-      setUser(data.user);
-      window.dispatchEvent(new Event("auth-changed"));
-    } catch (error) {
-      setUploadError(error.message || "Image upload failed.");
-    } finally {
-      setIsUploading(false);
-      event.target.value = "";
-    }
-  };
+  
 
 
 
@@ -536,20 +458,9 @@ trailer
               <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
                 <div className="mb-4 flex items-center gap-4">
                   <div className="relative h-20 w-20 overflow-hidden rounded-full border border-gray-200 bg-white">
-                    {user.profileImage ? (
-                      <Image
-                        src={user.profileImage}
-                        alt={`${user.name} profile`}
-                        fill
-                        sizes="80px"
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-green-100 text-xl font-bold text-green-700">
-                        {userInitial}
-                      </div>
-                    )}
+                    <div className="flex h-full w-full items-center justify-center bg-green-100 text-xl font-bold text-green-700">
+                      {userInitial}
+                    </div>
                   </div>
 
                   <div className="min-w-0">
@@ -558,28 +469,7 @@ trailer
                   </div>
                 </div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleProfileImageChange}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  <Upload size={16} />
-                  {isUploading ? "Uploading..." : "Upload Profile Photo"}
-                </button>
-
-                {uploadError && <p className="mt-2 text-sm text-red-500">{uploadError}</p>}
-                <p className="mt-2 text-xs text-gray-500">
-Images are auto-resized, compressed, and stored in Supabase for fast loading and consistent quality.
-                </p>
+                
               </div>
 
               <button
