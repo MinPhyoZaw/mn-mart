@@ -279,7 +279,7 @@ export default function ShopDetailClient({ shop, items }) {
 
       {/* MODAL */}
       {(isHotel || isSpa) && activeBookingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
 
           {/* overlay */}
           <div
@@ -288,7 +288,7 @@ export default function ShopDetailClient({ shop, items }) {
           />
 
           {/* modal */}
-          <div className={`relative w-full ${isSpa ? "max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto p-6" : "max-w-5xl max-h-[calc(100vh-2rem)] flex flex-col md:flex-row overflow-hidden"} bg-white rounded-2xl shadow-xl`}>
+          <div className={`relative w-full ${isSpa ? "max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]" : "max-w-5xl max-h-[calc(100dvh-2rem)] flex flex-col md:flex-row overflow-hidden"} bg-white rounded-2xl shadow-xl`}>
 
             {/* LEFT IMAGE */}
             {!isSpa ? <div className="relative h-48 flex-none md:h-auto md:w-1/2">
@@ -301,7 +301,7 @@ export default function ShopDetailClient({ shop, items }) {
             </div> : null}
 
             {/* RIGHT FORM */}
-            <div className={isSpa ? "w-full" : "min-h-0 flex-1 overflow-y-auto p-5 md:w-1/2 md:p-6"}>
+            <div className={isSpa ? "w-full" : "min-h-0 flex-1 overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:w-1/2 md:p-6"}>
 
               <button
                 onClick={() => setActiveBookingItemId(null)}
