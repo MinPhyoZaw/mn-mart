@@ -279,7 +279,7 @@ export default function ShopDetailClient({ shop, items }) {
 
       {/* MODAL */}
       {(isHotel || isSpa) && activeBookingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 
           {/* overlay */}
           <div
@@ -288,10 +288,10 @@ export default function ShopDetailClient({ shop, items }) {
           />
 
           {/* modal */}
-          <div className={`relative w-full ${isSpa ? "max-w-lg" : "max-w-5xl"} bg-white rounded-2xl shadow-xl ${isSpa ? "p-6" : "flex flex-col md:flex-row overflow-hidden"}`}>
+          <div className={`relative w-full ${isSpa ? "max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto p-6" : "max-w-5xl max-h-[calc(100vh-2rem)] flex flex-col md:flex-row overflow-hidden"} bg-white rounded-2xl shadow-xl`}>
 
             {/* LEFT IMAGE */}
-            {!isSpa ? <div className="md:w-1/2 h-64 md:h-auto relative">
+            {!isSpa ? <div className="relative h-48 flex-none md:h-auto md:w-1/2">
               <Image
                 src={activeBookingItem.image}
                 alt={activeBookingItem.name}
@@ -301,7 +301,7 @@ export default function ShopDetailClient({ shop, items }) {
             </div> : null}
 
             {/* RIGHT FORM */}
-            <div className={isSpa ? "w-full" : "md:w-1/2 p-6 overflow-y-auto"}>
+            <div className={isSpa ? "w-full" : "min-h-0 flex-1 overflow-y-auto p-5 md:w-1/2 md:p-6"}>
 
               <button
                 onClick={() => setActiveBookingItemId(null)}
@@ -323,7 +323,7 @@ export default function ShopDetailClient({ shop, items }) {
                 ))}
               </div> : null}
 
-              <div className="space-y-4">
+              <div className="space-y-3">
 
                 <label className="block text-sm font-semibold text-gray-700">Your Name
                 <input
@@ -390,7 +390,7 @@ export default function ShopDetailClient({ shop, items }) {
                   }
                 />
 
-                <div className="border p-3 bg-gray-50 text-sm leading-7 min-h-28">
+                <div className="border p-3 bg-gray-50 text-sm leading-6">
                   {isSpa ? SPA_BOOKING_TEXT : HOTEL_BOOKING_TEXT}
                 </div>
 

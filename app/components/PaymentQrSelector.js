@@ -19,9 +19,9 @@ export default function PaymentQrSelector({ value, onChange, className = "" }) {
 
   return (
     <>
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${className}`}>
+      <div className={`grid grid-cols-2 gap-3 ${className}`}>
         {ADMIN_PAYMENT_ACCOUNTS.map((account) => (
-          <label key={account.id} className={`rounded-xl border p-4 ${PAYMENT_CARD_STYLES[account.theme]}`}>
+          <label key={account.id} className={`rounded-xl border p-3 ${PAYMENT_CARD_STYLES[account.theme]}`}>
             <div className="flex items-center justify-between gap-3">
               <p className="font-semibold">{account.label}</p>
               <input
@@ -31,13 +31,12 @@ export default function PaymentQrSelector({ value, onChange, className = "" }) {
                 onChange={() => onChange?.(account.id)}
               />
             </div>
-            <p className="text-sm mt-2">Number: {account.number}</p>
             <div
               role="button"
               tabIndex={0}
               onClick={() => setSelectedQr(account.qr)}
               onKeyDown={(e) => e.key === "Enter" && setSelectedQr(account.qr)}
-              className={`mt-3 relative w-24 h-24 rounded overflow-hidden cursor-zoom-in border bg-white ${PAYMENT_QR_BORDER_STYLES[account.theme]}`}
+              className={`mt-2 relative w-20 h-20 rounded overflow-hidden cursor-zoom-in border bg-white ${PAYMENT_QR_BORDER_STYLES[account.theme]}`}
               aria-label={`Open ${account.label} QR code`}
             >
               <Image src={account.qr} alt={`${account.label} QR`} fill className="object-contain p-1" />
