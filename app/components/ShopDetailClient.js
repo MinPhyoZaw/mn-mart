@@ -73,6 +73,12 @@ export default function ShopDetailClient({ shop, items }) {
   const isShopping = shop?.category === "shopping";
   const visibleItems = isHotel ? items.filter((item) => item.isAvailable !== false) : items;
 
+  const gridClasses = isSpa
+    ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6"
+    : isShopping
+    ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-6"
+    : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 mt-6";
+
   const setSelectedWholesaleQty = (itemId, quantity) => {
     setSelectedWholesaleQtyByItem((prev) => ({
       ...prev,
@@ -193,7 +199,7 @@ export default function ShopDetailClient({ shop, items }) {
       <h1 className="text-2xl font-bold mt-4">{shop.name}</h1>
 
       {/* ITEMS */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isShopping || isSpa ? "lg:grid-cols-5" : "lg:grid-cols-3"} gap-4 mt-6`}>
+      <div className={gridClasses}>
         {visibleItems.length === 0 ? (
           <p className="text-sm text-gray-500">No available rooms right now.</p>
         ) : null}

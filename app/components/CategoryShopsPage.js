@@ -106,6 +106,7 @@ export default function CategoryShopsPage(param) {
             shops={shops}
             isTransportation={isTransportation}
             ctaLabel={ctaLabel}
+            category={category}
           />
         )}
       </div>
