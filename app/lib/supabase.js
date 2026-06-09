@@ -10,6 +10,9 @@ const supabaseKey =
 export const ITEM_IMAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_ITEM_IMAGE_BUCKET || "mn-mart-image";
 
+  export const RECEIPT_IMAGE_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_ITEM_IMAGE_BUCKET || "receipt-upload";
+
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 const sanitizeStorageSegment = (value) =>

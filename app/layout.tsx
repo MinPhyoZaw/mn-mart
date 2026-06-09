@@ -29,16 +29,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${raleway.variable} font-[var(--font-inter)]`}>
-        <SplashVideo />
-        <CartProvider>
-          <Navbar />
-          <main className="min-h-screen bg-gray-50">{children}</main>
-          <MobileBottomBar />
-          <CartDrawer />
-        </CartProvider>
-      </body>
-    </html>
-  );
+  <html lang="en">
+    <body
+      className={`${inter.variable} ${raleway.variable} font-[var(--font-inter)]`}
+    >
+      <SplashVideo />
+
+      <CartProvider>
+        <Navbar />
+
+        <main className="min-h-screen bg-gray-50 pb-24">
+          {children}
+        </main>
+
+        <MobileBottomBar />
+        <CartDrawer />
+      </CartProvider>
+    </body>
+  </html>
+);
 }

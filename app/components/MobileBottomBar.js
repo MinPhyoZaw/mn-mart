@@ -17,7 +17,7 @@ export default function MobileBottomBar() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-50">
+    <nav className="fixed bottom-0 left-0 mt-10 right-0 bg-white border-t border-gray-200 sm:hidden z-50">
       <div className="flex justify-around items-center py-3">
         {navItems.map((item, idx) => {
           const isActive = pathname === item.href;
