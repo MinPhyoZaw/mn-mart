@@ -168,7 +168,6 @@ export default function CheckoutPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-sm text-gray-900">{entry.shopName}</p>
-                    <p className="text-xs text-gray-500">Vendor: {entry.vendorName}</p>
                   </div>
                   <span className="text-xs font-medium bg-white border border-gray-200 px-2 py-1 rounded">
                     {entry.items.length} items
@@ -205,9 +204,19 @@ export default function CheckoutPage() {
           </div>
         </aside>
 
-        <section className="order-1 lg:order-1 lg:col-span-2 w-full max-w-3xl lg:max-w-none mx-auto bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Checkout</h1>
-          <p className="mt-1 text-sm text-gray-600">Upload payment receipt and confirm your order.</p>
+        <section className="relative order-1 lg:order-1 lg:col-span-2 w-full max-w-3xl lg:max-w-none mx-auto bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="Close checkout form"
+            className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-xl leading-none text-gray-500 shadow-sm transition hover:bg-gray-50 hover:text-gray-900 sm:right-4 sm:top-4"
+          >
+            ×
+          </button>
+          <div className="pr-10">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Checkout</h1>
+            <p className="mt-1 text-sm text-gray-600">Upload payment receipt and confirm your order.</p>
+          </div>
 
           <form className="mt-4 sm:mt-6 space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
