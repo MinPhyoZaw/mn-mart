@@ -13,9 +13,6 @@ const DEPOSIT_NOTICE =
 
 export default function TransportationTicketCard({
   shopId,
-  shopPhone,
-  shopKbzPayNumber,
-  shopWavePayNumber,
   ticket,
   rightSide,
 }) {
@@ -198,36 +195,6 @@ export default function TransportationTicketCard({
               <p className="mb-3 rounded-lg bg-yellow-50 border border-yellow-200 p-2 text-xs text-yellow-800">
                 {DEPOSIT_NOTICE}
               </p>
-
-              {/* Payment Info */}
-              <div className="mb-3 rounded-lg border border-green-200 bg-green-50 p-3 text-xs text-gray-700">
-
-                <p>
-                  <span className="font-semibold">
-                    KBZ Pay
-                  </span>{" "}
-                  - {shopKbzPayNumber || ""}
-                </p>
-
-                <p className="mt-1">
-                  <span className="font-semibold">
-                    Wave Pay
-                  </span>{" "}
-                  - {shopWavePayNumber || ""}
-                </p>
-
-                {!shopKbzPayNumber &&
-                !shopWavePayNumber ? (
-                  <p className="mt-2 text-[11px] text-gray-500">
-                    Vendor online banking numbers are not
-                    provided yet
-                    {shopPhone
-                      ? ` (contact: ${shopPhone})`
-                      : ""}
-                    .
-                  </p>
-                ) : null}
-              </div>
 
               {/* QR Selector */}
               <PaymentQrSelector
