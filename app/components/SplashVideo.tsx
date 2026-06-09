@@ -6,15 +6,21 @@ export default function SplashScreen() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const unlockScroll = () => {
+      document.body.style.overflow = previousOverflow;
+    };
+
     const timer = setTimeout(() => {
+      unlockScroll();
       setVisible(false);
     }, 2500);
 
     return () => {
       clearTimeout(timer);
-      document.body.style.overflow = "";
+      unlockScroll();
     };
   }, []);
 
