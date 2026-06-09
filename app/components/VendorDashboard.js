@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Package, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const AddItemForm = dynamic(() => import("./vendor/AddItemForm"), { ssr: false });
@@ -16,6 +17,7 @@ export default function VendorDashboard() {
   const [checkoutSummary, setCheckoutSummary] = useState(null);
   const [orders, setOrders] = useState([]);
   const [roomsRefreshToken, setRoomsRefreshToken] = useState(0);
+  const [shoppingPanel, setShoppingPanel] = useState(null);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -50,6 +52,7 @@ export default function VendorDashboard() {
   }, []);
 
   const serviceType = vendor?.serviceType || shop?.category || "";
+  const isShoppingDashboard = serviceType === "shopping";
 
   const handleOrderAction = async (id, action) => {
     const res = await fetch(`/api/vendor/orders/${id}`, {
@@ -108,11 +111,57 @@ export default function VendorDashboard() {
       <div className="max-w-3xl mx-auto p-6">
         {message && <p className="mb-3 text-sm text-blue-600">{message}</p>}
 
-        <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+        {isShoppingDashboard ? (
+          <>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setShoppingPanel("orders")}
+                className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  shoppingPanel === "orders" ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"
+                }`}
+                aria-pressed={shoppingPanel === "orders"}
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                  <Package aria-hidden="true" className="h-8 w-8" />
+                </span>
+                <span className="mt-4 block text-xl font-semibold text-gray-900">Orders</span>
+                <span className="mt-1 block text-sm text-gray-500">View and manage customer orders.</span>
+              </button>
 
-        {serviceType === "hotel" ? <RoomsList shop={shop} refreshToken={roomsRefreshToken} /> : null}
+              <button
+                type="button"
+                onClick={() => setShoppingPanel("addProduct")}
+                className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  shoppingPanel === "addProduct" ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white"
+                }`}
+                aria-pressed={shoppingPanel === "addProduct"}
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                  <Plus aria-hidden="true" className="h-9 w-9" />
+                </span>
+                <span className="mt-4 block text-xl font-semibold text-gray-900">Add New Product</span>
+                <span className="mt-1 block text-sm text-gray-500">Open the form to create a product.</span>
+              </button>
+            </div>
 
-        <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+            {shoppingPanel === "orders" ? (
+              <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+            ) : null}
+
+            {shoppingPanel === "addProduct" ? (
+              <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+            ) : null}
+          </>
+        ) : (
+          <>
+            <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+
+            {serviceType === "hotel" ? <RoomsList shop={shop} refreshToken={roomsRefreshToken} /> : null}
+
+            <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+          </>
+        )}
       </div>
     </div>
   );
