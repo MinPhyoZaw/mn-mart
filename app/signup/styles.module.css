@@ -6,6 +6,7 @@
   padding: 40px;
   background: linear-gradient(180deg, #f6f8ff 0%, #ffffff 100%);
 }
+
 .card {
   width: 100%;
   max-width: 1100px;
@@ -15,40 +16,60 @@
   box-shadow: 0 10px 30px rgba(20, 30, 60, 0.08);
   background: #fff;
 }
+
 .left {
   flex: 1.05;
   position: relative;
   min-height: 460px;
   background: #000;
 }
-.video {
-  width: 100%;
-  height: 100%;
+
+.image {
   object-fit: cover;
-  display: block;
+  object-position: center;
 }
+
 .overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(6,21,43,0.65), rgba(37,117,252,0.15));
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  padding: 28px;
-  text-align: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 24px;
 }
+
+.textContent {
+  text-align: left;
+  max-width: 90%;
+}
+
 .title {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.05;
-  animation: slideIn 700ms ease-out both;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #4b5563;
+  line-height: 1.2;
+  font-family: "Raleway", sans-serif;
+  word-break: break-word;
 }
+
+.mn {
+  color: #16a34a;
+  font-family: "Raleway", sans-serif;
+  font-weight: 800;
+}
+
+.mart {
+  color: #ef4444;
+  font-family: "Raleway", sans-serif;
+  font-weight: 800;
+}
+
 .subtitle {
-  margin-top: 10px;
-  font-size: 14px;
-  opacity: 0.95;
+  margin-top: 8px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
 }
+
 .right {
   flex: 0.95;
   padding: 42px;
@@ -57,20 +78,24 @@
   justify-content: center;
   background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
 }
+
 .form {
   width: 100%;
   max-width: 420px;
 }
+
 .heading {
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 8px;
 }
+
 .sub {
   color: #6b7280;
   font-size: 14px;
   margin-bottom: 18px;
 }
+
 .input {
   width: 100%;
   padding: 12px 14px;
@@ -80,10 +105,12 @@
   font-size: 14px;
   outline: none;
 }
+
 .input:focus {
-  box-shadow: 0 6px 20px rgba(37,117,252,0.08);
-  border-color: rgba(37,117,252,0.6);
+  box-shadow: 0 6px 20px rgba(37, 117, 252, 0.08);
+  border-color: rgba(37, 117, 252, 0.6);
 }
+
 .btn {
   width: 100%;
   padding: 12px 14px;
@@ -94,26 +121,31 @@
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  transition: transform .15s ease, box-shadow .15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.btn:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(37,117,252,0.18); }
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(37, 117, 252, 0.18);
+}
+
 .muted {
   color: #8b93a7;
   font-size: 13px;
   margin-top: 10px;
 }
-.msgError { color: #ef4444; margin-top: 10px; font-size: 13px; }
-.msgSuccess { color: #10b981; margin-top: 10px; font-size: 13px; }
-@keyframes slideIn {
-  from { transform: translateY(18px); opacity: 0 }
-  to { transform: translateY(0); opacity: 1 }
-}
-@media (max-width: 900px) {
-  .card { flex-direction: column; }
-  .left { min-height: 260px; }
-  .right { padding: 28px; }
+
+.msgError {
+  color: #ef4444;
+  margin-top: 10px;
+  font-size: 13px;
 }
 
+.msgSuccess {
+  color: #10b981;
+  margin-top: 10px;
+  font-size: 13px;
+}
 
 .feedbackWrap {
   min-height: 74px;
@@ -121,6 +153,7 @@
   align-items: center;
   margin-top: 10px;
 }
+
 .successCard {
   width: 100%;
   min-height: 64px;
@@ -132,6 +165,7 @@
   gap: 10px;
   padding: 10px 12px;
 }
+
 .successIcon {
   width: 28px;
   height: 28px;
@@ -143,8 +177,112 @@
   font-weight: 700;
   font-size: 15px;
 }
+
 .successText {
   color: #166534;
   font-size: 13px;
   font-weight: 600;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Tablet */
+
+@media (max-width: 900px) {
+  .container {
+    padding: 16px;
+  }
+
+  .card {
+    flex-direction: column;
+  }
+
+  .left {
+    min-height: 220px;
+  }
+
+  .overlay {
+    padding: 12px;
+  }
+
+  .title {
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  .right {
+    padding: 24px 18px;
+  }
+
+  .heading {
+    font-size: 20px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 480px) {
+  .container {
+    padding: 10px;
+  }
+
+  .card {
+    border-radius: 12px;
+  }
+
+  .left {
+    min-height: 180px;
+  }
+
+  .overlay {
+    padding: 10px;
+  }
+
+  .title {
+    font-size: 1.2rem;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+  }
+
+  .right {
+    padding: 18px 14px;
+  }
+
+  .heading {
+    font-size: 18px;
+  }
+
+  .sub {
+    font-size: 13px;
+  }
+
+  .input {
+    padding: 10px 12px;
+  }
+
+  .btn {
+    padding: 11px 12px;
+  }
+
+  .successText {
+    font-size: 12px;
+  }
 }

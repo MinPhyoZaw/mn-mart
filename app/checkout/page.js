@@ -254,8 +254,8 @@ export default function CheckoutPage() {
                 onChange={onReceiptChange}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2"
               />
-              {uploadingReceipt && <p className="mt-2 text-xs text-blue-700">Uploading receipt to Supabase...</p>}
-              {receiptImage && <p className="mt-2 text-xs text-green-700">Receipt uploaded to Supabase ✅</p>}
+              {uploadingReceipt && <p className="mt-2 text-xs text-blue-700">Uploading your receipt</p>}
+              {receiptImage && <p className="mt-2 text-xs text-green-700">Receipt uploaded  ✅</p>}
             </div>
 
             {message && <p className="text-sm text-blue-700">{message}</p>}

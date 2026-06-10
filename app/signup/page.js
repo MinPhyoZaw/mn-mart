@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
+import Image from "next/image";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -46,26 +47,27 @@ export default function SignupPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.left}>
-          <video
-            className={styles.video}
-            autoPlay
-            muted
-            loop
-            playsInline
-            src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-          />
-          <div className={styles.overlay}>
-            <div>
-              <div className={styles.title}>Welcome to Grocery Go</div>
-              <div className={styles.subtitle}>Create your seller account and start adding products.</div>
-            </div>
-          </div>
+<Image
+  src="/images/log.jpg"
+  alt="MN-Mart Marketplace"
+  fill
+  priority
+  className={styles.image}
+/>
+          {/* <div className={styles.overlay}>
+  <div className={styles.textContent}>
+    <div className={styles.title}>
+      Welcome to <span className={styles.mn}>MN</span>-<span className={styles.mart}>MART</span>
+    </div>
+    <div className={styles.subtitle}>All in one marketplace.</div>
+  </div>
+</div> */}
         </div>
 
         <div className={styles.right}>
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.heading}>Create your account</div>
-            <div className={styles.sub}>Sign up and start adding shops & products</div>
+            <div className={styles.sub}>Sign up and start buying the local taste</div>
             {isVendorSignup && (
               <div className={styles.msgSuccess}>
                 You need to sign up to become a vendor.
