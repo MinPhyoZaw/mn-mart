@@ -300,6 +300,16 @@ export default function ShopDetailClient({ shop, items }) {
           {/* modal */}
           <div className={`relative w-full ${isSpa ? "max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]" : "max-w-5xl max-h-[80vh] flex flex-col md:flex-row overflow-hidden"} bg-white rounded-2xl shadow-xl`}>
 
+            {isSpa ? (
+              <button
+                onClick={() => setActiveBookingItemId(null)}
+                className="absolute right-4 top-4 z-20 bg-white/90 backdrop-blur rounded-full p-1 shadow"
+                aria-label="Close spa booking"
+              >
+                ✕
+              </button>
+            ) : null}
+
             {/* LEFT IMAGE */}
             {!isSpa ? <div className="relative h-48 flex-none md:h-auto md:w-1/2">
               <Image

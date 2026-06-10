@@ -28,7 +28,6 @@ const INITIAL_FORM = {
     breakfast: false,
     extraBed: false,
   },
-  isAvailable: false,
   routeId: "",
   companyId: "",
   vehicleType: "Standard",

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const AddItemForm = dynamic(() => import("./vendor/AddItemForm"), { ssr: false });
@@ -18,6 +18,7 @@ export default function VendorDashboard() {
   const [orders, setOrders] = useState([]);
   const [roomsRefreshToken, setRoomsRefreshToken] = useState(0);
   const [shoppingPanel, setShoppingPanel] = useState(null);
+  const [vendorPanel, setVendorPanel] = useState(null);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -109,7 +110,12 @@ export default function VendorDashboard() {
       <CheckoutSummary vendor={vendor} shop={shop} checkoutSummary={checkoutSummary} serviceType={serviceType} />
 
       <div className="max-w-3xl mx-auto p-6">
-        {message && <p className="mb-3 text-sm text-blue-600">{message}</p>}
+        {message && (
+          <div className="mb-4 flex items-start gap-3 rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+            <CheckCircle className="h-6 w-6 text-green-600 flex-none" />
+            <div>{message}</div>
+          </div>
+        )}
 
         {isShoppingDashboard ? (
           <>
@@ -155,11 +161,57 @@ export default function VendorDashboard() {
           </>
         ) : (
           <>
-            <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+            {serviceType === "transportation" ? (
+              <>
+                <div className="mb-6 grid gap-4 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setVendorPanel("orders")}
+                    className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                      vendorPanel === "orders" ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"
+                    }`}
+                    aria-pressed={vendorPanel === "orders"}
+                  >
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                      <Package aria-hidden="true" className="h-8 w-8" />
+                    </span>
+                    <span className="mt-4 block text-xl font-semibold text-gray-900">Orders</span>
+                    <span className="mt-1 block text-sm text-gray-500">View and manage transport orders.</span>
+                  </button>
 
-            {serviceType === "hotel" ? <RoomsList shop={shop} refreshToken={roomsRefreshToken} /> : null}
+                  <button
+                    type="button"
+                    onClick={() => setVendorPanel("addItem")}
+                    className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                      vendorPanel === "addItem" ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white"
+                    }`}
+                    aria-pressed={vendorPanel === "addItem"}
+                  >
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                      <Plus aria-hidden="true" className="h-9 w-9" />
+                    </span>
+                    <span className="mt-4 block text-xl font-semibold text-gray-900">Add New Item</span>
+                    <span className="mt-1 block text-sm text-gray-500">Open the form to create a transport item.</span>
+                  </button>
+                </div>
 
-            <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+                {vendorPanel === "orders" ? (
+                  <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+                ) : null}
+
+                {vendorPanel === "addItem" ? (
+                  <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+                ) : null}
+              </>
+            ) : (
+              <>
+                <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+
+                {serviceType === "hotel" ? <RoomsList shop={shop} refreshToken={roomsRefreshToken} /> : null}
+
+                <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+              </>
+            )}
           </>
         )}
       </div>
