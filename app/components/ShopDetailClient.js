@@ -1,5 +1,5 @@
 "use client";
-import { Wifi, BedDouble, Tv, Coffee } from "lucide-react";
+import { Wifi, BedDouble, Tv, Coffee, MapPin } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
 import { normalizeWholesaleTiers } from "../lib/pricing";
 import Image from "next/image";
@@ -196,7 +196,17 @@ export default function ShopDetailClient({ shop, items }) {
         <Image src={shop.image} alt={shop.name} fill className="object-cover" />
       </div>
 
-      <h1 className="text-2xl font-bold mt-4">{shop.name}</h1>
+      <div className={isHotel ? "mt-6 text-center" : "mt-4"}>
+        <h1 className={isHotel ? "text-3xl font-bold text-gray-950" : "text-2xl font-bold"}>
+          {shop.name}
+        </h1>
+        {isHotel && shop.address ? (
+          <div className="mx-auto mt-3 flex max-w-2xl items-start justify-center gap-2 rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-sm text-gray-700 shadow-sm sm:text-base">
+            <MapPin className="mt-0.5 h-5 w-5 flex-none text-amber-600" aria-hidden="true" />
+            <p className="leading-relaxed">{shop.address}</p>
+          </div>
+        ) : null}
+      </div>
 
       {/* ITEMS */}
       <div className={gridClasses}>
@@ -248,7 +258,7 @@ export default function ShopDetailClient({ shop, items }) {
                     onClick={() => setActiveBookingItemId(item._id)}
                     className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
                   >
-                    Order Now
+                    {isHotel ? "Book Now" : "Order Now"}
                   </button>
                 </>
               ) : (() => {
