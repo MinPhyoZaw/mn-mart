@@ -288,7 +288,7 @@ export default function ShopDetailClient({ shop, items }) {
           />
 
           {/* modal */}
-          <div className={`relative w-full ${isSpa ? "max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]" : "max-w-5xl max-h-[calc(100dvh-2rem)] flex flex-col md:flex-row overflow-hidden"} bg-white rounded-2xl shadow-xl`}>
+          <div className={`relative w-full ${isSpa ? "max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]" : "max-w-5xl max-h-[80vh] flex flex-col md:flex-row overflow-hidden"} bg-white rounded-2xl shadow-xl`}>
 
             {/* LEFT IMAGE */}
             {!isSpa ? <div className="relative h-48 flex-none md:h-auto md:w-1/2">
@@ -303,17 +303,13 @@ export default function ShopDetailClient({ shop, items }) {
             {/* RIGHT FORM */}
             <div className={isSpa ? "w-full" : "min-h-0 flex-1 overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:w-1/2 md:p-6"}>
 
-              <button
-                onClick={() => setActiveBookingItemId(null)}
-                className="absolute right-4 top-4"
-              >
                 ✕
-              </button>
-
-              <h2 className="text-xl font-semibold mb-2">
-                {activeBookingItem.name}
-              </h2>
-
+                  <button
+                    onClick={() => setActiveBookingItemId(item._id)}
+                    className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
+                  >
+                    {isHotel ? "Book Now" : "Order Now"}
+                  </button>
               {/* Amenities */}
               {!isSpa ? <div className="flex flex-wrap gap-2 mb-3">
                 {getAmenityList(activeBookingItem).map((a, i) => (
