@@ -313,13 +313,13 @@ export default function ShopDetailClient({ shop, items }) {
             {/* RIGHT FORM */}
             <div className={isSpa ? "w-full" : "min-h-0 flex-1 overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:w-1/2 md:p-6"}>
 
-                ✕
+                {/* ✕
                   <button
                     onClick={() => setActiveBookingItemId(item._id)}
                     className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
                   >
                     {isHotel ? "Book Now" : "Order Now"}
-                  </button>
+                  </button> */}
               {/* Amenities */}
               {!isSpa ? <div className="flex flex-wrap gap-2 mb-3">
                 {getAmenityList(activeBookingItem).map((a, i) => (
