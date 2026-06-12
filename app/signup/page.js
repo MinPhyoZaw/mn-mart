@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./styles.module.css";
 import Image from "next/image";
 
-export default function SignupPage() {
+function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,61 +14,85 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const isVendorSignup = searchParams.get("vendor") === "true";
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, phone }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Signup failed");
-      setSuccess("Signup successfully! Redirecting to login page...");
-      setTimeout(() => router.push("/login"), 1400);
-    } catch (err) {
-      setError(err.message || "An error occurred");
-    } finally {
-      setLoading(false);
-    }
+ async function handleSubmit(e) {
+  e.preventDefault();
+
+  setError("");
+  setSuccess("");
+
+  if (password !== confirmPassword) {
+    setError("Passwords do not match");
+    return;
   }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        phone,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Signup failed");
+    }
+
+    setSuccess(
+      "Signup successfully! Redirecting to login page..."
+    );
+
+    setTimeout(() => {
+      router.push("/login");
+    }, 1400);
+  } catch (err) {
+    setError(err?.message || "An error occurred");
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.left}>
-<Image
-  src="/images/log.jpg"
-  alt="MN-Mart Marketplace"
-  fill
-  priority
-  className={styles.image}
-/>
-          {/* <div className={styles.overlay}>
-  <div className={styles.textContent}>
-    <div className={styles.title}>
-      Welcome to <span className={styles.mn}>MN</span>-<span className={styles.mart}>MART</span>
-    </div>
-    <div className={styles.subtitle}>All in one marketplace.</div>
-  </div>
-</div> */}
+          <Image
+            src="/images/log.jpg"
+            alt="MN-Mart Marketplace"
+            fill
+            priority
+            className={styles.image}
+          />
         </div>
 
         <div className={styles.right}>
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.heading}>Create your account</div>
-            <div className={styles.sub}>Sign up and start buying the local taste</div>
+          <form
+            className={styles.form}
+            onSubmit={handleSubmit}
+          >
+            <div className={styles.heading}>
+              Create your account
+            </div>
+
+            <div className={styles.sub}>
+              Sign up and start buying the local taste
+            </div>
+
             {isVendorSignup && (
               <div className={styles.msgSuccess}>
                 You need to sign up to become a vendor.
@@ -79,55 +104,97 @@ export default function SignupPage() {
               type="text"
               placeholder="Full name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
               required
             />
+
             <input
               className={styles.input}
               type="email"
               placeholder="Email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               required
             />
+
             <input
               className={styles.input}
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
               required
             />
+
             <input
               className={styles.input}
               type="password"
               placeholder="Confirm password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) =>
+                setConfirmPassword(e.target.value)
+              }
               required
             />
 
-            <button className={styles.btn} type="submit" disabled={loading}>
-              {loading ? "Signing up..." : "Create account"}
+            <button
+              className={styles.btn}
+              type="submit"
+              disabled={loading}
+            >
+              {loading
+                ? "Signing up..."
+                : "Create account"}
             </button>
 
-            {error && <div className={styles.msgError}>{error}</div>}
+            {error && (
+              <div className={styles.msgError}>
+                {error}
+              </div>
+            )}
 
             <div className={styles.feedbackWrap}>
               {success && (
-                <div className={styles.successCard} role="status" aria-live="polite">
-                  <div className={styles.successIcon}>✓</div>
-                  <div className={styles.successText}>{success}</div>
+                <div
+                  className={styles.successCard}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className={styles.successIcon}>
+                    ✓
+                  </div>
+
+                  <div className={styles.successText}>
+                    {success}
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className={styles.muted} style={{ marginTop: 14 }}>
-              Already have an account? <a href="/login">Log in</a>
+            <div
+              className={styles.muted}
+              style={{ marginTop: 14 }}
+            >
+              Already have an account?{" "}
+              <a href="/login">Log in</a>
             </div>
           </form>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupForm />
+    </Suspense>
   );
 }
