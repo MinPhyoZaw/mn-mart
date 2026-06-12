@@ -139,9 +139,9 @@ export default function ProductCarouselClient({
         </button>
 
         <div
-          ref={scrollerRef}
-          className="overflow-x-auto hide-scrollbar pb-2"
-        >
+  ref={scrollerRef}
+  className="overflow-x-auto hide-scrollbar pb-2 px-10 md:px-12"
+>
           <div className="flex gap-4 min-w-max snap-x snap-mandatory">
             {products.map((product) => (
               <CarouselProductCard
