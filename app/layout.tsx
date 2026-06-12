@@ -4,9 +4,14 @@ import MobileBottomBar from "./components/MobileBottomBar";
 import CartDrawer from "./components/CartDrawer";
 import SplashVideo from "./components/SplashVideo";
 import { CartProvider } from "./context/CartContext";
-import { Raleway, Inter } from "next/font/google";
+import { Raleway, Inter , Outfit} from "next/font/google";
 
+import { Nunito } from "next/font/google";
 
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-nunito",
+});
 
 const raleway = Raleway({
   subsets: ["latin"],
@@ -14,11 +19,19 @@ const raleway = Raleway({
   variable: "--font-raleway",
 });
 
+
+
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
 });
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+});
+
+
 
 export const metadata = {
   title: "MN Mart",
@@ -41,9 +54,15 @@ export default function RootLayout({
 }>) {
   return (
   <html lang="en">
-    <body
-      className={`${inter.variable} ${raleway.variable} font-[var(--font-inter)]`}
-    >
+<body
+  className={`
+    ${inter.variable}
+    ${raleway.variable}
+    ${outfit.variable}
+    ${nunito.variable}
+    font-[var(--font-inter)]
+  `}
+>
       <SplashVideo />
 
       <CartProvider>
