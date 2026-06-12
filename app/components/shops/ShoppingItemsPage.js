@@ -14,7 +14,7 @@ export default function ShoppingItemsPage({ title, heroImage }) {
     const fetchItems = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch("/api/items?shopCategory=shopping", { cache: "force-cache" });
+        const res = await fetch("/api/items?shopCategory=shopping", { cache: "no-store" });
         const data = await res.json();
 
         if (isMounted) {
