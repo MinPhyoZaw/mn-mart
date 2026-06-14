@@ -8,6 +8,7 @@ const AddItemForm = dynamic(() => import("./vendor/AddItemForm"), { ssr: false }
 const OrdersPanel = dynamic(() => import("./vendor/OrdersPanel"), { ssr: false });
 const CheckoutSummary = dynamic(() => import("./vendor/CheckoutSummary"), { ssr: false });
 const RoomsList = dynamic(() => import("./vendor/RoomsList"), { ssr: false });
+const ManageProducts = dynamic(() => import("./vendor/ManageProducts"), { ssr: false });
 
 export default function VendorDashboard() {
   const [loading, setLoading] = useState(true);
@@ -149,6 +150,21 @@ export default function VendorDashboard() {
                 <span className="mt-4 block text-xl font-semibold text-gray-900">Add New Product</span>
                 <span className="mt-1 block text-sm text-gray-500">Open the form to create a product.</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShoppingPanel("manageProducts")}
+                className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  shoppingPanel === "manageProducts" ? "border-yellow-500 bg-yellow-50" : "border-gray-200 bg-white"
+                }`}
+                aria-pressed={shoppingPanel === "manageProducts"}
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-700">
+                  <Package aria-hidden="true" className="h-8 w-8" />
+                </span>
+                <span className="mt-4 block text-xl font-semibold text-gray-900">Manage Products</span>
+                <span className="mt-1 block text-sm text-gray-500">View, edit and delete your products.</span>
+              </button>
             </div>
 
             {shoppingPanel === "orders" ? (
@@ -157,6 +173,10 @@ export default function VendorDashboard() {
 
             {shoppingPanel === "addProduct" ? (
               <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+            ) : null}
+
+            {shoppingPanel === "manageProducts" ? (
+              <ManageProducts shop={shop} serviceType={serviceType} setMessage={setMessage} onUpdated={handleCreated} />
             ) : null}
           </>
         ) : (
@@ -193,6 +213,21 @@ export default function VendorDashboard() {
                     <span className="mt-4 block text-xl font-semibold text-gray-900">Add New Item</span>
                     <span className="mt-1 block text-sm text-gray-500">Open the form to create a transport item.</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVendorPanel("manageProducts")}
+                    className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                      vendorPanel === "manageProducts" ? "border-yellow-500 bg-yellow-50" : "border-gray-200 bg-white"
+                    }`}
+                    aria-pressed={vendorPanel === "manageProducts"}
+                  >
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-700">
+                      <Package aria-hidden="true" className="h-8 w-8" />
+                    </span>
+                    <span className="mt-4 block text-xl font-semibold text-gray-900">Manage Items</span>
+                    <span className="mt-1 block text-sm text-gray-500">View, edit and delete your items.</span>
+                  </button>
                 </div>
 
                 {vendorPanel === "orders" ? (
@@ -201,6 +236,10 @@ export default function VendorDashboard() {
 
                 {vendorPanel === "addItem" ? (
                   <AddItemForm serviceType={serviceType} shop={shop} onCreated={handleCreated} setMessage={setMessage} />
+                ) : null}
+
+                {vendorPanel === "manageProducts" ? (
+                  <ManageProducts shop={shop} serviceType={serviceType} setMessage={setMessage} onUpdated={handleCreated} />
                 ) : null}
               </>
             ) : (

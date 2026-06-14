@@ -171,12 +171,12 @@ trailer
   {/* Brand Text */}
   <div className="flex flex-col leading-tight">
     <h1 className={`${raleway.className} text-xl md:text-2xl font-black tracking-tight`}>
-  <span className="text-green-700">MN</span>
+  <span className="font-[family-name:var(--font-nunito)]  text-green-700">MN</span>
 
-  <span className="text-red-600">Mart</span>
+  <span className=" font-[family-name:var(--font-nunito)] text-red-600">Mart</span>
 </h1>
 
-    <p className="text-[11px] text-gray-500 font-medium tracking-wide">
+    <p className=" font-[family-name:var(--font-nunito)] text-[11px] text-gray-500 font-medium tracking-wide">
       Myanmar Digital Marketplace
     </p>
   </div>
