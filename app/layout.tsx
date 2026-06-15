@@ -5,7 +5,7 @@ import CartDrawer from "./components/CartDrawer";
 import SplashVideo from "./components/SplashVideo";
 import { CartProvider } from "./context/CartContext";
 import { Raleway, Inter , Outfit} from "next/font/google";
-
+import InstallAppButton from "./components/InstallAppButton";
 import { Nunito } from "next/font/google";
 
 const nunito = Nunito({
@@ -75,6 +75,7 @@ export default function RootLayout({
         <main className="min-h-screen bg-gray-50 pb-24">
           {children}
         </main>
+    <InstallAppButton />
 
         <MobileBottomBar />
         <CartDrawer />
