@@ -27,9 +27,9 @@ export default function PromoBanner() {
         
         {/* Background */}
         <div
-          className="absolute inset-0 bg-cover bg-center md:bg-right"
-          style={{ backgroundImage: "url('/images/mn-banner.png')" }}
-        />
+  className="absolute inset-0 bg-cover bg-right md:bg-center"
+  style={{ backgroundImage: "url('/images/mn-banner.png')" }}
+/>
 
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />

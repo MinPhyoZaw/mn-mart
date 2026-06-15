@@ -1,12 +1,14 @@
 import type { NextConfig } from "next";
 import path from "path";
+// @ts-ignore
+import withPWA from "next-pwa";
 
 const supabaseImageHostname = new URL(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://yypxmsjyzplvtnkmnvgp.supabase.co",
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "https://yypxmsjyzplvtnkmnvgp.supabase.co"
 ).hostname;
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     domains: ["imgur.com", "i.imgur.com"],
     remotePatterns: [
@@ -17,8 +19,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Ensure Next resolves file-tracing from this project root (prevents scanning parent lockfiles)
+
   outputFileTracingRoot: path.join(__dirname),
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+})(nextConfig);
