@@ -47,6 +47,10 @@ export const metadata = {
     apple: "/icons/icon-192.png",
   },
 };
+
+export const viewport = {
+  themeColor: "#ef4444",
+};
 export default function RootLayout({
   children,
 }: Readonly<{
