@@ -3,22 +3,27 @@
 import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{
+    outcome: "accepted" | "dismissed";
+  }>;
+}
+
 export default function InstallAppButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
+
+  const [isInstalled, setIsInstalled] = useState(
+    typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as Navigator & { standalone?: boolean })
+          .standalone === true)
+  );
 
   useEffect(() => {
-    // Check if already installed
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone;
-
-    if (standalone) {
-      setIsInstalled(true);
-      return;
-    }
-
-    const handleBeforeInstallPrompt = (e: any) => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+      const e = event as BeforeInstallPromptEvent;
       e.preventDefault();
       setDeferredPrompt(e);
     };
@@ -51,20 +56,18 @@ export default function InstallAppButton() {
   const handleInstall = async () => {
     if (!deferredPrompt) return;
 
-    deferredPrompt.prompt();
+    await deferredPrompt.prompt();
 
-    const result = await deferredPrompt.userChoice;
+    const choice = await deferredPrompt.userChoice;
 
-    if (result.outcome === "accepted") {
+    if (choice.outcome === "accepted") {
       setDeferredPrompt(null);
     }
   };
 
-  // Hide if installed
-  if (isInstalled) return null;
-
-  // Hide if install prompt unavailable
-  if (!deferredPrompt) return null;
+  if (isInstalled || !deferredPrompt) {
+    return null;
+  }
 
   return (
     <button
