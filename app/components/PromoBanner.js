@@ -48,7 +48,7 @@ export default function PromoBanner() {
             </h2>
 
             <p className="text-sm sm:text-base mb-5 text-white/90">
-              Start your vendor journey with us today and connect with your community like never before.
+             Grow your business with MN Mart and reach more local customers.
             </p>
 
             {/* Button */}
