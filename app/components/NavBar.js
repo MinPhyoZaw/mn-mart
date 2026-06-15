@@ -341,27 +341,41 @@ trailer
                 </>
               ) : (
                 <>
-                  {user.role === "admin" && (
-                    <Link
-                      href="/admindashboard"
-                      onClick={closeMenu}
-                      className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
-                    >
-                      Admin
-                    </Link>
-                  )}
-
-                  {user.role === "vendor" && (
-                    <Link
-                      href="/vendordashboard"
-                      onClick={closeMenu}
-                      className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
-                    >
-                      Vendor Dashboard
-                    </Link>
-                  )}
-
                   <div className="grid grid-cols-2 gap-2">
+                    {user.role === "admin" && (
+                      <Link
+                        href="/admindashboard"
+                        onClick={closeMenu}
+                        className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
+                      >
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    )}
+
+                    {user.role === "vendor" && (
+                      <Link
+                        href="/vendordashboard"
+                        onClick={closeMenu}
+                        className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
+                      >
+                        <span>Vendor Dashboard</span>
+                      </Link>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        toggleCart();
+                        closeMenu();
+                      }}
+                      className="relative flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
+                      aria-label="Open shopping cart"
+                    >
+                      <ShoppingCart size={18} /> Cart
+                      <span className="absolute right-2 top-1 min-w-5 rounded-full bg-green-600 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                        {totalItems}
+                      </span>
+                    </button>
+
                     {["customer", "admin", "vendor"].includes(user.role) && (
                       <button
                         type="button"
@@ -381,20 +395,6 @@ trailer
                       className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
                     >
                       <User size={18} /> Account
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        toggleCart();
-                        closeMenu();
-                      }}
-                      className="relative flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
-                      aria-label="Open shopping cart"
-                    >
-                      <ShoppingCart size={18} /> Cart
-                      <span className="absolute right-2 top-1 min-w-5 rounded-full bg-green-600 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
-                        {totalItems}
-                      </span>
                     </button>
                   </div>
 
