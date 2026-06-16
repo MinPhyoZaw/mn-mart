@@ -124,20 +124,18 @@ export default function SearchBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.trim() && setOpen(true)}
-            placeholder="Search shops and products..."
-            className="
-              w-full
-              rounded-full
-              border border-gray-200
-              bg-white
-              pl-4
-              pr-48
-              py-2.5
-              shadow-sm
-              focus:outline-none
-              focus:ring-2
-              focus:ring-green-200
-            "
+            placeholder="Search shops & products..."
+className="
+  w-full
+  rounded-full
+  border border-gray-200
+  bg-white
+  pl-4
+  pr-24 sm:pr-48
+  py-2.5
+  text-sm sm:text-base
+  placeholder:text-xs sm:placeholder:text-sm
+"
           />
 
           {/* RIGHT SIDE (inside input) */}
