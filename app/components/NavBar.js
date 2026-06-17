@@ -23,46 +23,89 @@ export default function Navbar() {
   
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [vendorRequestsCount, setVendorRequestsCount] = useState(0);
   
   const router = useRouter();
   const pathname = usePathname();
   const { totalItems, toggleCart } = useCart();
 
   useEffect(() => {
-    const fetchUser = async () => {
+    let mounted = true;
+
+    const fetchNotifications = async () => {
       try {
         const res = await fetch("/api/auth/me", { cache: "no-store" });
         const data = await res.json();
+        if (!mounted) return;
         setUser(data.user);
 
         if (["customer", "admin", "vendor"].includes(data.user?.role)) {
           const noticeRes = await fetch("/api/orders/notifications", { cache: "no-store" });
           const noticeData = await noticeRes.json();
-          if (noticeData.success) {
-            setNotifications(noticeData.data || []);
+          let notices = [];
+          if (noticeData.success) notices = noticeData.data || [];
+
+          // For admins, include pending vendor requests as a synthetic notification
+          let vReqCount = 0;
+          if (data.user.role === "admin") {
+            try {
+              const vrRes = await fetch("/api/vendor-requests?status=pending&limit=1", { cache: "no-store" });
+              const vrData = await vrRes.json();
+              vReqCount = vrData?.pagination?.total || 0;
+            } catch (e) {
+              vReqCount = 0;
+            }
           }
+
+          if (vReqCount > 0) {
+            setVendorRequestsCount(vReqCount);
+            notices = [
+              { _id: "vendor-requests", type: "vendor-request", text: `${vReqCount} vendor requests pending`, count: vReqCount },
+              ...notices,
+            ];
+          } else {
+            setVendorRequestsCount(0);
+          }
+
+          setNotifications(notices);
+          // notify other components
+          window.dispatchEvent(new Event("notifications-updated"));
         } else {
           setNotifications([]);
+          setVendorRequestsCount(0);
         }
-      } catch {
+      } catch (err) {
         setUser(null);
         setNotifications([]);
+        setVendorRequestsCount(0);
       }
     };
 
-    fetchUser();
+    fetchNotifications();
+
+    const interval = setInterval(fetchNotifications, 8000);
 
     const syncAuth = () => {
-      fetchUser();
+      fetchNotifications();
     };
 
     window.addEventListener("auth-changed", syncAuth);
-    return () => window.removeEventListener("auth-changed", syncAuth);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+      window.removeEventListener("auth-changed", syncAuth);
+    };
   }, [pathname]);
 
   const closeMenu = () => setIsMenuOpen(false);
 
   const markNotificationAsRead = async (noticeId) => {
+    // Synthetic vendor-requests notification navigates to admin panel
+    if (noticeId === "vendor-requests") {
+      router.push("/admindashboard");
+      return;
+    }
+
     const res = await fetch("/api/orders/notifications", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -71,6 +114,7 @@ export default function Navbar() {
     const data = await res.json();
     if (!data.success) return;
     setNotifications((prev) => prev.filter((notice) => notice._id !== noticeId));
+    window.dispatchEvent(new Event("notifications-updated"));
   };
 
   const handleLogout = async () => {
@@ -232,7 +276,7 @@ trailer
                       >
                         <Bell size={21} />
                         <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
-                          {notifications.length}
+                          {notifications.reduce((acc, n) => acc + (n.count || 1), 0)}
                         </span>
                       </button>
 
@@ -384,7 +428,7 @@ trailer
                       >
                         <Bell size={18} /> Notifications
                         <span className="absolute right-2 top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
-                          {notifications.length}
+                          {notifications.reduce((acc, n) => acc + (n.count || 1), 0)}
                         </span>
                       </button>
                     )}

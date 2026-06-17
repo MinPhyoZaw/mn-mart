@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   BellIcon,
   ChartBarSquareIcon,
@@ -28,6 +28,34 @@ export default function AdminDashboardClient({
   shoppingCommissionSetting,
 }) {
   const [activeScreen, setActiveScreen] = useState("orders");
+  const [pendingReqCountState, setPendingReqCountState] = useState(pendingRequestsCount);
+  const [totalReqCountState, setTotalReqCountState] = useState(totalRequestsCount);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchPendingCounts = async () => {
+      try {
+        const res = await fetch('/api/vendor-requests?status=pending&limit=1', { cache: 'no-store' });
+        const data = await res.json();
+        if (!mounted) return;
+        const total = data?.pagination?.total ?? pendingRequestsCount;
+        setPendingReqCountState(total);
+        setTotalReqCountState(data?.pagination?.total ?? totalRequestsCount);
+      } catch {
+        // ignore
+      }
+    };
+
+    fetchPendingCounts();
+
+    const onUpdated = () => fetchPendingCounts();
+    window.addEventListener('notifications-updated', onUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener('notifications-updated', onUpdated);
+    };
+  }, [pendingRequestsCount, totalRequestsCount]);
 
   const menuItems = useMemo(
     () => [
@@ -88,7 +116,7 @@ export default function AdminDashboardClient({
                 <BellIcon className="h-4 w-4 text-amber-600" />
                 <p className="text-xs uppercase text-slate-500">Pending Requests</p>
               </div>
-              <p className="mt-1 text-2xl font-bold text-slate-900">{pendingRequestsCount}</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">{pendingReqCountState}</p>
               <p className="text-xs text-slate-500">Today orders: {todayOrdersCount}</p>
             </div>
           </section>
@@ -102,7 +130,7 @@ export default function AdminDashboardClient({
               <AdminVendorRequests
                 initialRequests={vendorRequests}
                 initialPageSize={requestPageSize}
-                initialTotal={totalRequestsCount}
+                initialTotal={totalReqCountState}
               />
             </section>
           )}

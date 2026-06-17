@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Package, Plus, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const AddItemForm = dynamic(() => import("./vendor/AddItemForm"), { ssr: false });
 const OrdersPanel = dynamic(() => import("./vendor/OrdersPanel"), { ssr: false });
@@ -11,6 +12,7 @@ const RoomsList = dynamic(() => import("./vendor/RoomsList"), { ssr: false });
 const ManageProducts = dynamic(() => import("./vendor/ManageProducts"), { ssr: false });
 
 export default function VendorDashboard() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [vendor, setVendor] = useState(null);
@@ -33,6 +35,15 @@ export default function VendorDashboard() {
         const vendorData = await vendorRes.json();
         const summaryData = await summaryRes.json();
         const orderData = await orderRes.json();
+
+        // If vendor endpoint returned 404 for missing profile/shop, redirect to vendor form
+        if (!vendorRes.ok && vendorRes.status === 404) {
+          const msg = (vendorData && vendorData.message && String(vendorData.message).toLowerCase()) || "";
+          if (msg.includes("profile") || msg.includes("shop")) {
+            router.push("/vendorForm");
+            return;
+          }
+        }
 
         if (vendorData.success) {
           setVendor(vendorData.data.vendor);
