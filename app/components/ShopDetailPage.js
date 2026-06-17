@@ -1,7 +1,13 @@
 import ShopDetailClient from "./ShopDetailClient";
 
 async function getShop(id) {
-  const res = await fetch(`http://localhost:3000/api/shops/${id}`, {
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+    "http://localhost:3000";
+
+  const res = await fetch(`${origin}/api/shops/${id}`, {
     cache: "no-store",
   });
 
