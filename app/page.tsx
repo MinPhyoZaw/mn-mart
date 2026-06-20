@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import PromoBanner from './components/PromoBanner';
 import Categories from './components/Categories';
 import ProductColumn from './components/ProductColumn';
