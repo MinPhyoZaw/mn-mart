@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import connectDB from "../../../lib/mongodb";
 import Vendor from "../../../models/Vendor";
 import Shop from "../../../models/Shop";
-import { requireAuth } from "../../../lib/routeAuth";
+import { requireVendorAuth } from "../../../lib/routeAuth";
 
 export async function GET(req) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     await connectDB();

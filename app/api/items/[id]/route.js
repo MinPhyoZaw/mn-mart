@@ -4,12 +4,12 @@ import Item from "../../../models/Item";
 import Shop from "../../../models/Shop";
 import Vendor from "../../../models/Vendor";
 // import Vendor from "../../../../models/Vendor";
-import { requireAuth } from "../../../lib/routeAuth";
+import { requireVendorAuth } from "../../../lib/routeAuth";
 import mongoose from "mongoose";
 
 export async function PATCH(req, { params }) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     const { id } = params;
@@ -51,7 +51,7 @@ export async function PATCH(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     const { id } = params;
@@ -107,7 +107,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     const { id } = params;

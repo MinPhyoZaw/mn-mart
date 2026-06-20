@@ -4,7 +4,7 @@ import connectDB from "../../lib/mongodb";
 import Item from "../../models/Item";
 import Shop from "../../models/Shop";
 import Vendor from "../../models/Vendor";
-import { requireAuth } from "../../lib/routeAuth";
+import { requireVendorAuth } from "../../lib/routeAuth";
 
 const REQUIRED_FIELDS = ["shopId", "name", "price", "type"];
 
@@ -49,7 +49,7 @@ const SHOPPING_CATEGORIES = [
 
 export async function POST(req) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     const body = await req.json();

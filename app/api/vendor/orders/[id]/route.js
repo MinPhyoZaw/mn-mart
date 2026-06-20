@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import connectDB from "../../../../lib/mongodb";
-import { requireAuth } from "../../../../lib/routeAuth";
+import { requireVendorAuth } from "../../../../lib/routeAuth";
 import Vendor from "../../../../models/Vendor";
 import Order from "../../../../models/Order";
 import Shop from "../../../../models/Shop";
 
 export async function PATCH(req, { params }) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     const { id } = params;
