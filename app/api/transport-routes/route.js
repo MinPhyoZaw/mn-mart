@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import connectDB from "../../lib/mongodb";
 import TransportationRoute from "../../models/TransportationRoute";
 import Vendor from "../../models/Vendor";
-import { requireAuth } from "../../lib/routeAuth";
+import { requireVendorAuth } from "../../lib/routeAuth";
 
 const parseList = (value) =>
   String(value || "")
@@ -13,7 +13,7 @@ const parseList = (value) =>
 
 export async function POST(req) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     const body = await req.json();
@@ -56,7 +56,7 @@ export async function POST(req) {
 
 export async function GET(req) {
   try {
-    const auth = requireAuth(req, ["vendor", "admin"]);
+    const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
     await connectDB();

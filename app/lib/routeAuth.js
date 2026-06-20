@@ -28,3 +28,27 @@ export function requireAuth(req, allowedRoles = []) {
     };
   }
 }
+
+
+export async function requireVendorAuth(req) {
+  const auth = requireAuth(req, ["vendor", "admin", "customer"]);
+  if (!auth.ok) return auth;
+
+  if (auth.user.role === "admin") {
+    return auth;
+  }
+
+  const connectDB = (await import("./mongodb")).default;
+  const Vendor = (await import("../models/Vendor")).default;
+
+  await connectDB();
+  const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
+  if (!vendor) {
+    return {
+      ok: false,
+      response: NextResponse.json({ success: false, message: "Vendor profile not found" }, { status: 404 }),
+    };
+  }
+
+  return { ok: true, user: { ...auth.user, role: "vendor" }, vendor };
+}
