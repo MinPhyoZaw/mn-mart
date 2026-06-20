@@ -48,6 +48,7 @@ type LeanProduct = {
   shopName?: string;
 };
 
+export const dynamic = "force-dynamic";
 
 const getTierQuantity = (tier: WholesaleTier) => tier.minQty ?? tier.qty ?? tier.quantity ?? tier.minQuantity;
 
