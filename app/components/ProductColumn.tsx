@@ -80,6 +80,14 @@ const getTagAliases = (tagName?: string): string[] => {
 async function fetchProductsByTag(tagName?: string, limit = 10): Promise<ProductType[]> {
   await connectDB();
 
+  console.log("Searching tag:", tagName);
+
+const count = await Item.countDocuments();
+console.log("Item count:", count);
+
+const sample = await Item.findOne().lean();
+console.log("Sample item:", sample);
+
   const itemQuery: Record<string, unknown> = { type: "product", isAvailable: true };
   const tagAliases = getTagAliases(tagName);
   if (tagAliases.length) itemQuery.tagName = { $in: tagAliases };
