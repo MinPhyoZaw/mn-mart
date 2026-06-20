@@ -269,13 +269,13 @@ export default function TransportationTicketCard({
               {/* Upload States */}
               {receiptUploading ? (
                 <p className="mt-2 text-xs text-blue-700">
-                  Uploading receipt to Supabase...
+                  Uploading the  receipt ...
                 </p>
               ) : null}
 
               {form.receiptImage ? (
                 <p className="mt-2 text-xs text-green-700">
-                  Receipt uploaded to Supabase ✅
+                  Receipt uploaded successfully... ✅
                 </p>
               ) : null}
 

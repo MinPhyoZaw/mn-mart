@@ -418,8 +418,8 @@ export default function ShopDetailClient({ shop, items }) {
                 <label className="block text-sm font-semibold text-gray-700">Upload the receipt
                   <input type="file" accept="image/*" onChange={handleReceiptUpload} className="mt-1 w-full rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 file:mr-4 file:rounded-md file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-white" />
                 </label>
-                {receiptUploading ? <p className="text-xs text-blue-600">Uploading receipt to Supabase...</p> : null}
-                {bookingForm.receiptImage ? <p className="text-xs text-green-700">Receipt uploaded to Supabase ✅</p> : null}
+                {receiptUploading ? <p className="text-xs text-blue-600">Uploading the receipt ...</p> : null}
+                {bookingForm.receiptImage ? <p className="text-xs text-green-700">Receipt uploaded to successfully ✅</p> : null}
 
                 <button
                   onClick={isSpa ? submitSpaBooking : submitHotelBooking}

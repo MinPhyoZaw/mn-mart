@@ -528,7 +528,7 @@ export default function AddItemForm({
       setForm((p) => ({ ...p, image: imageUrl }));
       setMessage?.("Image uploaded successfully. You can now create the item.");
     } catch (error) {
-      setMessage?.(error?.message || "Failed to upload image to Supabase.");
+      setMessage?.(error?.message || "Failed to upload your image .");
       e.target.value = "";
     } finally {
       setUploadingImage(false);

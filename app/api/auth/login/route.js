@@ -19,14 +19,14 @@ export async function POST(req) {
     const user = await User.findOne({ email });
     if (!user)
       return NextResponse.json(
-        { success: false, message: "Invalid credentials" },
+        { success: false, message: "User not found" },
         { status: 401 }
       );
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return NextResponse.json(
-        { success: false, message: "Invalid credentials" },
+        { success: false, message: "Incorrect password" },
         { status: 401 }
       );
 
