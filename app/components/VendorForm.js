@@ -3,43 +3,12 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-const MAX_IMAGE_SIDE = 1200;
-const OUTPUT_QUALITY = 0.78;
-
-const fileToDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error("Unable to read the image file."));
-    reader.readAsDataURL(file);
-  });
-
-const loadImageElement = (src) =>
-  new Promise((resolve, reject) => {
-    const img = new window.Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Unable to process selected image."));
-    img.src = src;
-  });
-
-const compressShopImage = async (file) => {
-  const sourceDataUrl = await fileToDataUrl(file);
-  const image = await loadImageElement(sourceDataUrl);
-
-  const scale = Math.min(MAX_IMAGE_SIDE / image.width, MAX_IMAGE_SIDE / image.height, 1);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(image.width * scale));
-  canvas.height = Math.max(1, Math.round(image.height * scale));
-
-  const ctx = canvas.getContext("2d", { alpha: false });
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-  return canvas.toDataURL("image/webp", OUTPUT_QUALITY);
-};
+import { useAuth } from "../context/AuthContext";
+import { compressItemImage } from "./vendor/ImageUtils";
 
 export default function VendorForm() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     vendorName: "",
@@ -55,28 +24,17 @@ export default function VendorForm() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [user, setUser] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        const signedInUser = data.user || null;
-        setUser(signedInUser);
-        setFormData((prev) => ({
-          ...prev,
-          vendorName: signedInUser?.name || "",
-        }));
-      } catch {
-        setUser(null);
-      }
-    };
+    if (!user?.name) return;
 
-    fetchUser();
-  }, []);
+    setFormData((prev) => ({
+      ...prev,
+      vendorName: user.name,
+    }));
+  }, [user?.name]);
 
   const handleChange = (e) => {
     setFormData({
@@ -98,7 +56,7 @@ export default function VendorForm() {
     setIsUploadingImage(true);
 
     try {
-      const optimizedImage = await compressShopImage(file);
+      const optimizedImage = await compressItemImage(file);
       setFormData((prev) => ({ ...prev, shopImage: optimizedImage }));
       setImagePreview(optimizedImage);
     } catch {

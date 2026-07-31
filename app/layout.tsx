@@ -3,6 +3,8 @@ import Navbar from "./components/NavBar";
 import MobileBottomBar from "./components/MobileBottomBar";
 import CartDrawer from "./components/CartDrawer";
 import SplashVideo from "./components/SplashVideo";
+import { AuthProvider } from "./context/AuthContext";
+import { NotificationsProvider } from "./context/NotificationsContext";
 import { CartProvider } from "./context/CartContext";
 import { Raleway, Inter , Outfit} from "next/font/google";
 import InstallAppButton from "./components/InstallAppButton";
@@ -69,17 +71,21 @@ export default function RootLayout({
 >
       <SplashVideo />
 
-      <CartProvider>
-        <Navbar />
+      <AuthProvider>
+        <NotificationsProvider>
+          <CartProvider>
+            <Navbar />
 
-        <main className="min-h-screen bg-gray-50 pb-24">
-          {children}
-        </main>
-    <InstallAppButton />
+          <main className="min-h-screen bg-gray-50 pb-24">
+            {children}
+          </main>
+          <InstallAppButton />
 
-        <MobileBottomBar />
-        <CartDrawer />
-      </CartProvider>
+            <MobileBottomBar />
+            <CartDrawer />
+          </CartProvider>
+        </NotificationsProvider>
+      </AuthProvider>
     </body>
   </html>
 );

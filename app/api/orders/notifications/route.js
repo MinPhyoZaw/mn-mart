@@ -4,6 +4,10 @@ import { requireAuth } from "../../../lib/routeAuth";
 import Order from "../../../models/Order";
 import Vendor from "../../../models/Vendor";
 
+const NO_STORE_HEADERS = {
+  "Cache-Control": "private, no-store, must-revalidate",
+};
+
 const toNotification = (order) => {
   if (order.role === "admin") {
     return {
@@ -109,10 +113,10 @@ export async function GET(req) {
       ...toNotification(order),
     }));
 
-    return NextResponse.json({ success: true, data: notifications });
+    return NextResponse.json({ success: true, data: notifications }, { headers: NO_STORE_HEADERS });
   } catch (error) {
     console.error("GET /api/orders/notifications error:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Server error" }, { status: 500, headers: NO_STORE_HEADERS });
   }
 }
 

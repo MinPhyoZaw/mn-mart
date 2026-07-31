@@ -2,20 +2,16 @@
 
 import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 
 export default function PromoBanner() {
   const router = useRouter();
+  const { user } = useAuth();
 
-  const handleBecomeVendor = async () => {
-    try {
-      const res = await fetch("/api/auth/me", { cache: "no-store" });
-      const data = await res.json();
-      if (data?.user) {
-        router.push("/vendorForm");
-        return;
-      }
-    } catch {
-      // If auth check fails, safely continue to signup flow.
+  const handleBecomeVendor = () => {
+    if (user) {
+      router.push("/vendorForm");
+      return;
     }
 
     router.push("/signup?vendor=true");

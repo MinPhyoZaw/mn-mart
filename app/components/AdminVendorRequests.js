@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { useNotifications } from "../context/NotificationsContext";
 
 export default function AdminVendorRequests({
   initialRequests,
@@ -17,6 +18,7 @@ export default function AdminVendorRequests({
   const [total, setTotal] = useState(initialTotal);
 
   const [mounted, setMounted] = useState(false);
+  const { refresh: refreshNotifications } = useNotifications();
 
   useEffect(() => {
     setMounted(true);
@@ -86,6 +88,7 @@ export default function AdminVendorRequests({
               : it
           )
         );
+        refreshNotifications();
       } else {
         alert(data.message || "Action failed");
       }

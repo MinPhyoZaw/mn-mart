@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import PaymentQrSelector from "../components/PaymentQrSelector";
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
@@ -9,6 +10,7 @@ import { RECEIPT_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supab
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { cartItems, totalPrice, clearCart } = useCart();
 
   const [customerName, setCustomerName] = useState("");
@@ -22,30 +24,15 @@ export default function CheckoutPage() {
   const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    if (authLoading) return;
 
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
+    if (!user) {
+      router.push("/signup?next=/checkout");
+      return;
+    }
 
-        if (!data?.user) {
-          router.push("/signup?next=/checkout");
-          return;
-        }
-      } catch {
-        router.push("/signup?next=/checkout");
-        return;
-      } finally {
-        if (mounted) setAuthChecking(false);
-      }
-    };
-
-    checkAuth();
-    return () => {
-      mounted = false;
-    };
-  }, [router]);
+    setAuthChecking(false);
+  }, [authLoading, user, router]);
 
   const byShopSummaries = useMemo(() => {
     const map = new Map();

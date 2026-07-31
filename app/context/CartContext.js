@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useAuth } from "./AuthContext";
 import { getWholesalePrice, normalizeWholesaleTiers } from "../lib/pricing";
 
 const CART_STORAGE_PREFIX = "mn-mart-cart";
@@ -8,6 +9,7 @@ const CART_STORAGE_PREFIX = "mn-mart-cart";
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
+  const { user, loading: authLoading } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -39,23 +41,11 @@ export function CartProvider({ children }) {
   };
 
   useEffect(() => {
-    const resolveCartStorageKey = async () => {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" });
-        const data = await res.json();
-        const identity = data?.user?._id ? String(data.user._id) : "guest";
-        setStorageKey(`${CART_STORAGE_PREFIX}:${identity}`);
-      } catch {
-        setStorageKey(`${CART_STORAGE_PREFIX}:guest`);
-      }
-    };
+    if (authLoading) return;
 
-    resolveCartStorageKey();
-    const syncCartWithAuth = () => resolveCartStorageKey();
-    window.addEventListener("auth-changed", syncCartWithAuth);
-
-    return () => window.removeEventListener("auth-changed", syncCartWithAuth);
-  }, []);
+    const identity = user?._id ? String(user._id) : "guest";
+    setStorageKey(`${CART_STORAGE_PREFIX}:${identity}`);
+  }, [authLoading, user?._id]);
 
   useEffect(() => {
     if (!storageKey) return;

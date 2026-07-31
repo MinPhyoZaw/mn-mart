@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Bell, Menu, ShoppingCart, User, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationsContext";
 import { useCart } from "../context/CartContext";
 import SearchBar from "./SearchBar";
 
@@ -17,109 +19,28 @@ const raleway = Raleway({
 
 
 export default function Navbar() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
+  const { notifications, markAsRead } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [vendorRequestsCount, setVendorRequestsCount] = useState(0);
   
   const router = useRouter();
-  const pathname = usePathname();
   const { totalItems, toggleCart } = useCart();
-
-  useEffect(() => {
-    let mounted = true;
-
-    const fetchNotifications = async () => {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" });
-        const data = await res.json();
-        if (!mounted) return;
-        setUser(data.user);
-
-        if (["customer", "admin", "vendor"].includes(data.user?.role)) {
-          const noticeRes = await fetch("/api/orders/notifications", { cache: "no-store" });
-          const noticeData = await noticeRes.json();
-          let notices = [];
-          if (noticeData.success) notices = noticeData.data || [];
-
-          // For admins, include pending vendor requests as a synthetic notification
-          let vReqCount = 0;
-          if (data.user.role === "admin") {
-            try {
-              const vrRes = await fetch("/api/vendor-requests?status=pending&limit=1", { cache: "no-store" });
-              const vrData = await vrRes.json();
-              vReqCount = vrData?.pagination?.total || 0;
-            } catch (e) {
-              vReqCount = 0;
-            }
-          }
-
-          if (vReqCount > 0) {
-            setVendorRequestsCount(vReqCount);
-            notices = [
-              { _id: "vendor-requests", type: "vendor-request", text: `${vReqCount} vendor requests pending`, count: vReqCount },
-              ...notices,
-            ];
-          } else {
-            setVendorRequestsCount(0);
-          }
-
-          setNotifications(notices);
-          // notify other components
-          window.dispatchEvent(new Event("notifications-updated"));
-        } else {
-          setNotifications([]);
-          setVendorRequestsCount(0);
-        }
-      } catch (err) {
-        setUser(null);
-        setNotifications([]);
-        setVendorRequestsCount(0);
-      }
-    };
-
-    fetchNotifications();
-
-    const interval = setInterval(fetchNotifications, 8000);
-
-    const syncAuth = () => {
-      fetchNotifications();
-    };
-
-    window.addEventListener("auth-changed", syncAuth);
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-      window.removeEventListener("auth-changed", syncAuth);
-    };
-  }, [pathname]);
 
   const closeMenu = () => setIsMenuOpen(false);
 
   const markNotificationAsRead = async (noticeId) => {
-    // Synthetic vendor-requests notification navigates to admin panel
     if (noticeId === "vendor-requests") {
       router.push("/admindashboard");
       return;
     }
 
-    const res = await fetch("/api/orders/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId: noticeId }),
-    });
-    const data = await res.json();
-    if (!data.success) return;
-    setNotifications((prev) => prev.filter((notice) => notice._id !== noticeId));
-    window.dispatchEvent(new Event("notifications-updated"));
+    await markAsRead(noticeId);
   };
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
     setIsAccountOpen(false);
     setIsNotificationsOpen(false);
     window.dispatchEvent(new Event("auth-changed"));
