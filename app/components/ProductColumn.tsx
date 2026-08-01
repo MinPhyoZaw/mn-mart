@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import connectDB from "../lib/mongodb";
 import Product from "../models/Product";
 import Item from "../models/Item";
-import Shop from "../models/Shop"; // 👈 THIS LINE FIXES IT
+import Shop from "../models/Shop"; //
 import ProductCarouselClient from "./ProductCarouselClient";
 
 type WholesaleTier = { minQty?: unknown; qty?: unknown; quantity?: unknown; minQuantity?: unknown; price?: unknown };
@@ -20,6 +20,7 @@ type ProductType = {
   vendorId?: string;
   retailPrice?: number;
   wholesaleTiers?: SerializedWholesaleTier[];
+  category?: string;
 };
 
 type LeanShop = {
@@ -116,6 +117,7 @@ console.log("Sample item:", sample);
         shopId: sid,
         shopName: shop.name || item.shopName || "",
         vendorId: shop.vendorId ? String(shop.vendorId) : "",
+        category: item.category ? String(item.category) : undefined,
       } as ProductType;
     });
   }
@@ -144,6 +146,7 @@ console.log("Sample item:", sample);
       shopId: sid,
       shopName: shop.name || product.shopName || "",
       vendorId: shop.vendorId ? String(shop.vendorId) : "",
+      category: product.category ? String(product.category) : undefined,
     } as ProductType;
   });
 }

@@ -5,6 +5,7 @@ import Item from "../../models/Item";
 import Shop from "../../models/Shop";
 import Vendor from "../../models/Vendor";
 import { requireVendorAuth } from "../../lib/routeAuth";
+import { isValidShoppingCategory } from "../../lib/shoppingCategories";
 
 const REQUIRED_FIELDS = ["shopId", "name", "price", "type"];
 
@@ -33,19 +34,6 @@ function normalizeWholesaleTiers(tiers = []) {
     .filter((tier) => Number.isFinite(tier.minQty) && Number.isFinite(tier.price) && tier.minQty > 1 && tier.price >= 0)
     .sort((a, b) => a.minQty - b.minQty);
 }
-
-const SHOPPING_CATEGORIES = [
-  "electronics",
-  "fashion",
-  "food & beverage",
-  "DIY",
-  "hardware",
-  "furniture",
-  "Media",
-  "Beauty & personal care",
-  "Tobacco products",
-  "Toy and hobbies",
-];
 
 export async function POST(req) {
   try {
@@ -85,7 +73,7 @@ export async function POST(req) {
       );
     }
 
-    if (body.type === "product" && !SHOPPING_CATEGORIES.includes(normalizedCategory)) {
+    if (body.type === "product" && !isValidShoppingCategory(normalizedCategory)) {
       return NextResponse.json(
         { success: false, message: "Invalid category for shopping product" },
         { status: 400 }
@@ -153,6 +141,9 @@ export async function GET(req) {
     const shopId = searchParams.get("shopId");
     const tagName = searchParams.get("tagName");
     const shopCategory = searchParams.get("shopCategory");
+    const type = searchParams.get("type");
+    const category = searchParams.get("category");
+    const limit = Number(searchParams.get("limit")) || 0;
 
     const filter = {};
 
@@ -171,15 +162,29 @@ export async function GET(req) {
       filter.tagName = normalizeTagName(tagName);
     }
 
+    if (type) {
+      filter.type = type;
+    }
+
+    if (category) {
+      filter.category = category;
+    }
+
     if (shopCategory) {
       const shoppingShops = await Shop.find({ category: shopCategory }).select("_id").lean();
       filter.shopId = { $in: shoppingShops.map((shop) => shop._id) };
     }
 
-    const items = await Item.find(filter)
+    let itemsQuery = Item.find(filter)
       .populate({ path: "shopId", select: "name category vendorId" })
       .sort({ createdAt: -1 })
       .lean();
+
+    if (limit > 0) {
+      itemsQuery = itemsQuery.limit(limit);
+    }
+
+    const items = await itemsQuery;
 
     const normalizedItems = items.map((item) => ({
       ...item,
@@ -191,6 +196,8 @@ export async function GET(req) {
             vendorId: item.shopId.vendorId,
           }
         : null,
+      shopName: item.shopId?.name || "",
+      vendorId: item.shopId?.vendorId ? String(item.shopId.vendorId) : "",
     }));
 
     return NextResponse.json({ success: true, data: normalizedItems }, { status: 200 });

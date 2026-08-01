@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import AddToCartButton from "./AddToCartButton";
 import { normalizeWholesaleTiers } from "../lib/pricing";
+import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
 
 type ProductType = {
   _id: string;
@@ -16,7 +17,14 @@ type ProductType = {
   vendorId?: string;
   retailPrice?: number;
   wholesaleTiers?: { minQty: number; price: number }[];
+  category?: string;
 };
+
+function getCategoryLabel(category?: string) {
+  if (!category) return "";
+  const match = SHOPPING_PRODUCT_CATEGORIES.find((item) => item.value === category);
+  return match?.label || category;
+}
 
 function CarouselProductCard({ product }: { product: ProductType }) {
   const [selectedWholesaleQty, setSelectedWholesaleQty] = useState<number | null>(null);
@@ -48,6 +56,12 @@ function CarouselProductCard({ product }: { product: ProductType }) {
       <p className="text-[10px] text-red-400 mt-1 line-clamp-1">
         {product.shopName}
       </p>
+
+      {product.category ? (
+        <span className="mt-2 inline-flex w-fit rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
+          {getCategoryLabel(product.category)}
+        </span>
+      ) : null}
 
       <p className="mt-2 text-sm md:text-base text-gray-500">
         {Number(product.price || 0).toLocaleString()} MMK

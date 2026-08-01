@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { compressItemImageBlob } from "./ImageUtils";
 import { uploadImageToSupabaseStorage } from "../../lib/supabase";
+import { SHOPPING_PRODUCT_CATEGORIES } from "../../lib/shoppingCategories";
 
 const TYPE_MAP = {
   shopping: "product",
@@ -69,19 +70,6 @@ const FORM_TITLE = {
   spa: "Add New Service",
 };
 
-const SHOPPING_CATEGORIES = [
-  "electronics",
-  "fashion",
-  "food & beverage",
-  "DIY",
-  "hardware",
-  "furniture",
-  "Media",
-  "Beauty & personal care",
-  "Tobacco products",
-  "Toy and hobbies",
-];
-
 const TAG_OPTIONS = [
   "NewArrival",
   "BestSellers",
@@ -97,7 +85,7 @@ export default function AddItemForm({
 }) {
   const [form, setForm] = useState({
     ...INITIAL_FORM,
-    category: SHOPPING_CATEGORIES[0],
+    category: SHOPPING_PRODUCT_CATEGORIES[0]?.value || "",
   });
   const [routeForm, setRouteForm] = useState(INITIAL_ROUTE_FORM);
   const [routes, setRoutes] = useState([]);
@@ -313,9 +301,9 @@ export default function AddItemForm({
             <option value="" disabled>
               Select category
             </option>
-            {SHOPPING_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {category}
+            {SHOPPING_PRODUCT_CATEGORIES.map((category) => (
+              <option key={category.value} value={category.value}>
+                {category.label}
               </option>
             ))}
           </select>
@@ -652,7 +640,7 @@ export default function AddItemForm({
       const data = await res.json();
       if (!data.success) return setMessage?.(data.message || "Failed");
       setMessage?.("Created successfully.");
-      setForm({ ...INITIAL_FORM, category: SHOPPING_CATEGORIES[0] });
+      setForm({ ...INITIAL_FORM, category: SHOPPING_PRODUCT_CATEGORIES[0]?.value || "" });
       onCreated?.();
     } catch {
       setMessage?.("Server error while creating item/service");
