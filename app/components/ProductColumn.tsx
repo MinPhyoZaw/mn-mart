@@ -39,6 +39,7 @@ type LeanItem = {
   wholesaleTiers?: WholesaleTier[];
   image?: string;
   shopName?: string;
+   category?: unknown;
 };
 
 type LeanProduct = {
@@ -49,6 +50,7 @@ type LeanProduct = {
   price?: number;
   image?: string;
   shopName?: string;
+   category?: unknown;
 };
 
 

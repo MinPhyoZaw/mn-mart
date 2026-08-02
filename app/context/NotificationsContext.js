@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useAuth } from "./AuthContext";
 
 const NotificationsContext = createContext(null);
@@ -13,13 +21,38 @@ let lastFetchAt = 0;
 
 async function fetchOrderNotifications() {
   const now = Date.now();
-  if (inflightRequest) return inflightRequest;
-  if (now - lastFetchAt < MIN_FETCH_GAP_MS) return null;
 
-  inflightRequest = fetch("/api/orders/notifications", { cache: "no-store" })
-    .then((res) => res.json())
-    .then((data) => (data.success ? data.data || [] : []))
-    .catch(() => [])
+  if (inflightRequest) {
+    return inflightRequest;
+  }
+
+  if (now - lastFetchAt < MIN_FETCH_GAP_MS) {
+    return null;
+  }
+
+  inflightRequest = fetch("/api/orders/notifications", {
+    cache: "no-store",
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        throw new Error(
+          `Failed to fetch notifications: ${res.status}`
+        );
+      }
+
+      return res.json();
+    })
+    .then((data) => {
+      return data.success ? data.data || [] : [];
+    })
+    .catch((error) => {
+      console.error(
+        "Failed to fetch order notifications:",
+        error
+      );
+
+      return [];
+    })
     .finally(() => {
       inflightRequest = null;
       lastFetchAt = Date.now();
@@ -30,16 +63,36 @@ async function fetchOrderNotifications() {
 
 async function fetchPendingVendorRequestsCount() {
   try {
-    const res = await fetch("/api/vendor-requests?status=pending&limit=1", { cache: "no-store" });
+    const res = await fetch(
+      "/api/vendor-requests?status=pending&limit=1",
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch vendor requests: ${res.status}`
+      );
+    }
+
     const data = await res.json();
+
     return data?.pagination?.total || 0;
-  } catch {
+  } catch (error) {
+    console.error(
+      "Failed to fetch pending vendor requests:",
+      error
+    );
+
     return 0;
   }
 }
 
 function mergeAdminVendorRequests(notices, count) {
-  if (count <= 0) return notices;
+  if (count <= 0) {
+    return notices;
+  }
 
   return [
     {
@@ -54,46 +107,68 @@ function mergeAdminVendorRequests(notices, count) {
 
 export function NotificationsProvider({ children }) {
   const { user, loading: authLoading } = useAuth();
+
   const [notifications, setNotifications] = useState([]);
-  const [vendorRequestsCount, setVendorRequestsCount] = useState(null);
+  const [vendorRequestsCount, setVendorRequestsCount] =
+    useState(0);
+
   const pollTimerRef = useRef(null);
-  const userId = user?._id ? String(user._id) : null;
+  const initialLoadTimerRef = useRef(null);
+
+  const userId = user?._id
+    ? String(user._id)
+    : null;
+
   const userRole = user?.role || null;
+
   const canReceiveNotifications = Boolean(
-    userRole && ["customer", "admin", "vendor"].includes(userRole)
+    userRole &&
+      ["customer", "admin", "vendor"].includes(userRole)
   );
 
   const loadNotifications = useCallback(async () => {
     if (!canReceiveNotifications) {
-      setNotifications([]);
-      setVendorRequestsCount(0);
       return;
     }
 
     const notices = await fetchOrderNotifications();
-    if (notices === null) return;
 
-    let pendingVendorCount = 0;
-    if (userRole === "admin") {
-      pendingVendorCount = await fetchPendingVendorRequestsCount();
-    }
-
-    setVendorRequestsCount(pendingVendorCount);
-    setNotifications(
-      userRole === "admin" ? mergeAdminVendorRequests(notices, pendingVendorCount) : notices
-    );
-  }, [canReceiveNotifications, userRole]);
-
-  useEffect(() => {
-    if (authLoading) return;
-
-    if (!canReceiveNotifications) {
-      setNotifications([]);
-      setVendorRequestsCount(0);
+    if (notices === null) {
       return;
     }
 
-    loadNotifications();
+    let pendingVendorCount = 0;
+
+    if (userRole === "admin") {
+      pendingVendorCount =
+        await fetchPendingVendorRequestsCount();
+    }
+
+    setVendorRequestsCount(pendingVendorCount);
+
+    if (userRole === "admin") {
+      setNotifications(
+        mergeAdminVendorRequests(
+          notices,
+          pendingVendorCount
+        )
+      );
+    } else {
+      setNotifications(notices);
+    }
+  }, [canReceiveNotifications, userRole]);
+
+  useEffect(() => {
+    if (authLoading || !canReceiveNotifications) {
+      return;
+    }
+
+    const stopInitialLoadTimer = () => {
+      if (initialLoadTimerRef.current) {
+        clearTimeout(initialLoadTimerRef.current);
+        initialLoadTimerRef.current = null;
+      }
+    };
 
     const stopPolling = () => {
       if (pollTimerRef.current) {
@@ -104,70 +179,166 @@ export function NotificationsProvider({ children }) {
 
     const startPolling = () => {
       stopPolling();
+
       pollTimerRef.current = setInterval(() => {
         if (document.visibilityState === "visible") {
-          loadNotifications();
+          void loadNotifications();
         }
       }, POLL_INTERVAL_MS);
     };
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        loadNotifications();
+        void loadNotifications();
         startPolling();
       } else {
         stopPolling();
       }
     };
 
+    /*
+     * Delay the initial notification request until after
+     * the effect finishes. This avoids synchronously
+     * triggering state updates inside the effect body.
+     */
+    initialLoadTimerRef.current = setTimeout(() => {
+      void loadNotifications();
+    }, 0);
+
     if (document.visibilityState === "visible") {
       startPolling();
     }
 
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener(
+      "visibilitychange",
+      onVisibilityChange
+    );
 
     return () => {
+      stopInitialLoadTimer();
       stopPolling();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+
+      document.removeEventListener(
+        "visibilitychange",
+        onVisibilityChange
+      );
     };
-  }, [authLoading, canReceiveNotifications, userId, userRole, loadNotifications]);
+  }, [
+    authLoading,
+    canReceiveNotifications,
+    userId,
+    loadNotifications,
+  ]);
 
   const markAsRead = useCallback(async (noticeId) => {
-    const res = await fetch("/api/orders/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId: noticeId }),
-    });
-    const data = await res.json();
-    if (!data.success) return false;
+    try {
+      const res = await fetch(
+        "/api/orders/notifications",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId: noticeId,
+          }),
+        }
+      );
 
-    setNotifications((prev) => prev.filter((notice) => notice._id !== noticeId));
-    return true;
+      if (!res.ok) {
+        throw new Error(
+          `Failed to mark notification as read: ${res.status}`
+        );
+      }
+
+      const data = await res.json();
+
+      if (!data.success) {
+        return false;
+      }
+
+      setNotifications((previousNotifications) =>
+        previousNotifications.filter(
+          (notice) => notice._id !== noticeId
+        )
+      );
+
+      return true;
+    } catch (error) {
+      console.error(
+        "Failed to mark notification as read:",
+        error
+      );
+
+      return false;
+    }
   }, []);
 
-  const totalCount = useMemo(
-    () => notifications.reduce((acc, notice) => acc + (notice.count || 1), 0),
-    [notifications]
+  const visibleNotifications = useMemo(() => {
+    if (!canReceiveNotifications) {
+      return [];
+    }
+
+    return notifications;
+  }, [canReceiveNotifications, notifications]);
+
+  const visibleVendorRequestsCount = useMemo(() => {
+    if (
+      !canReceiveNotifications ||
+      userRole !== "admin"
+    ) {
+      return 0;
+    }
+
+    return vendorRequestsCount;
+  }, [
+    canReceiveNotifications,
+    userRole,
+    vendorRequestsCount,
+  ]);
+
+  const totalCount = useMemo(() => {
+    return visibleNotifications.reduce(
+      (total, notice) =>
+        total + (notice.count || 1),
+      0
+    );
+  }, [visibleNotifications]);
+
+  const value = useMemo(
+    () => ({
+      notifications: visibleNotifications,
+      vendorRequestsCount:
+        visibleVendorRequestsCount,
+      totalCount,
+      markAsRead,
+      refresh: loadNotifications,
+    }),
+    [
+      visibleNotifications,
+      visibleVendorRequestsCount,
+      totalCount,
+      markAsRead,
+      loadNotifications,
+    ]
   );
 
-  const value = {
-    notifications,
-    vendorRequestsCount,
-    totalCount,
-    markAsRead,
-    refresh: loadNotifications,
-  };
-
   return (
-    <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
+    <NotificationsContext.Provider value={value}>
+      {children}
+    </NotificationsContext.Provider>
   );
 }
 
 export function useNotifications() {
-  const context = useContext(NotificationsContext);
+  const context = useContext(
+    NotificationsContext
+  );
 
   if (!context) {
-    throw new Error("useNotifications must be used inside NotificationsProvider");
+    throw new Error(
+      "useNotifications must be used inside NotificationsProvider"
+    );
   }
 
   return context;
