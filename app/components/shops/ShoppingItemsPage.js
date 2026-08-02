@@ -48,7 +48,7 @@ export default function ShoppingItemsPage({ title, heroImage }) {
         ) : items.length === 0 ? (
           <p className="text-center text-gray-500">No shopping items available</p>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5">
+          <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 md:gap-x-3 md:gap-y-7">
             {items.map((item) => (
               <ShoppingItemCard key={item._id} item={item} />
             ))}

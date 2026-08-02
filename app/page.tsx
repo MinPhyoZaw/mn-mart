@@ -11,7 +11,7 @@ export default function HomePage() {
   return (
     <div className='w-[90%] mx-auto'>
       <ShoppingCategoryShowcase />
-       <ProductColumn tagName="NewArrival" title="New Arrival" />
+       {/* <ProductColumn tagName="NewArrival" title="New Arrival" /> */}
       <PromoBanner/>
       <Categories/>
       

@@ -1,98 +1,108 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Car, Hotel, Sparkles } from "lucide-react";
 
 const categories = [
   {
     name: "Shopping",
-    desc: "Buy from local shops",
-    icon: <ShoppingCart size={22} />,
     link: "/shops",
-    color: "bg-orange-500",
+    image: "/images/categories/catego.png",
+    gradientClass:
+      "bg-gradient-to-r from-orange-950/90 via-orange-900/55 to-transparent",
   },
   {
-    name: "Transportation",
-    desc: "Book travel easily",
-    icon: <Car size={22} />,
+    name: "Car Ticket",
     link: "/transportation",
-    color: "bg-blue-500",
+    image: "/images/categories/car.png",
+    gradientClass:
+      "bg-gradient-to-r from-blue-950/90 via-blue-900/55 to-transparent",
   },
   {
     name: "Hotel",
-    desc: "Find best hotels",
-    icon: <Hotel size={22} />,
     link: "/hotel",
-    color: "bg-green-500",
+    image: "/images/categories/hotel.png",
+    gradientClass:
+      "bg-gradient-to-r from-emerald-950/90 via-emerald-900/55 to-transparent",
   },
   {
     name: "Spa",
-    desc: "Relax & refresh",
-    icon: <Sparkles size={22} />,
     link: "/spa",
-    color: "bg-pink-500",
+    image: "/images/categories/spa.png",
+    gradientClass:
+      "bg-gradient-to-r from-pink-950/90 via-pink-900/55 to-transparent",
   },
 ];
 
 export default function Categories() {
   return (
-    <div className="w-[92%] md:w-[90%] mx-auto py-8 md:py-10">
-      
-      {/* Title */}
-      <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6">
-        Explore Services
-      </h2>
+    <section className="mx-auto w-[94%] py-7 md:w-[90%] md:py-10">
+      <div className="mb-4 md:mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 md:text-2xl">
+          Explore Services
+        </h2>
+      </div>
 
-      {/* Responsive Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
-
-        {categories.map((cat) => (
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        {categories.map((category) => (
           <Link
-            key={cat.name}
-            href={cat.link}
+            key={category.name}
+            href={category.link}
             className="
-              bg-white
-              rounded-xl md:rounded-2xl
-              shadow-sm
-              hover:shadow-md
-              transition
-              p-3 md:p-4
-              h-[90px] sm:h-[100px] md:h-[110px]
-              flex items-center justify-between
               group
+              relative
+              block
+              h-[92px]
+              overflow-hidden
+              rounded-[20px]
+              bg-gray-200
+              sm:h-[105px]
+              md:h-[125px]
             "
           >
-
-            {/* LEFT TEXT */}
-            <div className="pr-2">
-              <h3 className="text-xs sm:text-sm font-semibold text-gray-800 leading-tight">
-                {cat.name}
-              </h3>
-
-              <p className="text-[10px] sm:text-xs text-gray-500 mt-1 line-clamp-2">
-                {cat.desc}
-              </p>
-            </div>
-
-            {/* RIGHT ICON */}
+            {/* Background image */}
             <div
-              className={`
-                ${cat.color}
-                text-white
-                p-2 md:p-2.5
-                rounded-full
+              className="
+                absolute
+                inset-0
+                bg-cover
+                bg-center
+                transition-transform
+                duration-500
                 group-hover:scale-110
-                transition
-                shrink-0
-              `}
-            >
-              {cat.icon}
-            </div>
+              "
+              style={{
+                backgroundImage: `url(${category.image})`,
+              }}
+            />
 
+            {/* Gradient overlay */}
+            <div
+              className={`absolute inset-0 ${category.gradientClass}`}
+            />
+
+            {/* Bottom shadow */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+
+            {/* Category name */}
+            <div className="relative z-10 flex h-full items-center px-4 md:px-5">
+              <h3
+                className="
+                  max-w-[65%]
+                  text-sm
+                  font-semibold
+                  leading-tight
+                  text-white
+                  drop-shadow-sm
+                  sm:text-base
+                  md:text-lg
+                "
+              >
+                {category.name}
+              </h3>
+            </div>
           </Link>
         ))}
-
       </div>
-    </div>
+    </section>
   );
 }

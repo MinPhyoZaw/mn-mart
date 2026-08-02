@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
-import AddToCartButton from "./AddToCartButton";
-import { normalizeWholesaleTiers } from "../lib/pricing";
+import Link from "next/link";
+import ProductDetailsModal from "./ProductDetailsModal";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
 
 type ProductType = {
@@ -16,164 +16,157 @@ type ProductType = {
   shopId?: string;
   vendorId?: string;
   retailPrice?: number;
-  wholesaleTiers?: { minQty: number; price: number }[];
+  wholesaleTiers?: {
+    minQty: number;
+    price: number;
+  }[];
   category?: string;
 };
 
 function getCategoryLabel(category?: string) {
   if (!category) return "";
-  const match = SHOPPING_PRODUCT_CATEGORIES.find((item) => item.value === category);
+
+  const match = SHOPPING_PRODUCT_CATEGORIES.find(
+    (item) => item.value === category
+  );
+
   return match?.label || category;
 }
 
-function CarouselProductCard({ product }: { product: ProductType }) {
-  const [selectedWholesaleQty, setSelectedWholesaleQty] = useState<number | null>(null);
-
-  const wholesaleTiers = useMemo(
-    () => normalizeWholesaleTiers(product.wholesaleTiers || []),
-    [product.wholesaleTiers]
-  );
-
-  const selectedWholesaleTier =
-    wholesaleTiers.find((tier) => tier.minQty === selectedWholesaleQty) || null;
-
+function ProductCard({
+  product,
+  onOpenDetails,
+}: {
+  product: ProductType;
+  onOpenDetails: (product: ProductType) => void;
+}) {
   return (
-    <div className="w-[160px] md:w-[200px] snap-start rounded-xl bg-white shadow-sm hover:shadow-md transition p-3 group flex flex-col h-[340px] md:h-[390px]">
-      
-      <div className="relative w-full h-[120px] md:h-[150px] mb-3">
+    <article className="group min-w-0">
+      <button
+        type="button"
+        onClick={() => onOpenDetails(product)}
+        className="relative block aspect-[1/1] w-full overflow-hidden rounded-xl bg-gray-100"
+      >
         <Image
           src={product.image || "/images/placeholder.png"}
           alt={product.name}
           fill
-          className="object-cover rounded-lg group-hover:scale-105 transition"
+          sizes="
+            (max-width: 639px) 50vw,
+            (max-width: 1023px) 33vw,
+            16vw
+          "
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
-      </div>
+      </button>
 
-      <h3 className="text-xs md:text-sm font-medium text-gray-800 line-clamp-2 min-h-[36px]">
-        {product.name}
-      </h3>
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={() => onOpenDetails(product)}
+          className="text-left"
+        >
+          <h3 className="line-clamp-2 min-h-[38px] text-xs font-medium leading-[19px] text-gray-800 transition-colors hover:text-orange-600 md:text-sm">
+            {product.name}
+          </h3>
+        </button>
 
-      <p className="text-[10px] text-red-400 mt-1 line-clamp-1">
-        {product.shopName}
-      </p>
+        <p className="mt-1 truncate text-[10px] text-gray-400 md:text-xs">
+          {product.shopName || "MN Mart Shop"}
+        </p>
 
-      {product.category ? (
-        <span className="mt-2 inline-flex w-fit rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
-          {getCategoryLabel(product.category)}
-        </span>
-      ) : null}
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="mr-1 text-[10px] font-semibold text-orange-600">
+              MMK
+            </span>
 
-      <p className="mt-2 text-sm md:text-base text-gray-500">
-        {Number(product.price || 0).toLocaleString()} MMK
-      </p>
-
-      {/* Wholesale Section Fixed Height */}
-      <div className="mt-2 h-8">
-        {wholesaleTiers.length ? (
-          <div className="space-y-0.5 rounded-lg border border-green-100 bg-green-50/70 p-1.5 text-[9px] text-green-800 h-full overflow-auto">
-            {wholesaleTiers.map((tier) => (
-              <label
-                key={tier.minQty}
-                className="flex cursor-pointer items-center gap-1"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedWholesaleQty === tier.minQty}
-                  onChange={(e) =>
-                    setSelectedWholesaleQty(
-                      e.target.checked ? tier.minQty : null
-                    )
-                  }
-                 className="h-3 w-3 accent-green-600"
-                />
-
-                <span>
-                  လက်ကားဈေး : {tier.minQty} -{" "}
-                  {Number(tier.price).toLocaleString()} MMK
-                </span>
-              </label>
-            ))}
+            <span className="text-base font-bold text-orange-600 md:text-lg">
+              {Number(product.price || 0).toLocaleString()}
+            </span>
           </div>
-        ) : null}
-      </div>
 
-      {/* Button always aligned */}
-      <div className="mt-auto pt-3">
-        <AddToCartButton
-          product={{ ...product, selectedWholesaleTier }}
-        />
+          {product.category ? (
+            <span className="max-w-[45%] truncate rounded bg-orange-50 px-1.5 py-0.5 text-[9px] text-orange-600">
+              {getCategoryLabel(product.category)}
+            </span>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onOpenDetails(product)}
+          className="mt-2 flex h-8 w-full items-center justify-center rounded-lg bg-orange-500 text-[11px] font-medium text-white transition-colors hover:bg-orange-600 md:text-xs"
+        >
+          See Details
+        </button>
       </div>
-    </div>
+    </article>
   );
 }
 
 export default function ProductCarouselClient({
   products,
   heading,
+  category,
 }: {
   products: ProductType[];
   heading?: string;
+  category?: string;
 }) {
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
 
-  const getAmount = () =>
-    typeof window !== "undefined" && window.innerWidth > 768
-      ? 240
-      : 180;
+  if (!products.length) return null;
 
-  const scrollLeft = () => {
-    scrollerRef.current?.scrollBy({
-      left: -getAmount(),
-      behavior: "smooth",
-    });
-  };
-
-  const scrollRight = () => {
-    scrollerRef.current?.scrollBy({
-      left: getAmount(),
-      behavior: "smooth",
-    });
+  const openDetails = (product: ProductType) => {
+    setSelectedProduct(product);
   };
 
   return (
-    <section className="py-8 w-[92%] md:w-[90%] mx-auto relative">
-      {heading && (
-        <h2 className="text-lg md:text-2xl font-semibold mb-5 text-gray-800">
-          {heading}
-        </h2>
-      )}
+    <>
+      <section className="mx-auto w-[96%] py-5 md:w-[90%] md:py-8">
+        {heading ? (
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800 md:text-2xl">
+              {heading}
+            </h2>
 
-      <div className="relative">
-        <button
-          onClick={scrollLeft}
-          aria-label="Scroll left"
-          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-white border rounded-full p-2 shadow-md"
-        >
-          &lt;
-        </button>
+            <Link
+              href={`/shopping?category=${encodeURIComponent(category || "guess-you-like")}`}
+              className="text-xs font-medium text-orange-600 hover:underline md:text-sm"
+            >
+              View all
+            </Link>
+          </div>
+        ) : null}
 
         <div
-  ref={scrollerRef}
-  className="overflow-x-auto hide-scrollbar pb-2 px-10 md:px-12"
->
-          <div className="flex gap-4 min-w-max snap-x snap-mandatory">
-            {products.map((product) => (
-              <CarouselProductCard
-                key={product._id}
-                product={product}
-              />
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={scrollRight}
-          aria-label="Scroll right"
-          className="absolute right-1 top-1/2 -translate-y-1/2 z-10 bg-white border rounded-full p-2 shadow-md"
+          className="
+            grid
+            grid-cols-2
+            gap-x-2.5
+            gap-y-6
+            sm:grid-cols-3
+            md:grid-cols-4
+            lg:grid-cols-6
+            md:gap-x-3
+            md:gap-y-7
+          "
         >
-          &gt;
-        </button>
-      </div>
-    </section>
+          {products.map((product) => (
+            <ProductCard
+              key={product._id}
+              product={product}
+              onOpenDetails={() => openDetails(product)}
+            />
+          ))}
+        </div>
+      </section>
+
+      <ProductDetailsModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
+    </>
   );
 }
