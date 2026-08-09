@@ -59,7 +59,7 @@ export async function POST(req) {
     console.log("RESET PASSWORD URL:", resetUrl);
 
     await resend.emails.send({
-      from: "MN Mart <onboarding@resend.dev>",
+      from: "MN Mart <noreply@mn-mart.store>",
       to: email,
       subject: "Reset your MN Mart password",
       html: `
