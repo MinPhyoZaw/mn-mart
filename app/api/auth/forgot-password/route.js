@@ -23,11 +23,16 @@ export async function POST(req) {
       );
     }
 
+    console.log("Forgot password request :" ,email);
     const user = await User.findOne({
       email: email.toLowerCase(),
     });
 
+
+console.log("USER FOUND:", !!user);
+
     if (!user) {
+       console.log("NO USER FOUND - EMAIL NOT SENT");
       return NextResponse.json({
         success: true,
         message:
@@ -99,6 +104,10 @@ export async function POST(req) {
         </div>
       `,
     });
+
+    console.log("RESEND DATA:", data);
+console.log("RESEND ERROR:", error);
+
 
     return NextResponse.json({
       success: true,
