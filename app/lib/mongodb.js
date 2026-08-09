@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-console.log("Mongo URI exists:", !!MONGODB_URI);
-console.log("Mongo URI:", MONGODB_URI?.substring(0, 40) + "...");
+
 if (!MONGODB_URI) {
   throw new Error("Please define MONGODB_URI in .env.local");
 }
