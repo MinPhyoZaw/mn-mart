@@ -115,17 +115,16 @@ export async function POST(req) {
 
     // Handle Resend error
     if (error) {
-      console.error("FAILED TO SEND RESET EMAIL:", error);
+  console.error("FAILED TO SEND RESET EMAIL:", error);
 
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Unable to send password reset email.",
-        },
-        { status: 500 }
-      );
-    }
-
+  return NextResponse.json(
+    {
+      success: false,
+      message: error.message || "Unable to send password reset email.",
+    },
+    { status: 500 }
+  );
+}
     return NextResponse.json({
       success: true,
       message:
