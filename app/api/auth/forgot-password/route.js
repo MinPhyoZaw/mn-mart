@@ -23,16 +23,18 @@ export async function POST(req) {
       );
     }
 
-    console.log("Forgot password request :" ,email);
+    console.log("Forgot password request:", email);
+
     const user = await User.findOne({
       email: email.toLowerCase(),
     });
 
+    console.log("USER FOUND:", !!user);
 
-console.log("USER FOUND:", !!user);
-
+    // Do not reveal whether the account exists
     if (!user) {
-       console.log("NO USER FOUND - EMAIL NOT SENT");
+      console.log("NO USER FOUND - EMAIL NOT SENT");
+
       return NextResponse.json({
         success: true,
         message:
@@ -40,8 +42,10 @@ console.log("USER FOUND:", !!user);
       });
     }
 
+    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
 
+    // Store only hashed token in database
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
@@ -63,7 +67,8 @@ console.log("USER FOUND:", !!user);
 
     console.log("RESET PASSWORD URL:", resetUrl);
 
-    await resend.emails.send({
+    // Send email with Resend
+    const { data, error } = await resend.emails.send({
       from: "MN Mart <noreply@mn-mart.store>",
       to: email,
       subject: "Reset your MN Mart password",
@@ -106,14 +111,27 @@ console.log("USER FOUND:", !!user);
     });
 
     console.log("RESEND DATA:", data);
-console.log("RESEND ERROR:", error);
+    console.log("RESEND ERROR:", error);
 
+    // Handle Resend error
+    if (error) {
+      console.error("FAILED TO SEND RESET EMAIL:", error);
+
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unable to send password reset email.",
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message:
         "If an account exists with this email, a password reset link has been sent.",
     });
+
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
 
