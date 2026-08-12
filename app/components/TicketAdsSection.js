@@ -3,6 +3,9 @@ import {
   CheckCircle2,
   ArrowRightLeft,
   Bus,
+  Clock3,
+  ShieldCheck,
+  MapPinned,
 } from "lucide-react";
 
 export default function TicketAdsSection() {
@@ -15,7 +18,7 @@ export default function TicketAdsSection() {
 
   return (
     <section
-      className="relative overflow-hidden rounded-3xl p-6 md:p-8 shadow-xl"
+      className="relative overflow-hidden rounded-[2rem] border border-white/20 shadow-2xl"
       style={{
         backgroundImage: "url('/images/car-ticket.png')",
         backgroundSize: "cover",
@@ -23,114 +26,138 @@ export default function TicketAdsSection() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-black/45" />
+      {/* Layered overlays */}
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/78 to-slate-900/25" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
 
-      {/* Glow */}
-      <div className="absolute -top-10 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+      {/* Decorative glows */}
+      <div className="absolute -left-16 -top-16 h-56 w-56 rounded-full bg-emerald-400/15 blur-3xl" />
+      <div className="absolute -bottom-20 right-10 h-64 w-64 rounded-full bg-red-500/15 blur-3xl" />
 
-      {/* Content */}
-      <div className="relative z-10">
-        {/* Verified Badge */}
-        <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 mb-5">
-          <CheckCircle2
-            size={15}
-            className="text-green-400"
-          />
-          <span className="text-xs font-semibold text-white">
-            MN-Mart Verified Transportation
-          </span>
+      <div className="relative z-10 p-5 sm:p-7 md:p-9 lg:p-10">
+        {/* Top row */}
+        <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-xl">
+            <CheckCircle2 size={15} className="text-emerald-400" />
+            <span className="text-xs font-semibold text-white">
+              MN-Mart Verified Transportation
+            </span>
+          </div>
+
+          <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80 backdrop-blur-md sm:flex">
+            <Clock3 size={14} />
+            Daily Trips Available
+          </div>
         </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-          {/* Left Side */}
+        <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
+          {/* Left */}
           <div>
-            {/* Heading */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-white text-red-500 p-3 rounded-2xl shadow-lg">
-                <Bus size={24} />
+            <div className="mb-5 flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-red-500 shadow-xl shadow-black/20">
+                <Bus size={28} />
               </div>
 
               <div>
-                <h2 className="text-3xl md:text-4xl font-black text-white leading-tight">
-                  Car Ticket Booking
-                </h2>
-
-                <p className="text-xs text-green-300 tracking-wider mt-1">
-                  SAFE • FAST • RELIABLE
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
+                  Travel With Confidence
                 </p>
+
+                <h2 className="mt-1 text-3xl font-black leading-tight text-white sm:text-4xl md:text-5xl">
+                  Car Ticket
+                  <span className="block text-emerald-300">Booking</span>
+                </h2>
               </div>
             </div>
 
-            {/* Description */}
-            <p className="text-sm md:text-base text-white/90 leading-relaxed max-w-lg">
-              MN-Mart မှတစ်ဆင့် ယုံကြည်စိတ်ချရသော
-              ကားလက်မှတ်များကို လွယ်ကူစွာ
-              ကြိုတင်မှာယူနိုင်ပါသည်။
+            <p className="max-w-xl text-sm leading-7 text-white/85 sm:text-base">
+              MN-Mart မှတစ်ဆင့် ယုံကြည်စိတ်ချရသော ကားလက်မှတ်များကို
+              လွယ်ကူမြန်ဆန်စွာ ရှာဖွေပြီး ကြိုတင်မှာယူနိုင်ပါသည်။
             </p>
 
-            {/* Stats */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <span className="bg-white/15 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full">
+            {/* Feature pills */}
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3.5 py-2 text-xs font-medium text-white backdrop-blur-md">
+                <MapPinned size={14} className="text-emerald-300" />
                 20+ Routes
-              </span>
+              </div>
 
-              <span className="bg-white/15 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3.5 py-2 text-xs font-medium text-white backdrop-blur-md">
+                <Clock3 size={14} className="text-emerald-300" />
                 Daily Trips
-              </span>
+              </div>
 
-              <span className="bg-white/15 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full">
-                Trusted Service
-              </span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3.5 py-2 text-xs font-medium text-white backdrop-blur-md">
+                <ShieldCheck size={14} className="text-emerald-300" />
+                Trusted Operators
+              </div>
             </div>
 
-            {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            {/* CTA */}
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/transportation"
-                className="w-full sm:w-auto"
+                className="inline-flex items-center justify-center rounded-2xl bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-950/20 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-400"
               >
-                <button className="w-full bg-white text-green-700 hover:bg-green-50 transition-all duration-300 px-5 py-3 rounded-xl text-sm font-semibold shadow-lg">
-                  Book Now
-                </button>
+                Book Ticket Now
               </Link>
 
               <Link
                 href="/transportation"
-                className="w-full sm:w-auto"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition duration-300 hover:bg-white/15"
               >
-                <button className="w-full bg-white/15 border border-white/20 backdrop-blur-md text-white hover:bg-white/20 transition-all duration-300 px-5 py-3 rounded-xl text-sm font-semibold">
-                  View Routes
-                </button>
+                Explore Routes
               </Link>
             </div>
           </div>
 
-          {/* Right Side Routes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {routes.map((route, index) => (
-              <div
-                key={index}
-                className="bg-white/90 rounded-2xl p-4 shadow-lg hover:scale-[1.02] transition-all duration-300"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="bg-red-100 text-red-500 p-2 rounded-xl">
-                    <ArrowRightLeft size={16} />
-                  </div>
-
-                  <div>
-                    <p className="text-gray-800 font-bold text-sm leading-snug">
-                      {route}
-                    </p>
-
-                    <p className="text-gray-500 text-[11px] mt-1">
-                      DAILY AVAILABLE
-                    </p>
-                  </div>
-                </div>
+          {/* Right */}
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/10 p-3 backdrop-blur-xl sm:p-4">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Popular Routes
+                </p>
+                <p className="mt-0.5 text-xs text-white/60">
+                  Quick access to frequent destinations
+                </p>
               </div>
-            ))}
+
+              <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-200">
+                DAILY
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {routes.map((route, index) => (
+                <Link
+                  key={index}
+                  href="/transportation"
+                  className="group rounded-2xl border border-white/10 bg-white/95 p-4 shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 transition group-hover:bg-red-100">
+                      <ArrowRightLeft size={17} />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold leading-snug text-gray-900">
+                        {route}
+                      </p>
+
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                        View available trips
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-xs leading-5 text-white/75">
+              Choose your route, check available departure times and book directly
+              through MN-Mart.
+            </div>
           </div>
         </div>
       </div>
