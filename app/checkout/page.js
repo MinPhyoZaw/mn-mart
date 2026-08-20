@@ -175,7 +175,7 @@ export default function CheckoutPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         {/* ================= LEFT ================= */}
         <section className="space-y-5">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form id="checkout-form" onSubmit={handleSubmit} className="space-y-5">
             {/* Customer information */}
             <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
               <div className="mb-6 flex items-center gap-3">
