@@ -5,11 +5,25 @@ import { Resend } from "resend";
 import User from "../../../models/User";
 import connectDB from "../../../lib/mongodb";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req) {
   try {
     await connectDB();
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY is missing");
+
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Email service is not configured.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
 
     const { email } = await req.json();
 
@@ -60,7 +74,7 @@ export async function POST(req) {
 
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ||
-      "http://localhost:3000";
+      "https://www.mn-mart.store";
 
     const resetUrl =
       `${baseUrl}/reset-password?token=${resetToken}`;
@@ -113,24 +127,25 @@ export async function POST(req) {
     console.log("RESEND DATA:", data);
     console.log("RESEND ERROR:", error);
 
-    // Handle Resend error
     if (error) {
-  console.error("FAILED TO SEND RESET EMAIL:", error);
+      console.error("FAILED TO SEND RESET EMAIL:", error);
 
-  return NextResponse.json(
-    {
-      success: false,
-      message: error.message || "Unable to send password reset email.",
-    },
-    { status: 500 }
-  );
-}
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            error.message ||
+            "Unable to send password reset email.",
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message:
         "If an account exists with this email, a password reset link has been sent.",
     });
-
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
 
