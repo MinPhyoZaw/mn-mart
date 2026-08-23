@@ -183,20 +183,40 @@ export default function ProductDetailsModal({
               <label className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
                 <span>Quantity</span>
 
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(event) =>
-                    setQuantity(
-                      Math.max(
-                        Number(event.target.value) || 1,
-                        1
+                <span className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => Math.max(current - 1, 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-lg leading-none text-gray-700 hover:bg-gray-100"
+                    aria-label="Decrease quantity"
+                  >
+                    -
+                  </button>
+
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(event) =>
+                      setQuantity(
+                        Math.max(
+                          Number(event.target.value) || 1,
+                          1
+                        )
                       )
-                    )
-                  }
-                  className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
-                />
+                    }
+                    className="w-16 rounded border border-gray-300 px-2 py-1 text-center"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => current + 1)}
+                    className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-lg leading-none text-gray-700 hover:bg-gray-100"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </span>
               </label>
 
               <button
