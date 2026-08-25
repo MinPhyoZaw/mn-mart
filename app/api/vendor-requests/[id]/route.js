@@ -5,6 +5,12 @@ import Vendor from "../../../models/Vendor";
 import User from "../../../models/User";
 import { requireAuth } from "../../../lib/routeAuth";
 
+function getSafeShopImage(value) {
+  return typeof value === "string" && /^https?:\/\//i.test(value)
+    ? value
+    : null;
+}
+
 export async function PATCH(req, context) {
   try {
     const auth = requireAuth(req, ["admin"]);
@@ -62,7 +68,7 @@ export async function PATCH(req, context) {
         phone,
         address,
         description: vr.description || "",
-        image: vr.shopImage || null,
+        image: getSafeShopImage(vr.shopImage),
         kbzPayNumber: vr.kbzPayNumber || "",
         wavePayNumber: vr.wavePayNumber || "",
       };
@@ -77,7 +83,16 @@ export async function PATCH(req, context) {
       await vr.save();
 
       return NextResponse.json(
-        { success: true, message: "Approved", vendor: newVendor, shop, request: vr },
+        {
+          success: true,
+          message: "Approved",
+          vendor: newVendor,
+          shop,
+          request: {
+            ...vr.toObject(),
+            shopImage: getSafeShopImage(vr.shopImage),
+          },
+        },
         { status: 200 }
       );
     }
@@ -90,7 +105,17 @@ export async function PATCH(req, context) {
       vr.decidedBy = auth.user.userId;
       vr.reviewedAt = new Date();
       await vr.save();
-      return NextResponse.json({ success: true, message: "Rejected", request: vr }, { status: 200 });
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Rejected",
+          request: {
+            ...vr.toObject(),
+            shopImage: getSafeShopImage(vr.shopImage),
+          },
+        },
+        { status: 200 }
+      );
     }
 
     return NextResponse.json({ success: false, message: "Invalid action" }, { status: 400 });

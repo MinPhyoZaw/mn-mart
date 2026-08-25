@@ -15,8 +15,12 @@ function serializeRequest(r) {
     phone: r.phone || "",
     description: r.description || "",
 
-    // Intentionally do NOT return shopImage here.
-    // Existing records contain large Base64 strings.
+    shopImage:
+      typeof r.shopImage === "string" &&
+      /^https?:\/\//i.test(r.shopImage)
+        ? r.shopImage
+        : null,
+
     status: r.status || "pending",
 
     createdAt: r.createdAt
@@ -78,33 +82,42 @@ export async function GET(req) {
       (page - 1) * limit;
 
     const [rows, total] = await Promise.all([
-      VendorRequest.find(filter)
-        .select(
-          [
-            "_id",
-            "userId",
-            "decidedBy",
-            "businessName",
-            "vendorName",
-            "vendorType",
-            "phone",
-            "description",
-
-            // IMPORTANT:
-            // shopImage is intentionally excluded.
-
-            "status",
-            "createdAt",
-            "updatedAt",
-            "reviewedAt",
-          ].join(" ")
-        )
-        .sort({
-          createdAt: -1,
-        })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      VendorRequest.aggregate([
+        { $match: filter },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            _id: 1,
+            userId: 1,
+            decidedBy: 1,
+            businessName: 1,
+            vendorName: 1,
+            vendorType: 1,
+            phone: 1,
+            description: 1,
+            shopImage: {
+              $cond: [
+                {
+                  $regexMatch: {
+                    input: {
+                      $ifNull: ["$shopImage", ""],
+                    },
+                    regex: "^https?://",
+                  },
+                },
+                "$shopImage",
+                null,
+              ],
+            },
+            status: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            reviewedAt: 1,
+          },
+        },
+      ]),
 
       VendorRequest.countDocuments(filter),
     ]);

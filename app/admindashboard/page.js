@@ -99,14 +99,20 @@ export default async function AdminDashboardPage() {
                 phone: 1,
                 description: 1,
 
-                /*
-                 * IMPORTANT:
-                 * Do NOT include shopImage here.
-                 *
-                 * Existing shopImage values are Base64
-                 * and can make this aggregation exceed
-                 * MongoDB's 16 MB BSON document limit.
-                 */
+                shopImage: {
+                  $cond: [
+                    {
+                      $regexMatch: {
+                        input: {
+                          $ifNull: ["$shopImage", ""],
+                        },
+                        regex: "^https?://",
+                      },
+                    },
+                    "$shopImage",
+                    null,
+                  ],
+                },
 
                 status: 1,
 
@@ -353,10 +359,8 @@ export default async function AdminDashboardPage() {
   };
 
   /*
-   * Serialize vendor requests
-   *
-   * IMPORTANT:
-   * shopImage is intentionally excluded.
+  * Serialize vendor requests. The aggregation already removes
+  * legacy Base64 images; keep the URL check here as a second boundary.
    */
   const vendorRequests =
     vendorRequestsRaw.map(
@@ -390,6 +394,12 @@ export default async function AdminDashboardPage() {
 
         description:
           request.description || "",
+
+        shopImage:
+          typeof request.shopImage === "string" &&
+          /^https?:\/\//i.test(request.shopImage)
+            ? request.shopImage
+            : null,
 
         status:
           request.status ||

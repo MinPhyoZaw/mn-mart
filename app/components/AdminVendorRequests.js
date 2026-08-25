@@ -317,6 +317,12 @@ export default function AdminVendorRequests({
       {!loadingList && requests.length > 0 && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {requests.map((request) => {
+            const shopImage =
+              typeof request.shopImage === "string" &&
+              /^https?:\/\//i.test(request.shopImage)
+                ? request.shopImage
+                : null;
+
             const isPending =
               request.status === "pending";
 
@@ -332,10 +338,10 @@ export default function AdminVendorRequests({
                 className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
                 {/* Shop Image */}
-                {request.shopImage && (
+                {shopImage && (
                   <div className="relative h-44 w-full overflow-hidden bg-gray-100 md:h-48">
                     <Image
-                      src={request.shopImage}
+                      src={shopImage}
                       alt={`${
                         request.businessName ||
                         "Vendor"
@@ -394,7 +400,7 @@ export default function AdminVendorRequests({
                       </p>
                     </div>
 
-                    {!request.shopImage && (
+                    {!shopImage && (
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
                           isPending
