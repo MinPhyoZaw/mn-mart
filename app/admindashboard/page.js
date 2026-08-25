@@ -67,40 +67,54 @@ export default async function AdminDashboardPage() {
     todayOrders,
     shoppingCommissionRaw,
   ] = await Promise.all([
-    // Count only — don't load every shop document
+    // Only count shops
     Shop.countDocuments({}),
 
-    // Count only — don't load every vendor document
+    // Only count vendors
     Vendor.countDocuments({}),
 
-    // Load only first page of vendor requests
+    // Vendor requests
     VendorRequest.find({})
       .select(
-        "_id userId shopName phone status createdAt updatedAt reviewedAt decidedBy"
+        [
+          "_id",
+          "userId",
+          "decidedBy",
+          "businessName",
+          "vendorName",
+          "vendorType",
+          "phone",
+          "description",
+          "shopImage",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reviewedAt",
+        ].join(" ")
       )
       .sort({ createdAt: -1 })
       .limit(requestPageSize)
       .lean(),
 
-    // Load only first page of users
+    // Only first 20 users
     User.find({})
       .select("_id name email role createdAt updatedAt")
       .sort({ createdAt: -1 })
       .limit(userPageSize)
       .lean(),
 
-    // Pending vendor request count
+    // Pending vendor requests count
     VendorRequest.countDocuments({
       status: "pending",
     }),
 
-    // Total vendor request count
+    // Total vendor requests
     VendorRequest.countDocuments({}),
 
-    // Total user count
+    // Total users
     User.countDocuments({}),
 
-    // Load only fields needed for today's commission/profit
+    // Today's confirmed orders
     Order.find({
       createdAt: {
         $gte: start,
@@ -114,6 +128,7 @@ export default async function AdminDashboardPage() {
       .sort({ createdAt: -1 })
       .lean(),
 
+    // Shopping commission setting
     CommissionSetting.findOne({
       serviceType: "shopping",
     })
@@ -121,7 +136,10 @@ export default async function AdminDashboardPage() {
       .lean(),
   ]);
 
-  // Calculate today's profit by vendor
+  /*
+   * Calculate today's admin commission
+   * grouped by vendor.
+   */
   const vendorProfitMap = new Map();
 
   for (const order of todayOrders) {
@@ -151,6 +169,9 @@ export default async function AdminDashboardPage() {
       0
     );
 
+  /*
+   * Normalize commission data
+   */
   const shoppingCommissionSetting = {
     _id: shoppingCommissionRaw?._id
       ? String(shoppingCommissionRaw._id)
@@ -169,11 +190,17 @@ export default async function AdminDashboardPage() {
       : null,
   };
 
+  /*
+   * Convert MongoDB ObjectIds and Dates
+   * before sending data to Client Component.
+   */
   const vendorRequests = vendorRequestsRaw.map(
     (request) => ({
       ...request,
 
-      _id: String(request._id),
+      _id: request._id
+        ? String(request._id)
+        : null,
 
       userId: request.userId
         ? String(request.userId)
@@ -182,6 +209,27 @@ export default async function AdminDashboardPage() {
       decidedBy: request.decidedBy
         ? String(request.decidedBy)
         : null,
+
+      businessName:
+        request.businessName || "",
+
+      vendorName:
+        request.vendorName || "",
+
+      vendorType:
+        request.vendorType || "",
+
+      phone:
+        request.phone || "",
+
+      description:
+        request.description || "",
+
+      shopImage:
+        request.shopImage || null,
+
+      status:
+        request.status || "pending",
 
       createdAt: request.createdAt
         ? request.createdAt.toISOString()
@@ -199,10 +247,15 @@ export default async function AdminDashboardPage() {
     })
   );
 
+  /*
+   * Normalize users
+   */
   const users = usersRaw.map((user) => ({
     ...user,
 
-    _id: String(user._id),
+    _id: user._id
+      ? String(user._id)
+      : null,
 
     createdAt: user.createdAt
       ? user.createdAt.toISOString()
@@ -217,16 +270,34 @@ export default async function AdminDashboardPage() {
     <AdminDashboardClient
       shopsCount={shopsCount}
       vendorsCount={vendorsCount}
-      pendingRequestsCount={pendingRequestsCount}
-      todayOrdersCount={todayOrders.length}
-      todayProfitByVendor={todayProfitByVendor}
-      totalTodayProfit={totalTodayProfit}
-      vendorRequests={vendorRequests}
-      requestPageSize={requestPageSize}
-      totalRequestsCount={totalRequestsCount}
+      pendingRequestsCount={
+        pendingRequestsCount
+      }
+      todayOrdersCount={
+        todayOrders.length
+      }
+      todayProfitByVendor={
+        todayProfitByVendor
+      }
+      totalTodayProfit={
+        totalTodayProfit
+      }
+      vendorRequests={
+        vendorRequests
+      }
+      requestPageSize={
+        requestPageSize
+      }
+      totalRequestsCount={
+        totalRequestsCount
+      }
       users={users}
-      userPageSize={userPageSize}
-      totalUsersCount={totalUsersCount}
+      userPageSize={
+        userPageSize
+      }
+      totalUsersCount={
+        totalUsersCount
+      }
       shoppingCommissionSetting={
         shoppingCommissionSetting
       }
