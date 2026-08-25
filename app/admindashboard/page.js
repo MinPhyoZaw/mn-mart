@@ -28,12 +28,6 @@ const getTodayRange = () => {
 };
 
 export default async function AdminDashboardPage() {
-  /*
-   * --------------------------------------------------
-   * 1. Authentication
-   * --------------------------------------------------
-   */
-
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
 
@@ -51,9 +45,6 @@ export default async function AdminDashboardPage() {
 
   await connectDB();
 
-  /*
-   * Only get the fields required for authorization.
-   */
   const currentUser = decoded?.userId
     ? await User.findById(decoded.userId)
         .select("_id role")
@@ -64,26 +55,14 @@ export default async function AdminDashboardPage() {
     redirect("/");
   }
 
-  /*
-   * --------------------------------------------------
-   * 2. Dashboard configuration
-   * --------------------------------------------------
-   */
-
   const requestPageSize = 20;
   const userPageSize = 20;
 
   const { start, end } = getTodayRange();
 
   /*
-   * --------------------------------------------------
-   * 3. First small batch
-   *
-   * Instead of running everything at once,
-   * only run 3 operations concurrently.
-   * --------------------------------------------------
+   * First small batch
    */
-
   const [
     shopsCount,
     vendorsCount,
@@ -93,15 +72,6 @@ export default async function AdminDashboardPage() {
 
     Vendor.countDocuments({}),
 
-    /*
-     * One aggregation replaces:
-     *
-     * VendorRequest.find(...)
-     * VendorRequest.countDocuments({ status: "pending" })
-     * VendorRequest.countDocuments({})
-     *
-     * So 3 MongoDB operations become 1.
-     */
     VendorRequest.aggregate([
       {
         $sort: {
@@ -128,7 +98,15 @@ export default async function AdminDashboardPage() {
 
                 phone: 1,
                 description: 1,
-                shopImage: 1,
+
+                /*
+                 * IMPORTANT:
+                 * Do NOT include shopImage here.
+                 *
+                 * Existing shopImage values are Base64
+                 * and can make this aggregation exceed
+                 * MongoDB's 16 MB BSON document limit.
+                 */
 
                 status: 1,
 
@@ -170,10 +148,6 @@ export default async function AdminDashboardPage() {
     ]),
   ]);
 
-  /*
-   * Extract vendor request information.
-   */
-
   const vendorRequestFacet =
     vendorRequestResult?.[0] || {};
 
@@ -190,24 +164,13 @@ export default async function AdminDashboardPage() {
     vendorRequestStats.total || 0;
 
   /*
-   * --------------------------------------------------
-   * 4. Second small batch
-   *
-   * Again only 3 operations concurrently.
-   * --------------------------------------------------
+   * Second small batch
    */
-
   const [
     userResult,
     orderProfitResult,
     shoppingCommissionRaw,
   ] = await Promise.all([
-    /*
-     * One operation provides both:
-     *
-     * - first 20 users
-     * - total user count
-     */
     User.aggregate([
       {
         $sort: {
@@ -243,11 +206,6 @@ export default async function AdminDashboardPage() {
       },
     ]),
 
-    /*
-     * Instead of downloading every order and
-     * calculating vendor profit in JavaScript,
-     * let MongoDB aggregate it.
-     */
     Order.aggregate([
       {
         $match: {
@@ -257,7 +215,6 @@ export default async function AdminDashboardPage() {
           },
 
           orderStatus: "confirmed",
-
           vendorStatus: "accepted",
         },
       },
@@ -325,18 +282,13 @@ export default async function AdminDashboardPage() {
     CommissionSetting.findOne({
       serviceType: "shopping",
     })
-      .select(
-        "_id serviceType rate updatedAt"
-      )
+      .select("_id serviceType rate updatedAt")
       .lean(),
   ]);
 
   /*
-   * --------------------------------------------------
-   * 5. Users
-   * --------------------------------------------------
+   * Users
    */
-
   const userFacet =
     userResult?.[0] || {};
 
@@ -347,11 +299,8 @@ export default async function AdminDashboardPage() {
     userFacet.stats?.[0]?.total || 0;
 
   /*
-   * --------------------------------------------------
-   * 6. Today's orders / profit
-   * --------------------------------------------------
+   * Today's profit
    */
-
   const todayProfitByVendor =
     orderProfitResult.map((row) => ({
       vendorName:
@@ -378,11 +327,8 @@ export default async function AdminDashboardPage() {
     );
 
   /*
-   * --------------------------------------------------
-   * 7. Commission setting
-   * --------------------------------------------------
+   * Commission setting
    */
-
   const shoppingCommissionSetting = {
     _id:
       shoppingCommissionRaw?._id
@@ -407,11 +353,11 @@ export default async function AdminDashboardPage() {
   };
 
   /*
-   * --------------------------------------------------
-   * 8. Serialize vendor requests
-   * --------------------------------------------------
+   * Serialize vendor requests
+   *
+   * IMPORTANT:
+   * shopImage is intentionally excluded.
    */
-
   const vendorRequests =
     vendorRequestsRaw.map(
       (request) => ({
@@ -445,9 +391,6 @@ export default async function AdminDashboardPage() {
         description:
           request.description || "",
 
-        shopImage:
-          request.shopImage || null,
-
         status:
           request.status ||
           "pending",
@@ -476,11 +419,8 @@ export default async function AdminDashboardPage() {
     );
 
   /*
-   * --------------------------------------------------
-   * 9. Serialize users
-   * --------------------------------------------------
+   * Serialize users
    */
-
   const users =
     usersRaw.map((user) => ({
       _id:
@@ -511,12 +451,6 @@ export default async function AdminDashboardPage() {
             ).toISOString()
           : null,
     }));
-
-  /*
-   * --------------------------------------------------
-   * 10. Render dashboard
-   * --------------------------------------------------
-   */
 
   return (
     <AdminDashboardClient

@@ -14,7 +14,9 @@ function serializeRequest(r) {
     vendorType: r.vendorType || "",
     phone: r.phone || "",
     description: r.description || "",
-    shopImage: r.shopImage || null,
+
+    // Intentionally do NOT return shopImage here.
+    // Existing records contain large Base64 strings.
     status: r.status || "pending",
 
     createdAt: r.createdAt
@@ -51,11 +53,10 @@ export async function GET(req) {
       )
     );
 
-    const requestedLimit =
-      Number.parseInt(
-        searchParams.get("limit") || "20",
-        10
-      );
+    const requestedLimit = Number.parseInt(
+      searchParams.get("limit") || "20",
+      10
+    );
 
     const limit = Math.min(
       Math.max(requestedLimit, 1),
@@ -68,9 +69,7 @@ export async function GET(req) {
     const filter = {};
 
     if (
-      ["pending", "approved", "rejected"].includes(
-        status
-      )
+      ["pending", "approved", "rejected"].includes(status)
     ) {
       filter.status = status;
     }
@@ -78,63 +77,57 @@ export async function GET(req) {
     const skip =
       (page - 1) * limit;
 
-    const [rows, total] =
-      await Promise.all([
-        VendorRequest.find(filter)
-          .select(
-            [
-              "_id",
-              "userId",
-              "decidedBy",
-              "businessName",
-              "vendorName",
-              "vendorType",
-              "phone",
-              "description",
-              "shopImage",
-              "status",
-              "createdAt",
-              "updatedAt",
-              "reviewedAt",
-            ].join(" ")
-          )
-          .sort({
-            createdAt: -1,
-          })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
+    const [rows, total] = await Promise.all([
+      VendorRequest.find(filter)
+        .select(
+          [
+            "_id",
+            "userId",
+            "decidedBy",
+            "businessName",
+            "vendorName",
+            "vendorType",
+            "phone",
+            "description",
 
-        VendorRequest.countDocuments(
-          filter
-        ),
-      ]);
+            // IMPORTANT:
+            // shopImage is intentionally excluded.
+
+            "status",
+            "createdAt",
+            "updatedAt",
+            "reviewedAt",
+          ].join(" ")
+        )
+        .sort({
+          createdAt: -1,
+        })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      VendorRequest.countDocuments(filter),
+    ]);
 
     return NextResponse.json({
       success: true,
 
-      data:
-        rows.map(
-          serializeRequest
-        ),
+      data: rows.map(
+        serializeRequest
+      ),
 
       pagination: {
         page,
         limit,
         total,
 
-        totalPages:
-          Math.max(
-            1,
-            Math.ceil(
-              total / limit
-            )
-          ),
+        totalPages: Math.max(
+          1,
+          Math.ceil(total / limit)
+        ),
 
         hasNextPage:
-          skip +
-            rows.length <
-          total,
+          skip + rows.length < total,
       },
     });
   } catch (error) {
