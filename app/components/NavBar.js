@@ -169,12 +169,13 @@ trailer
                 <>
                   {user.role === "admin" && (
                     <Link
-                      href="/admindashboard"
-                      onClick={closeMenu}
-                      className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
-                    >
-                      Admin
-                    </Link>
+  href="/admindashboard"
+  prefetch={false}
+  onClick={closeMenu}
+  className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
+>
+  Admin
+</Link>
                   )}
 
                   {user.role === "vendor" && (
@@ -309,12 +310,13 @@ trailer
                   <div className="grid grid-cols-2 gap-2">
                     {user.role === "admin" && (
                       <Link
-                        href="/admindashboard"
-                        onClick={closeMenu}
-                        className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
-                      >
-                        <span>Admin Dashboard</span>
-                      </Link>
+  href="/admindashboard"
+  prefetch={false}
+  onClick={closeMenu}
+  className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
+>
+  <span>Admin Dashboard</span>
+</Link>
                     )}
 
                     {user.role === "vendor" && (
