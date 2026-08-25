@@ -12,46 +12,69 @@ export default function AdminVendorRequests({
   const [requests, setRequests] = useState(initialRequests || []);
   const [loadingId, setLoadingId] = useState(null);
   const [loadingList, setLoadingList] = useState(false);
+
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(initialPageSize);
   const [total, setTotal] = useState(initialTotal);
 
   const [mounted, setMounted] = useState(false);
+
   const { refresh: refreshNotifications } = useNotifications();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(total / limit)),
-    [total, limit]
-  );
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(total / limit));
+  }, [total, limit]);
 
   const fetchRequests = useCallback(
     async (nextPage, nextFilter) => {
       setLoadingList(true);
+
       try {
         const params = new URLSearchParams({
           page: String(nextPage),
           limit: String(limit),
         });
 
-        if (nextFilter !== "all") params.set("status", nextFilter);
+        if (nextFilter !== "all") {
+          params.set("status", nextFilter);
+        }
 
-        const res = await fetch(`/api/vendor-requests?${params.toString()}`);
+        const res = await fetch(
+          `/api/vendor-requests?${params.toString()}`,
+          {
+            cache: "no-store",
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(
+            `Failed to load vendor requests: ${res.status}`
+          );
+        }
+
         const data = await res.json();
 
-        if (data.success) {
-          setRequests(data.data || []);
-          setTotal(data.pagination?.total || 0);
-        } else {
-          alert(data.message || "Could not load requests");
+        if (!data?.success) {
+          throw new Error(
+            data?.message || "Could not load requests"
+          );
         }
-      } catch (err) {
-        console.error(err);
-        alert("Server error");
+
+        setRequests(data.data || []);
+        setTotal(Number(data.pagination?.total || 0));
+      } catch (error) {
+        console.error(
+          "Failed to fetch vendor requests:",
+          error
+        );
+
+        alert("Could not load vendor requests.");
       } finally {
         setLoadingList(false);
       }
@@ -60,346 +83,522 @@ export default function AdminVendorRequests({
   );
 
   useEffect(() => {
-    if (page === 1 && filter === "all") return;
-    fetchRequests(page, filter);
+    /*
+     * Initial page=1/filter=all already comes from
+     * the server through initialRequests.
+     *
+     * Therefore we don't fetch it again.
+     */
+    if (page === 1 && filter === "all") {
+      return;
+    }
+
+    void fetchRequests(page, filter);
   }, [page, filter, fetchRequests]);
 
+  const handleFilterChange = (event) => {
+    const nextFilter = event.target.value;
+
+    /*
+     * Important:
+     * Do NOT call fetchRequests() here.
+     *
+     * Updating filter/page will trigger the effect
+     * above once, avoiding duplicate API requests.
+     */
+    setFilter(nextFilter);
+    setPage(1);
+  };
+
   const updateRequest = async (id, action) => {
+    if (loadingId) {
+      return;
+    }
+
     setLoadingId(id);
+
     try {
-      const res = await fetch(`/api/vendor-requests/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
+      const res = await fetch(
+        `/api/vendor-requests/${id}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action,
+          }),
+        }
+      );
 
       const data = await res.json();
 
-      if (data.success) {
-        setRequests((r) =>
-          r.map((it) =>
-            it._id === id
-              ? {
-                  ...it,
-                  status:
-                    data.request?.status ||
-                    (action === "approve" ? "approved" : "rejected"),
-                }
-              : it
+      if (!res.ok || !data?.success) {
+        throw new Error(
+          data?.message || `Action failed: ${res.status}`
+        );
+      }
+
+      const nextStatus =
+        data.request?.status ||
+        (action === "approve"
+          ? "approved"
+          : "rejected");
+
+      /*
+       * Update the UI locally.
+       * No router.refresh()
+       * No window.location.reload()
+       * No full /admindashboard reload.
+       */
+      setRequests((previousRequests) =>
+        previousRequests.map((request) =>
+          request._id === id
+            ? {
+                ...request,
+                status: nextStatus,
+              }
+            : request
+        )
+      );
+
+      /*
+       * If current view is filtered to pending,
+       * remove the processed request from that list.
+       */
+      if (filter === "pending") {
+        setRequests((previousRequests) =>
+          previousRequests.filter(
+            (request) => request._id !== id
           )
         );
-        refreshNotifications();
-      } else {
-        alert(data.message || "Action failed");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Server error");
+
+      /*
+       * Update local total when looking at a
+       * status-specific list.
+       */
+      if (filter === "pending") {
+        setTotal((previousTotal) =>
+          Math.max(0, previousTotal - 1)
+        );
+      }
+
+      /*
+       * Refresh notification count.
+       *
+       * This only hits notification APIs.
+       * It does NOT reload /admindashboard.
+       */
+      void refreshNotifications();
+    } catch (error) {
+      console.error(
+        `Failed to ${action} vendor request:`,
+        error
+      );
+
+      alert(
+        action === "approve"
+          ? "Could not approve vendor request."
+          : "Could not reject vendor request."
+      );
     } finally {
       setLoadingId(null);
     }
   };
 
+  const goToPreviousPage = () => {
+    if (loadingList) {
+      return;
+    }
+
+    setPage((currentPage) =>
+      Math.max(1, currentPage - 1)
+    );
+  };
+
+  const goToNextPage = () => {
+    if (loadingList) {
+      return;
+    }
+
+    setPage((currentPage) =>
+      Math.min(totalPages, currentPage + 1)
+    );
+  };
+
   return (
-  <div className="space-y-6">
-    {/* Header + Filter */}
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-5">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-lg md:text-xl font-semibold text-gray-900">
-            Vendor Requests
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Review and manage vendor registration requests.
-          </p>
+    <div className="space-y-6">
+      {/* Header + Filter */}
+      <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 md:text-xl">
+              Vendor Requests
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Review and manage vendor registration
+              requests.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <select
+                value={filter}
+                onChange={handleFilterChange}
+                disabled={loadingList}
+                className="cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-4 pr-10 text-sm text-gray-700 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="all">
+                  All Requests
+                </option>
+
+                <option value="pending">
+                  Pending
+                </option>
+
+                <option value="approved">
+                  Approved
+                </option>
+
+                <option value="rejected">
+                  Rejected
+                </option>
+              </select>
+
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                <svg
+                  className="h-4 w-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m19 9-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <div className="whitespace-nowrap rounded-xl bg-gray-100 px-3 py-2 text-xs font-medium text-gray-600">
+              {total} total
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <select
-              value={filter}
-              onChange={(e) => {
-                const nextFilter = e.target.value;
-                setFilter(nextFilter);
-                setPage(1);
-                fetchRequests(1, nextFilter);
-              }}
-              className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl pl-4 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-gray-300 cursor-pointer"
+      {/* Loading */}
+      {loadingList && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {[1, 2, 3, 4].map((item) => (
+            <div
+              key={item}
+              className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5"
             >
-              <option value="all">All Requests</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+              <div className="mb-4 h-40 rounded-xl bg-gray-100" />
 
-            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+              <div className="mb-3 h-5 w-1/2 rounded bg-gray-100" />
+
+              <div className="mb-3 h-4 w-1/3 rounded bg-gray-100" />
+
+              <div className="h-4 w-full rounded bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Requests Grid */}
+      {!loadingList && requests.length > 0 && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {requests.map((request) => {
+            const isPending =
+              request.status === "pending";
+
+            const isApproved =
+              request.status === "approved";
+
+            const isRejected =
+              request.status === "rejected";
+
+            return (
+              <div
+                key={request._id}
+                className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              >
+                {/* Shop Image */}
+                {request.shopImage && (
+                  <div className="relative h-44 w-full overflow-hidden bg-gray-100 md:h-48">
+                    <Image
+                      src={request.shopImage}
+                      alt={`${
+                        request.businessName ||
+                        "Vendor"
+                      } preview`}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+
+                    <div className="absolute right-3 top-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-md ${
+                          isPending
+                            ? "border-amber-200 bg-amber-50/95 text-amber-700"
+                            : isApproved
+                            ? "border-emerald-200 bg-emerald-50/95 text-emerald-700"
+                            : "border-red-200 bg-red-50/95 text-red-700"
+                        }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isPending
+                              ? "bg-amber-500"
+                              : isApproved
+                              ? "bg-emerald-500"
+                              : "bg-red-500"
+                          }`}
+                        />
+
+                        {request.status
+                          ? request.status
+                              .charAt(0)
+                              .toUpperCase() +
+                            request.status.slice(1)
+                          : "Unknown"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-5">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-lg font-semibold text-gray-900">
+                        {request.businessName ||
+                          "Unnamed Business"}
+                      </h3>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        Vendor:{" "}
+                        <span className="font-medium text-gray-700">
+                          {request.vendorName ||
+                            "N/A"}
+                        </span>
+                      </p>
+                    </div>
+
+                    {!request.shopImage && (
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+                          isPending
+                            ? "bg-amber-50 text-amber-700"
+                            : isApproved
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isPending
+                              ? "bg-amber-500"
+                              : isApproved
+                              ? "bg-emerald-500"
+                              : "bg-red-500"
+                          }`}
+                        />
+
+                        {request.status
+                          ? request.status
+                              .charAt(0)
+                              .toUpperCase() +
+                            request.status.slice(1)
+                          : "Unknown"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <p className="text-[11px] uppercase tracking-wide text-gray-400">
+                        Vendor Type
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium capitalize text-gray-700">
+                        {request.vendorType ||
+                          "N/A"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <p className="text-[11px] uppercase tracking-wide text-gray-400">
+                        Phone
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium text-gray-700">
+                        {request.phone || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {request.description && (
+                    <div className="mt-4">
+                      <p className="mb-1 text-xs uppercase tracking-wide text-gray-400">
+                        Description
+                      </p>
+
+                      <p className="line-clamp-3 text-sm leading-relaxed text-gray-600">
+                        {request.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-gray-400">
+                        Submitted
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-500">
+                        {mounted &&
+                        request.createdAt
+                          ? new Date(
+                              request.createdAt
+                            ).toLocaleString()
+                          : ""}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateRequest(
+                            request._id,
+                            "reject"
+                          )
+                        }
+                        disabled={
+                          loadingId ===
+                            request._id ||
+                          !isPending
+                        }
+                        className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {loadingId ===
+                        request._id
+                          ? "..."
+                          : "Reject"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateRequest(
+                            request._id,
+                            "approve"
+                          )
+                        }
+                        disabled={
+                          loadingId ===
+                            request._id ||
+                          !isPending
+                        }
+                        className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {loadingId ===
+                        request._id
+                          ? "Processing..."
+                          : "Approve"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loadingList &&
+        requests.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
               <svg
-                className="w-4 h-4 text-gray-400"
+                className="h-6 w-6 text-gray-400"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="1.8"
                 viewBox="0 0 24 24"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="m19 9-7 7-7-7"
+                  d="M9 12h6m-6 4h6M7 4h10a2 2 0 0 1 2 2v14H5V6a2 2 0 0 1 2-2Z"
                 />
               </svg>
             </div>
+
+            <h3 className="text-base font-semibold text-gray-800">
+              No vendor requests
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              There are no vendor requests
+              matching this filter.
+            </p>
+          </div>
+        )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <button
+            type="button"
+            onClick={goToPreviousPage}
+            disabled={
+              page <= 1 || loadingList
+            }
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            ← Previous
+          </button>
+
+          <div className="text-sm text-gray-500">
+            Page{" "}
+            <span className="font-semibold text-gray-900">
+              {page}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-gray-900">
+              {totalPages}
+            </span>
           </div>
 
-          <div className="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-2 rounded-xl whitespace-nowrap">
-            {total} total
-          </div>
+          <button
+            type="button"
+            onClick={goToNextPage}
+            disabled={
+              page >= totalPages ||
+              loadingList
+            }
+            className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next →
+          </button>
         </div>
-      </div>
+      )}
     </div>
-
-    {/* Loading */}
-    {loadingList && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {[1, 2, 3, 4].map((item) => (
-          <div
-            key={item}
-            className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse"
-          >
-            <div className="h-40 bg-gray-100 rounded-xl mb-4" />
-            <div className="h-5 bg-gray-100 rounded w-1/2 mb-3" />
-            <div className="h-4 bg-gray-100 rounded w-1/3 mb-3" />
-            <div className="h-4 bg-gray-100 rounded w-full" />
-          </div>
-        ))}
-      </div>
-    )}
-
-    {/* Requests Grid */}
-    {!loadingList && requests.length > 0 && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {requests.map((r) => {
-          const isPending = r.status === "pending";
-          const isApproved = r.status === "approved";
-          const isRejected = r.status === "rejected";
-
-          return (
-            <div
-              key={r._id}
-              className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
-            >
-              {/* Image */}
-              {r.shopImage && (
-                <div className="relative h-44 md:h-48 w-full bg-gray-100 overflow-hidden">
-                  <Image
-                    src={r.shopImage}
-                    alt={`${r.businessName} preview`}
-                    fill
-                    className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                    unoptimized
-                  />
-
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md ${
-                        isPending
-                          ? "bg-amber-50/95 text-amber-700 border border-amber-200"
-                          : isApproved
-                          ? "bg-emerald-50/95 text-emerald-700 border border-emerald-200"
-                          : "bg-red-50/95 text-red-700 border border-red-200"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isPending
-                            ? "bg-amber-500"
-                            : isApproved
-                            ? "bg-emerald-500"
-                            : "bg-red-500"
-                        }`}
-                      />
-                      {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="p-5">
-                {/* Top */}
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
-                      {r.businessName}
-                    </h3>
-
-                    <p className="text-sm text-gray-500 mt-1">
-                      Vendor:{" "}
-                      <span className="text-gray-700 font-medium">
-                        {r.vendorName || "N/A"}
-                      </span>
-                    </p>
-                  </div>
-
-                  {!r.shopImage && (
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                        isPending
-                          ? "bg-amber-50 text-amber-700"
-                          : isApproved
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-red-50 text-red-700"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isPending
-                            ? "bg-amber-500"
-                            : isApproved
-                            ? "bg-emerald-500"
-                            : "bg-red-500"
-                        }`}
-                      />
-                      {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="grid grid-cols-2 gap-3 mt-5">
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-400">
-                      Vendor Type
-                    </p>
-                    <p className="text-sm font-medium text-gray-700 mt-1 capitalize">
-                      {r.vendorType || "N/A"}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-400">
-                      Phone
-                    </p>
-                    <p className="text-sm font-medium text-gray-700 mt-1">
-                      {r.phone || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                {r.description && (
-                  <div className="mt-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
-                      Description
-                    </p>
-                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
-                      {r.description}
-                    </p>
-                  </div>
-                )}
-
-                {/* Submitted */}
-                <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-gray-400">
-                      Submitted
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {mounted
-                        ? new Date(r.createdAt).toLocaleString()
-                        : ""}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateRequest(r._id, "reject")}
-                      disabled={
-                        loadingId === r._id || r.status !== "pending"
-                      }
-                      className="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {loadingId === r._id ? "..." : "Reject"}
-                    </button>
-
-                    <button
-                      onClick={() => updateRequest(r._id, "approve")}
-                      disabled={
-                        loadingId === r._id || r.status !== "pending"
-                      }
-                      className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-black transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {loadingId === r._id
-                        ? "Processing..."
-                        : "Approve"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
-
-    {/* Empty State */}
-    {requests.length === 0 && !loadingList && (
-      <div className="bg-white border border-dashed border-gray-200 rounded-2xl py-16 px-6 text-center">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-          <svg
-            className="w-6 h-6 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 12h6m-6 4h6M7 4h10a2 2 0 0 1 2 2v14H5V6a2 2 0 0 1 2-2Z"
-            />
-          </svg>
-        </div>
-
-        <h3 className="text-base font-semibold text-gray-800">
-          No vendor requests
-        </h3>
-
-        <p className="text-sm text-gray-500 mt-1">
-          There are no vendor requests matching this filter.
-        </p>
-      </div>
-    )}
-
-    {/* Pagination */}
-    {totalPages > 1 && (
-      <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-4 flex items-center justify-between">
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page <= 1 || loadingList}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          ← Previous
-        </button>
-
-        <div className="text-sm text-gray-500">
-          Page{" "}
-          <span className="font-semibold text-gray-900">{page}</span>{" "}
-          of{" "}
-          <span className="font-semibold text-gray-900">
-            {totalPages}
-          </span>
-        </div>
-
-        <button
-          onClick={() =>
-            setPage((p) => Math.min(totalPages, p + 1))
-          }
-          disabled={page >= totalPages || loadingList}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-black transition disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Next →
-        </button>
-      </div>
-    )}
-  </div>
-);
+  );
 }

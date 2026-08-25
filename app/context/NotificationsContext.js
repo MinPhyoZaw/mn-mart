@@ -9,41 +9,59 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { useAuth } from "./AuthContext";
 
 const NotificationsContext = createContext(null);
 
-const POLL_INTERVAL_MS = 60_000;
-const MIN_FETCH_GAP_MS = 2_000;
+const POLL_INTERVAL_MS = 5 * 60_000;
+const MIN_FETCH_GAP_MS = 5_000;
 
-let inflightRequest = null;
-let lastFetchAt = 0;
+let inflightOrderRequest = null;
+let inflightVendorRequest = null;
+
+let lastOrderFetchAt = 0;
+let lastVendorFetchAt = 0;
 
 async function fetchOrderNotifications() {
   const now = Date.now();
 
-  if (inflightRequest) {
-    return inflightRequest;
+  if (inflightOrderRequest) {
+    return inflightOrderRequest;
   }
 
-  if (now - lastFetchAt < MIN_FETCH_GAP_MS) {
-    return null;
+  if (now - lastOrderFetchAt < MIN_FETCH_GAP_MS) {
+    return {
+      success: false,
+      skipped: true,
+      data: null,
+    };
   }
 
-  inflightRequest = fetch("/api/orders/notifications", {
+  inflightOrderRequest = fetch("/api/orders/notifications", {
     cache: "no-store",
+    credentials: "include",
   })
     .then(async (res) => {
+      if (res.status === 401) {
+        return {
+          success: true,
+          data: [],
+        };
+      }
+
       if (!res.ok) {
         throw new Error(
           `Failed to fetch notifications: ${res.status}`
         );
       }
 
-      return res.json();
-    })
-    .then((data) => {
-      return data.success ? data.data || [] : [];
+      const data = await res.json();
+
+      return {
+        success: true,
+        data: data?.success ? data.data || [] : [],
+      };
     })
     .catch((error) => {
       console.error(
@@ -51,42 +69,79 @@ async function fetchOrderNotifications() {
         error
       );
 
-      return [];
+      return {
+        success: false,
+        data: null,
+      };
     })
     .finally(() => {
-      inflightRequest = null;
-      lastFetchAt = Date.now();
+      inflightOrderRequest = null;
+      lastOrderFetchAt = Date.now();
     });
 
-  return inflightRequest;
+  return inflightOrderRequest;
 }
 
 async function fetchPendingVendorRequestsCount() {
-  try {
-    const res = await fetch(
-      "/api/vendor-requests?status=pending&limit=1",
-      {
-        cache: "no-store",
-      }
-    );
+  const now = Date.now();
 
-    if (!res.ok) {
-      throw new Error(
-        `Failed to fetch vendor requests: ${res.status}`
-      );
-    }
-
-    const data = await res.json();
-
-    return data?.pagination?.total || 0;
-  } catch (error) {
-    console.error(
-      "Failed to fetch pending vendor requests:",
-      error
-    );
-
-    return 0;
+  if (inflightVendorRequest) {
+    return inflightVendorRequest;
   }
+
+  if (now - lastVendorFetchAt < MIN_FETCH_GAP_MS) {
+    return {
+      success: false,
+      skipped: true,
+      count: null,
+    };
+  }
+
+  inflightVendorRequest = fetch(
+    "/api/vendor-requests?status=pending&limit=1",
+    {
+      cache: "no-store",
+      credentials: "include",
+    }
+  )
+    .then(async (res) => {
+      if (res.status === 401 || res.status === 403) {
+        return {
+          success: true,
+          count: 0,
+        };
+      }
+
+      if (!res.ok) {
+        throw new Error(
+          `Failed to fetch vendor requests: ${res.status}`
+        );
+      }
+
+      const data = await res.json();
+
+      return {
+        success: true,
+        count: Number(data?.pagination?.total || 0),
+      };
+    })
+    .catch((error) => {
+      console.error(
+        "Failed to fetch pending vendor requests:",
+        error
+      );
+
+      return {
+        success: false,
+        count: null,
+      };
+    })
+    .finally(() => {
+      inflightVendorRequest = null;
+      lastVendorFetchAt = Date.now();
+    });
+
+  return inflightVendorRequest;
 }
 
 function mergeAdminVendorRequests(notices, count) {
@@ -106,7 +161,10 @@ function mergeAdminVendorRequests(notices, count) {
 }
 
 export function NotificationsProvider({ children }) {
-  const { user, loading: authLoading } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+  } = useAuth();
 
   const [notifications, setNotifications] = useState([]);
   const [vendorRequestsCount, setVendorRequestsCount] =
@@ -131,48 +189,77 @@ export function NotificationsProvider({ children }) {
       return;
     }
 
-    const notices = await fetchOrderNotifications();
+    const orderResult =
+      await fetchOrderNotifications();
 
-    if (notices === null) {
+    if (
+      !orderResult.success &&
+      !orderResult.skipped
+    ) {
       return;
     }
 
-    let pendingVendorCount = 0;
+    let nextNotifications =
+      orderResult.data ?? null;
+
+    let nextVendorCount = null;
 
     if (userRole === "admin") {
-      pendingVendorCount =
+      const vendorResult =
         await fetchPendingVendorRequestsCount();
+
+      if (vendorResult.success) {
+        nextVendorCount = vendorResult.count;
+      }
     }
 
-    setVendorRequestsCount(pendingVendorCount);
-
-    if (userRole === "admin") {
-      setNotifications(
-        mergeAdminVendorRequests(
-          notices,
-          pendingVendorCount
-        )
-      );
-    } else {
-      setNotifications(notices);
+    if (nextVendorCount !== null) {
+      setVendorRequestsCount(nextVendorCount);
     }
-  }, [canReceiveNotifications, userRole]);
+
+    if (nextNotifications !== null) {
+      if (userRole === "admin") {
+        setNotifications(
+          mergeAdminVendorRequests(
+            nextNotifications,
+            nextVendorCount ??
+              vendorRequestsCount
+          )
+        );
+      } else {
+        setNotifications(nextNotifications);
+      }
+    }
+  }, [
+    canReceiveNotifications,
+    userRole,
+    vendorRequestsCount,
+  ]);
 
   useEffect(() => {
-    if (authLoading || !canReceiveNotifications) {
+    if (
+      authLoading ||
+      !canReceiveNotifications
+    ) {
       return;
     }
 
     const stopInitialLoadTimer = () => {
       if (initialLoadTimerRef.current) {
-        clearTimeout(initialLoadTimerRef.current);
+        clearTimeout(
+          initialLoadTimerRef.current
+        );
+
         initialLoadTimerRef.current = null;
       }
     };
 
     const stopPolling = () => {
       if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
+        clearInterval(
+          pollTimerRef.current
+        );
+
         pollTimerRef.current = null;
       }
     };
@@ -180,15 +267,24 @@ export function NotificationsProvider({ children }) {
     const startPolling = () => {
       stopPolling();
 
-      pollTimerRef.current = setInterval(() => {
-        if (document.visibilityState === "visible") {
-          void loadNotifications();
-        }
-      }, POLL_INTERVAL_MS);
+      pollTimerRef.current = setInterval(
+        () => {
+          if (
+            document.visibilityState ===
+            "visible"
+          ) {
+            void loadNotifications();
+          }
+        },
+        POLL_INTERVAL_MS
+      );
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (
+        document.visibilityState ===
+        "visible"
+      ) {
         void loadNotifications();
         startPolling();
       } else {
@@ -196,16 +292,15 @@ export function NotificationsProvider({ children }) {
       }
     };
 
-    /*
-     * Delay the initial notification request until after
-     * the effect finishes. This avoids synchronously
-     * triggering state updates inside the effect body.
-     */
-    initialLoadTimerRef.current = setTimeout(() => {
-      void loadNotifications();
-    }, 0);
+    initialLoadTimerRef.current =
+      setTimeout(() => {
+        void loadNotifications();
+      }, 500);
 
-    if (document.visibilityState === "visible") {
+    if (
+      document.visibilityState ===
+      "visible"
+    ) {
       startPolling();
     }
 
@@ -230,49 +325,67 @@ export function NotificationsProvider({ children }) {
     loadNotifications,
   ]);
 
-  const markAsRead = useCallback(async (noticeId) => {
-    try {
-      const res = await fetch(
-        "/api/orders/notifications",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orderId: noticeId,
-          }),
+  useEffect(() => {
+    if (!canReceiveNotifications) {
+      setNotifications([]);
+      setVendorRequestsCount(0);
+    }
+  }, [canReceiveNotifications]);
+
+  const markAsRead = useCallback(
+    async (noticeId) => {
+      try {
+        if (noticeId === "vendor-requests") {
+          return true;
         }
-      );
 
-      if (!res.ok) {
-        throw new Error(
-          `Failed to mark notification as read: ${res.status}`
+        const res = await fetch(
+          "/api/orders/notifications",
+          {
+            method: "PATCH",
+            credentials: "include",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              orderId: noticeId,
+            }),
+          }
         );
-      }
 
-      const data = await res.json();
+        if (!res.ok) {
+          throw new Error(
+            `Failed to mark notification as read: ${res.status}`
+          );
+        }
 
-      if (!data.success) {
+        const data = await res.json();
+
+        if (!data?.success) {
+          return false;
+        }
+
+        setNotifications(
+          (previousNotifications) =>
+            previousNotifications.filter(
+              (notice) =>
+                notice._id !== noticeId
+            )
+        );
+
+        return true;
+      } catch (error) {
+        console.error(
+          "Failed to mark notification as read:",
+          error
+        );
+
         return false;
       }
-
-      setNotifications((previousNotifications) =>
-        previousNotifications.filter(
-          (notice) => notice._id !== noticeId
-        )
-      );
-
-      return true;
-    } catch (error) {
-      console.error(
-        "Failed to mark notification as read:",
-        error
-      );
-
-      return false;
-    }
-  }, []);
+    },
+    []
+  );
 
   const visibleNotifications = useMemo(() => {
     if (!canReceiveNotifications) {
@@ -280,22 +393,26 @@ export function NotificationsProvider({ children }) {
     }
 
     return notifications;
-  }, [canReceiveNotifications, notifications]);
-
-  const visibleVendorRequestsCount = useMemo(() => {
-    if (
-      !canReceiveNotifications ||
-      userRole !== "admin"
-    ) {
-      return 0;
-    }
-
-    return vendorRequestsCount;
   }, [
     canReceiveNotifications,
-    userRole,
-    vendorRequestsCount,
+    notifications,
   ]);
+
+  const visibleVendorRequestsCount =
+    useMemo(() => {
+      if (
+        !canReceiveNotifications ||
+        userRole !== "admin"
+      ) {
+        return 0;
+      }
+
+      return vendorRequestsCount;
+    }, [
+      canReceiveNotifications,
+      userRole,
+      vendorRequestsCount,
+    ]);
 
   const totalCount = useMemo(() => {
     return visibleNotifications.reduce(
@@ -307,11 +424,16 @@ export function NotificationsProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      notifications: visibleNotifications,
+      notifications:
+        visibleNotifications,
+
       vendorRequestsCount:
         visibleVendorRequestsCount,
+
       totalCount,
+
       markAsRead,
+
       refresh: loadNotifications,
     }),
     [
@@ -324,7 +446,9 @@ export function NotificationsProvider({ children }) {
   );
 
   return (
-    <NotificationsContext.Provider value={value}>
+    <NotificationsContext.Provider
+      value={value}
+    >
       {children}
     </NotificationsContext.Provider>
   );
