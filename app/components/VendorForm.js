@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
@@ -31,6 +31,7 @@ export default function VendorForm() {
   const [imagePreview, setImagePreview] = useState("");
   const [isUploadingImage, setIsUploadingImage] =
     useState(false);
+  const submissionLockRef = useRef(false);
 
   useEffect(() => {
     if (!user?.name) return;
@@ -121,6 +122,10 @@ const handleImageChange = async (e) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (submissionLockRef.current) {
+      return;
+    }
+
     if (!user) {
       setMessageType("error");
       setMessage(
@@ -149,6 +154,7 @@ const handleImageChange = async (e) => {
     }
 
     setLoading(true);
+    submissionLockRef.current = true;
     setMessage("");
 
     try {
@@ -217,9 +223,7 @@ const handleImageChange = async (e) => {
 
       setImagePreview("");
 
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
+      router.replace("/");
     } catch (error) {
       console.error(
         "Vendor request submission failed:",
@@ -234,6 +238,7 @@ const handleImageChange = async (e) => {
       );
     } finally {
       setLoading(false);
+      submissionLockRef.current = false;
     }
   };
 
