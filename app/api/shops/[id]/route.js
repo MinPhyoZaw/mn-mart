@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectDB from "../../../lib/mongodb";
 import Shop from "../../../models/Shop";
 import Item from "../../../models/Item";
 import Vendor from "../../../models/Vendor";
+import { requireAuth } from "../../../lib/routeAuth";
 
 export async function GET(req, { params }) {
   try {
@@ -48,9 +50,37 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    await connectDB();
+    const auth = requireAuth(req, ["admin"]);
+    if (!auth.ok) return auth.response;
+
     const { id } = await params;
-    const updates = await req.json();
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ success: false, message: "Invalid shop id" }, { status: 400 });
+    }
+
+    await connectDB();
+    const body = await req.json();
+    const editableFields = [
+      "name",
+      "category",
+      "phone",
+      "address",
+      "description",
+      "image",
+      "kbzPayNumber",
+      "wavePayNumber",
+      "isActive",
+    ];
+    const updates = Object.fromEntries(
+      editableFields
+        .filter((field) => body[field] !== undefined)
+        .map((field) => [field, body[field]])
+    );
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ success: false, message: "No editable fields provided" }, { status: 400 });
+    }
+
     const updated = await Shop.findByIdAndUpdate(id, updates, { new: true }).lean();
     if (!updated) return NextResponse.json({ success: false, message: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: updated }, { status: 200 });
@@ -62,8 +92,15 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    await connectDB();
+    const auth = requireAuth(req, ["admin"]);
+    if (!auth.ok) return auth.response;
+
     const { id } = await params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ success: false, message: "Invalid shop id" }, { status: 400 });
+    }
+
+    await connectDB();
     const deleted = await Shop.findByIdAndDelete(id).lean();
     if (!deleted) return NextResponse.json({ success: false, message: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true, message: "Deleted" }, { status: 200 });

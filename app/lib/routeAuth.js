@@ -31,7 +31,7 @@ export function requireAuth(req, allowedRoles = []) {
 
 
 export async function requireVendorAuth(req) {
-  const auth = requireAuth(req, ["vendor", "admin", "customer"]);
+  const auth = requireAuth(req, ["vendor", "admin"]);
   if (!auth.ok) return auth;
 
   if (auth.user.role === "admin") {

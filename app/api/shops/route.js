@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectDB from "../../lib/mongodb";
 import Shop from "../../models/Shop";
+import Vendor from "../../models/Vendor";
+import { requireAuth } from "../../lib/routeAuth";
 
 export const revalidate = 60;
 
@@ -81,19 +84,40 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    const auth = requireAuth(req, ["admin"]);
+    if (!auth.ok) return auth.response;
+
     await connectDB();
     const body = await req.json();
 
     const normalizedCategory = normalizeCategory(body.category);
-    const payload = {
-      ...body,
-      category: normalizedCategory,
-    };
-
-    const { name, category, vendorId } = payload;
+    const { name, vendorId } = body;
+    const category = normalizedCategory;
     if (!name || !category || !vendorId) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
     }
+
+    if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+      return NextResponse.json({ success: false, message: "Invalid vendorId format" }, { status: 400 });
+    }
+
+    const vendor = await Vendor.findById(vendorId).select("_id").lean();
+    if (!vendor) {
+      return NextResponse.json({ success: false, message: "Vendor not found" }, { status: 404 });
+    }
+
+    const payload = {
+      vendorId,
+      name,
+      category,
+      phone: body.phone,
+      address: body.address,
+      description: body.description,
+      image: body.image,
+      kbzPayNumber: body.kbzPayNumber,
+      wavePayNumber: body.wavePayNumber,
+      isActive: body.isActive,
+    };
 
     const shop = await Shop.create(payload);
     return NextResponse.json({ success: true, data: shop }, { status: 201 });

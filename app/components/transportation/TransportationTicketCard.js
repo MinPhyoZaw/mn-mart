@@ -20,6 +20,7 @@ export default function TransportationTicketCard({
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [receiptUploading, setReceiptUploading] = useState(false);
+  const [bookingKey, setBookingKey] = useState(null);
 
   const [form, setForm] = useState({
     customerName: "",
@@ -96,6 +97,7 @@ export default function TransportationTicketCard({
         body: JSON.stringify({
           shopId,
           ticketId: ticket.id,
+          bookingKey,
           ...form,
         }),
       });
@@ -128,7 +130,10 @@ export default function TransportationTicketCard({
       {/* Buy Button */}
       <button
         type="button"
-        onClick={() => setShowForm(true)}
+        onClick={() => {
+          setBookingKey(crypto.randomUUID());
+          setShowForm(true);
+        }}
         className="inline-flex items-center justify-center rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 transition"
       >
         Buy Ticket Online

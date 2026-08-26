@@ -22,6 +22,7 @@ export default function CheckoutPage() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [message, setMessage] = useState("");
   const [authChecking, setAuthChecking] = useState(true);
+  const [checkoutKey] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     if (authLoading) return;
@@ -116,6 +117,7 @@ export default function CheckoutPage() {
           customerAddress,
           paymentProvider,
           receiptImage,
+          checkoutKey,
         }),
       });
       const data = await res.json();

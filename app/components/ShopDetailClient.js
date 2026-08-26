@@ -63,6 +63,7 @@ export default function ShopDetailClient({ shop, items }) {
   const [receiptUploading, setReceiptUploading] = useState(false);
   const [bookingMessage, setBookingMessage] = useState("");
   const [selectedWholesaleQtyByItem, setSelectedWholesaleQtyByItem] = useState({});
+  const [bookingKey, setBookingKey] = useState(null);
 
   const activeBookingItem = activeBookingItemId
     ? items.find((i) => i._id === activeBookingItemId)
@@ -138,11 +139,13 @@ export default function ShopDetailClient({ shop, items }) {
     try {
       await fetch("/api/hotel-booking", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...bookingForm,
           roomItemId: activeBookingItem._id,
           shopId: shop._id,
           paymentProvider: bookingForm.paymentProvider,
+          bookingKey,
         }),
       });
 
@@ -169,6 +172,7 @@ export default function ShopDetailClient({ shop, items }) {
     try {
       await fetch("/api/spa-booking", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerName: bookingForm.customerName,
           customerPhone: bookingForm.customerPhone,
@@ -177,6 +181,7 @@ export default function ShopDetailClient({ shop, items }) {
           paymentProvider: bookingForm.paymentProvider,
           serviceItemId: activeBookingItem._id,
           shopId: shop._id,
+          bookingKey,
         }),
       });
       setBookingMessage("Spa booking submitted successfully");
@@ -255,7 +260,10 @@ export default function ShopDetailClient({ shop, items }) {
                   </div>
 
                   <button
-                    onClick={() => setActiveBookingItemId(item._id)}
+                    onClick={() => {
+                      setBookingKey(crypto.randomUUID());
+                      setActiveBookingItemId(item._id);
+                    }}
                     className="mt-4 w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
                   >
                     {isHotel ? "Book Now" : "Order Now"}

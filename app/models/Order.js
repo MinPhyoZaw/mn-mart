@@ -8,6 +8,12 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    idempotencyKey: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
