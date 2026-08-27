@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectDB from "../../../../lib/mongodb";
 import { requireAuth } from "../../../../lib/routeAuth";
 import Order from "../../../../models/Order";
@@ -11,16 +12,15 @@ export async function PATCH(req, { params }) {
     const { id } = params;
     const { action } = await req.json();
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ success: false, message: "Invalid order ID" }, { status: 400 });
+    }
+
     if (!["approve", "reject"].includes(action)) {
       return NextResponse.json({ success: false, message: "Invalid action" }, { status: 400 });
     }
 
     await connectDB();
-
-    const currentOrder = await Order.findById(id).lean();
-    if (!currentOrder) {
-      return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
-    }
 
     const update =
       action === "approve"
@@ -37,9 +37,23 @@ export async function PATCH(req, { params }) {
             customerNotificationRead: false,
           };
 
-    const order = await Order.findByIdAndUpdate(id, update, { new: true }).lean();
+    const order = await Order.findOneAndUpdate(
+      { _id: id, orderStatus: "pending" },
+      { $set: update },
+      { new: true }
+    ).lean();
+
     if (!order) {
-      return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+      const orderExists = await Order.exists({ _id: id });
+
+      if (!orderExists) {
+        return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
+      }
+
+      return NextResponse.json(
+        { success: false, message: "Order has already been processed" },
+        { status: 409 }
+      );
     }
 
     return NextResponse.json({ success: true, data: order });
