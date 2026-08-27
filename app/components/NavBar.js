@@ -19,7 +19,7 @@ const raleway = Raleway({
 
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { notifications, markAsRead } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
