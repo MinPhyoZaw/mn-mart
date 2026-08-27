@@ -1,14 +1,31 @@
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import connectDB from "../../../lib/mongodb";
 import VendorRequest from "../../../models/VendorRequest";
 import Vendor from "../../../models/Vendor";
 import User from "../../../models/User";
+import Shop from "../../../models/Shop";
 import { requireAuth } from "../../../lib/routeAuth";
 
 function getSafeShopImage(value) {
   return typeof value === "string" && /^https?:\/\//i.test(value)
     ? value
     : null;
+}
+
+function requestResponse(vendorRequest) {
+  return {
+    ...vendorRequest.toObject(),
+    shopImage: getSafeShopImage(vendorRequest.shopImage),
+  };
+}
+
+async function getClaimFailure(id, session) {
+  const existingRequest = await VendorRequest.findById(id)
+    .select("_id")
+    .session(session);
+
+  return existingRequest ? "ALREADY_PROCESSED" : "NOT_FOUND";
 }
 
 export async function PATCH(req, context) {
@@ -20,99 +37,153 @@ export async function PATCH(req, context) {
     const { id } = await context.params;
     const { action } = await req.json();
 
-    const vr = await VendorRequest.findById(id);
-    if (!vr) return NextResponse.json({ success: false, message: "Not found" }, { status: 404 });
-
     if (action === "approve") {
-      if (vr.status === "approved") {
-        return NextResponse.json({ success: false, message: "Already approved" }, { status: 400 });
+      const session = await mongoose.startSession();
+      let result;
+      let claimFailure;
+
+      try {
+        await session.withTransaction(async () => {
+          const reviewedAt = new Date();
+          const vr = await VendorRequest.findOneAndUpdate(
+            { _id: id, status: "pending" },
+            {
+              $set: {
+                status: "approved",
+                decidedBy: auth.user.userId,
+                reviewedAt,
+              },
+            },
+            { new: true, session }
+          );
+
+          if (!vr) {
+            claimFailure = await getClaimFailure(id, session);
+            return;
+          }
+
+          const requestUser = vr.userId
+            ? await User.findById(vr.userId).session(session)
+            : null;
+          const vendorName = vr.businessName || "Unnamed Vendor";
+          const serviceType = vr.vendorType || "shopping";
+          const contactPerson =
+            vr.vendorName || requestUser?.name || vr.businessName || "Owner";
+          const phone = vr.phone || "N/A";
+          const address = vr.address || "N/A";
+          const email =
+            requestUser?.email ||
+            `${vendorName.toLowerCase().replace(/[^a-z0-9]+/g, "")}-${vr._id}@example.com`;
+
+          const vendorFilter = vr.userId ? { userId: vr.userId } : { email };
+          const newVendor = await Vendor.findOneAndUpdate(
+            vendorFilter,
+            {
+              $set: {
+                vendorName,
+                serviceType,
+                contactPerson,
+                phone,
+                email,
+                address,
+                isActive: true,
+              },
+              ...(vr.userId ? { $setOnInsert: { userId: vr.userId } } : {}),
+            },
+            {
+              new: true,
+              upsert: true,
+              setDefaultsOnInsert: true,
+              session,
+            }
+          );
+
+          if (requestUser && requestUser.role !== "vendor") {
+            await User.updateOne(
+              { _id: requestUser._id },
+              { $set: { role: "vendor" } },
+              { session }
+            );
+          }
+
+          const shopPayload = {
+            vendorId: newVendor._id,
+            name: vendorName,
+            category: serviceType,
+            phone,
+            address,
+            description: vr.description || "",
+            image: getSafeShopImage(vr.shopImage),
+            kbzPayNumber: vr.kbzPayNumber || "",
+            wavePayNumber: vr.wavePayNumber || "",
+          };
+          const shop = await Shop.findOneAndUpdate(
+            { vendorId: newVendor._id },
+            { $set: shopPayload },
+            { new: true, upsert: true, setDefaultsOnInsert: true, session }
+          );
+
+          result = { vendor: newVendor, shop, request: vr };
+        });
+      } finally {
+        await session.endSession();
       }
 
-      const requestUser = vr.userId ? await User.findById(vr.userId) : null;
-      const vendorName = vr.businessName || "Unnamed Vendor";
-      const serviceType = vr.vendorType || "shopping";
-      const contactPerson = vr.vendorName || requestUser?.name || vr.businessName || "Owner";
-      const phone = vr.phone || "N/A";
-      const address = vr.address || "N/A";
-      const email =
-        requestUser?.email ||
-        `${vendorName.toLowerCase().replace(/[^a-z0-9]+/g, "")}-${Date.now()}@example.com`;
-
-      const filter = vr.userId ? { userId: vr.userId } : { email };
-      const newVendor = await Vendor.findOneAndUpdate(
-        filter,
-        {
-          vendorName,
-          serviceType,
-          contactPerson,
-          phone,
-          email,
-          address,
-          userId: vr.userId || undefined,
-          isActive: true,
-        },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
-      );
-
-      if (requestUser && requestUser.role !== "vendor") {
-        requestUser.role = "vendor";
-        await requestUser.save();
+      if (claimFailure === "NOT_FOUND") {
+        return NextResponse.json(
+          { success: false, message: "Not found" },
+          { status: 404 }
+        );
       }
 
-      const Shop = (await import("../../../models/Shop")).default;
-      const existingShop = await Shop.findOne({ vendorId: newVendor._id });
-      const shopPayload = {
-        vendorId: newVendor._id,
-        name: vendorName,
-        category: serviceType,
-        phone,
-        address,
-        description: vr.description || "",
-        image: getSafeShopImage(vr.shopImage),
-        kbzPayNumber: vr.kbzPayNumber || "",
-        wavePayNumber: vr.wavePayNumber || "",
-      };
-
-      const shop = existingShop
-        ? await Shop.findByIdAndUpdate(existingShop._id, shopPayload, { new: true })
-        : await Shop.create(shopPayload);
-
-      vr.status = "approved";
-      vr.decidedBy = auth.user.userId;
-      vr.reviewedAt = new Date();
-      await vr.save();
+      if (claimFailure === "ALREADY_PROCESSED") {
+        return NextResponse.json(
+          { success: false, message: "Already processed" },
+          { status: 409 }
+        );
+      }
 
       return NextResponse.json(
         {
           success: true,
           message: "Approved",
-          vendor: newVendor,
-          shop,
-          request: {
-            ...vr.toObject(),
-            shopImage: getSafeShopImage(vr.shopImage),
-          },
+          vendor: result.vendor,
+          shop: result.shop,
+          request: requestResponse(result.request),
         },
         { status: 200 }
       );
     }
 
     if (action === "reject") {
-      if (vr.status === "rejected") {
-        return NextResponse.json({ success: false, message: "Already rejected" }, { status: 400 });
+      const vr = await VendorRequest.findOneAndUpdate(
+        { _id: id, status: "pending" },
+        {
+          $set: {
+            status: "rejected",
+            decidedBy: auth.user.userId,
+            reviewedAt: new Date(),
+          },
+        },
+        { new: true }
+      );
+
+      if (!vr) {
+        const exists = await VendorRequest.exists({ _id: id });
+        return NextResponse.json(
+          {
+            success: false,
+            message: exists ? "Already processed" : "Not found",
+          },
+          { status: exists ? 409 : 404 }
+        );
       }
-      vr.status = "rejected";
-      vr.decidedBy = auth.user.userId;
-      vr.reviewedAt = new Date();
-      await vr.save();
+
       return NextResponse.json(
         {
           success: true,
           message: "Rejected",
-          request: {
-            ...vr.toObject(),
-            shopImage: getSafeShopImage(vr.shopImage),
-          },
+          request: requestResponse(vr),
         },
         { status: 200 }
       );
