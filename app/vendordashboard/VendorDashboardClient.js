@@ -5,13 +5,13 @@ import { Package, Plus, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const AddItemForm = dynamic(() => import("./vendor/AddItemForm"), { ssr: false });
-const OrdersPanel = dynamic(() => import("./vendor/OrdersPanel"), { ssr: false });
-const CheckoutSummary = dynamic(() => import("./vendor/CheckoutSummary"), { ssr: false });
-const RoomsList = dynamic(() => import("./vendor/RoomsList"), { ssr: false });
-const ManageProducts = dynamic(() => import("./vendor/ManageProducts"), { ssr: false });
+const AddItemForm = dynamic(() => import("../components/vendor/AddItemForm"), { ssr: false });
+const OrdersPanel = dynamic(() => import("../components/vendor/OrdersPanel"), { ssr: false });
+const CheckoutSummary = dynamic(() => import("../components/vendor/CheckoutSummary"), { ssr: false });
+const RoomsList = dynamic(() => import("../components/vendor/RoomsList"), { ssr: false });
+const ManageProducts = dynamic(() => import("../components/vendor/ManageProducts"), { ssr: false });
 
-export default function VendorDashboard() {
+export default function VendorDashboardClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
