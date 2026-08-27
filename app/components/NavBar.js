@@ -40,13 +40,23 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+  try {
+    const result = await logout();
+
+    if (!result?.success) {
+      console.error("Logout failed:", result?.error);
+      return;
+    }
+
     setIsAccountOpen(false);
     setIsNotificationsOpen(false);
-    window.dispatchEvent(new Event("auth-changed"));
     setIsMenuOpen(false);
-    router.push("/");
-  };
+
+    router.replace("/");
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+};
 
   const openAccountPane = () => {
     closeMenu();
