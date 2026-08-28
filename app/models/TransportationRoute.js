@@ -8,32 +8,38 @@ const transportationRouteSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+
     companyName: {
       type: String,
       required: true,
       trim: true,
       maxlength: 120,
     },
+
     fromCity: {
       type: String,
       required: true,
       trim: true,
       maxlength: 80,
     },
+
     toCity: {
       type: String,
       required: true,
       trim: true,
       maxlength: 80,
     },
+
     boardingPoints: {
       type: [String],
       default: [],
     },
+
     droppingPoints: {
       type: [String],
       default: [],
     },
+
     duration: {
       type: String,
       required: true,
@@ -41,7 +47,27 @@ const transportationRouteSchema = new mongoose.Schema(
       maxlength: 60,
     },
   },
-  { timestamps: { createdAt: true, updatedAt: true } }
+  {
+    timestamps: {
+      createdAt: true,
+      updatedAt: true,
+    },
+  }
 );
 
-export default mongoose.models.TransportationRoute || mongoose.model("TransportationRoute", transportationRouteSchema);
+/*
+ * Vendor route listing:
+ *
+ * TransportationRoute.find({ companyId })
+ *   .sort({ createdAt: -1 })
+ */
+transportationRouteSchema.index({
+  companyId: 1,
+  createdAt: -1,
+});
+
+export default mongoose.models.TransportationRoute ||
+  mongoose.model(
+    "TransportationRoute",
+    transportationRouteSchema
+  );

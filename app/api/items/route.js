@@ -138,20 +138,64 @@ export async function GET(req) {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
+
     const shopId = searchParams.get("shopId");
     const tagName = searchParams.get("tagName");
     const shopCategory = searchParams.get("shopCategory");
     const type = searchParams.get("type");
     const category = searchParams.get("category");
-    const limit = Number(searchParams.get("limit")) || 0;
+
+    /*
+     * --------------------------------------------------
+     * Pagination
+     * --------------------------------------------------
+     *
+     * Never allow an unbounded item query.
+     */
+
+    const parsedPage = Number.parseInt(
+      searchParams.get("page") || "1",
+      10
+    );
+
+    const parsedLimit = Number.parseInt(
+      searchParams.get("limit") || "24",
+      10
+    );
+
+    const page =
+      Number.isFinite(parsedPage) && parsedPage > 0
+        ? parsedPage
+        : 1;
+
+    const DEFAULT_LIMIT = 24;
+    const MAX_LIMIT = 50;
+
+    const limit =
+      Number.isFinite(parsedLimit) && parsedLimit > 0
+        ? Math.min(parsedLimit, MAX_LIMIT)
+        : DEFAULT_LIMIT;
+
+    const skip = (page - 1) * limit;
+
+    /*
+     * --------------------------------------------------
+     * Filters
+     * --------------------------------------------------
+     */
 
     const filter = {};
 
     if (shopId) {
       if (!mongoose.Types.ObjectId.isValid(shopId)) {
         return NextResponse.json(
-          { success: false, message: "Invalid shopId format" },
-          { status: 400 }
+          {
+            success: false,
+            message: "Invalid shopId format",
+          },
+          {
+            status: 400,
+          }
         );
       }
 
@@ -170,24 +214,111 @@ export async function GET(req) {
       filter.category = category;
     }
 
+    /*
+     * --------------------------------------------------
+     * Filter by Shop category
+     * --------------------------------------------------
+     */
+
     if (shopCategory) {
-      const shoppingShops = await Shop.find({ category: shopCategory }).select("_id").lean();
-      filter.shopId = { $in: shoppingShops.map((shop) => shop._id) };
+      const matchingShops = await Shop.find({
+        category: shopCategory,
+      })
+        .select("_id")
+        .lean();
+
+      const matchingShopIds = matchingShops.map(
+        (shop) => shop._id
+      );
+
+      /*
+       * Preserve an existing shopId filter if one
+       * was explicitly provided.
+       */
+      if (shopId) {
+        const belongsToCategory = matchingShopIds.some(
+          (id) => String(id) === String(shopId)
+        );
+
+        if (!belongsToCategory) {
+          return NextResponse.json(
+            {
+              success: true,
+              data: [],
+              pagination: {
+                page,
+                limit,
+                total: 0,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPreviousPage: false,
+              },
+            },
+            {
+              status: 200,
+            }
+          );
+        }
+      } else {
+        filter.shopId = {
+          $in: matchingShopIds,
+        };
+      }
     }
 
-    let itemsQuery = Item.find(filter)
-      .populate({ path: "shopId", select: "name category vendorId" })
-      .sort({ createdAt: -1 })
-      .lean();
+    /*
+     * --------------------------------------------------
+     * Fetch only one bounded page
+     * --------------------------------------------------
+     *
+     * Explicit projection prevents unrelated fields
+     * from being accidentally returned later.
+     */
 
-    if (limit > 0) {
-      itemsQuery = itemsQuery.limit(limit);
-    }
+    const [items, total] = await Promise.all([
+      Item.find(filter)
+        .select(
+          [
+            "_id",
+            "shopId",
+            "name",
+            "price",
+            "retailPrice",
+            "wholesaleTiers",
+            "description",
+            "image",
+            "type",
+            "category",
+            "tagName",
+            "extra",
+            "isAvailable",
+            "createdAt",
+            "updatedAt",
+          ].join(" ")
+        )
+        .populate({
+          path: "shopId",
+          select: "_id name category vendorId",
+        })
+        .sort({
+          createdAt: -1,
+        })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
 
-    const items = await itemsQuery;
+      Item.countDocuments(filter),
+    ]);
+
+    /*
+     * --------------------------------------------------
+     * Normalize response
+     * --------------------------------------------------
+     */
 
     const normalizedItems = items.map((item) => ({
       ...item,
+
       shop: item.shopId
         ? {
             _id: item.shopId._id,
@@ -196,16 +327,66 @@ export async function GET(req) {
             vendorId: item.shopId.vendorId,
           }
         : null,
-      shopName: item.shopId?.name || "",
-      vendorId: item.shopId?.vendorId ? String(item.shopId.vendorId) : "",
+
+      shopName:
+        item.shopId?.name || "",
+
+      vendorId:
+        item.shopId?.vendorId
+          ? String(item.shopId.vendorId)
+          : "",
     }));
 
-    return NextResponse.json({ success: true, data: normalizedItems }, { status: 200 });
-  } catch (error) {
-    console.error("GET /api/items error:", error);
+    const totalPages =
+      total === 0
+        ? 0
+        : Math.ceil(total / limit);
+
     return NextResponse.json(
-      { success: false, message: "Server error" },
-      { status: 500 }
+      {
+        success: true,
+
+        /*
+         * Existing callers can continue using:
+         *
+         * data.data
+         *
+         * so the existing response shape remains
+         * backward compatible.
+         */
+        data: normalizedItems,
+
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+
+          hasNextPage:
+            page < totalPages,
+
+          hasPreviousPage:
+            page > 1,
+        },
+      },
+      {
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error(
+      "GET /api/items error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Server error",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

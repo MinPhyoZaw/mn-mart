@@ -32,41 +32,124 @@ const orderSchema = new mongoose.Schema(
       default: null,
     },
 
-    customerName: { type: String, required: true },
-    customerPhone: { type: String, required: true },
-    customerAddress: { type: String, required: true },
+    customerName: {
+      type: String,
+      required: true,
+    },
+
+    customerPhone: {
+      type: String,
+      required: true,
+    },
+
+    customerAddress: {
+      type: String,
+      required: true,
+    },
+
     bookingDetails: {
-      guestCount: { type: Number, default: null },
-      extraBedAmount: { type: Number, default: null },
-      note: { type: String, default: "" },
+      guestCount: {
+        type: Number,
+        default: null,
+      },
+
+      extraBedAmount: {
+        type: Number,
+        default: null,
+      },
+
+      note: {
+        type: String,
+        default: "",
+      },
     },
 
     transportationDetails: {
-      fromCity: { type: String, default: "" },
-      toCity: { type: String, default: "" },
-      departureDate: { type: String, default: "" },
-      departureTime: { type: String, default: "" },
-      depositAmount: { type: Number, default: 0 },
-      leftToPayAmount: { type: Number, default: 0 },
+      fromCity: {
+        type: String,
+        default: "",
+      },
+
+      toCity: {
+        type: String,
+        default: "",
+      },
+
+      departureDate: {
+        type: String,
+        default: "",
+      },
+
+      departureTime: {
+        type: String,
+        default: "",
+      },
+
+      depositAmount: {
+        type: Number,
+        default: 0,
+      },
+
+      leftToPayAmount: {
+        type: Number,
+        default: 0,
+      },
     },
 
     serviceType: {
       type: String,
-      enum: ["shopping", "transportation", "hotel", "spa"],
+      enum: [
+        "shopping",
+        "transportation",
+        "hotel",
+        "spa",
+      ],
       required: true,
     },
 
     items: [
       {
-        itemId: { type: mongoose.Schema.Types.ObjectId, ref: "Item", required: true },
-        name: { type: String, required: true },
-        image: { type: String, default: null },
-        price: { type: Number, required: true },
-        quantity: { type: Number, required: true },
-        lineTotal: { type: Number, required: true },
+        itemId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Item",
+          required: true,
+        },
+
+        name: {
+          type: String,
+          required: true,
+        },
+
+        image: {
+          type: String,
+          default: null,
+        },
+
+        price: {
+          type: Number,
+          required: true,
+        },
+
+        quantity: {
+          type: Number,
+          required: true,
+        },
+
+        lineTotal: {
+          type: Number,
+          required: true,
+        },
+
         selectedWholesaleTier: {
-          minQty: { type: Number, default: null },
-          price: { type: Number, default: null },
+          minQty: {
+            type: Number,
+            default: null,
+          },
+
+          price: {
+            type: Number,
+            default: null,
+          },
         },
       },
     ],
@@ -78,7 +161,14 @@ const orderSchema = new mongoose.Schema(
 
     paymentProvider: {
       type: String,
-      enum: ["kbzpay", "wave", "kbzpay_1", "kbzpay_2", "mmqr_1", "mmqr_2"],
+      enum: [
+        "kbzpay",
+        "wave",
+        "kbzpay_1",
+        "kbzpay_2",
+        "mmqr_1",
+        "mmqr_2",
+      ],
       required: true,
     },
 
@@ -105,25 +195,41 @@ const orderSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "rejected"],
+      enum: [
+        "pending",
+        "paid",
+        "rejected",
+      ],
       default: "pending",
     },
 
     orderStatus: {
       type: String,
-      enum: ["pending", "confirmed", "rejected"],
+      enum: [
+        "pending",
+        "confirmed",
+        "rejected",
+      ],
       default: "pending",
     },
 
     vendorStatus: {
       type: String,
-      enum: ["new", "accepted", "rejected", "preparing"],
+      enum: [
+        "new",
+        "accepted",
+        "rejected",
+        "preparing",
+      ],
       default: "new",
     },
 
     settlementStatus: {
       type: String,
-      enum: ["unsettled", "settled"],
+      enum: [
+        "unsettled",
+        "settled",
+      ],
       default: "unsettled",
     },
 
@@ -142,7 +248,85 @@ const orderSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.models.Order || mongoose.model("Order", orderSchema);
+/*
+ * ==================================================
+ * Query indexes
+ * ==================================================
+ */
+
+/*
+ * Vendor order dashboard:
+ *
+ * Order.find({ vendorId })
+ *   .sort({ createdAt: -1 })
+ */
+orderSchema.index({
+  vendorId: 1,
+  createdAt: -1,
+});
+
+/*
+ * Customer order history:
+ *
+ * Order.find({ customerId })
+ *   .sort({ createdAt: -1 })
+ */
+orderSchema.index({
+  customerId: 1,
+  createdAt: -1,
+});
+
+/*
+ * Customer unread notifications:
+ *
+ * Order.find({
+ *   customerId,
+ *   customerNotificationRead: { $ne: true }
+ * })
+ * .sort({ createdAt: -1 })
+ */
+orderSchema.index({
+  customerId: 1,
+  customerNotificationRead: 1,
+  createdAt: -1,
+});
+
+/*
+ * Admin pending unread notifications:
+ *
+ * Order.find({
+ *   orderStatus: "pending",
+ *   adminNotificationRead: { $ne: true }
+ * })
+ * .sort({ createdAt: -1 })
+ */
+orderSchema.index({
+  orderStatus: 1,
+  adminNotificationRead: 1,
+  createdAt: -1,
+});
+
+/*
+ * Vendor pending unread notifications:
+ *
+ * Order.find({
+ *   vendorId,
+ *   orderStatus: "pending",
+ *   vendorNotificationRead: { $ne: true }
+ * })
+ * .sort({ createdAt: -1 })
+ */
+orderSchema.index({
+  vendorId: 1,
+  orderStatus: 1,
+  vendorNotificationRead: 1,
+  createdAt: -1,
+});
+
+export default mongoose.models.Order ||
+  mongoose.model("Order", orderSchema);

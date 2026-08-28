@@ -1,9 +1,9 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 import PromoBanner from './components/PromoBanner';
 import Categories from './components/Categories';
 import ProductColumn from './components/ProductColumn';
-import Advertisement from "./components/Advertisement";
+
 import TicketAdsSection from './components/TicketAdsSection';
 import ShoppingCategoryShowcase from './components/ShoppingCategoryShowcase';
 

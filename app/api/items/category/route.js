@@ -19,7 +19,13 @@ export async function GET(req) {
     const category = normalizeCategory(searchParams.get("category"));
     const limitParam = searchParams.get("limit");
     const rawLimit = Number(limitParam);
-    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 18;
+    const DEFAULT_LIMIT = 18;
+const MAX_LIMIT = 50;
+
+const limit =
+  Number.isFinite(rawLimit) && rawLimit > 0
+    ? Math.min(rawLimit, MAX_LIMIT)
+    : DEFAULT_LIMIT;
 
     const filter = { type: "product" };
 

@@ -184,57 +184,99 @@ export function NotificationsProvider({ children }) {
       ["customer", "admin", "vendor"].includes(userRole)
   );
 
-  const loadNotifications = useCallback(async () => {
-    if (!canReceiveNotifications) {
-      return;
+ const loadNotifications = useCallback(async () => {
+  if (!canReceiveNotifications) {
+    return;
+  }
+
+  const orderResult =
+    await fetchOrderNotifications();
+
+  if (
+    !orderResult.success &&
+    !orderResult.skipped
+  ) {
+    return;
+  }
+
+  const nextNotifications =
+    orderResult.data ?? null;
+
+  let nextVendorCount = null;
+
+  if (userRole === "admin") {
+    const vendorResult =
+      await fetchPendingVendorRequestsCount();
+
+    if (vendorResult.success) {
+      nextVendorCount =
+        vendorResult.count;
     }
+  }
 
-    const orderResult =
-      await fetchOrderNotifications();
-
-    if (
-      !orderResult.success &&
-      !orderResult.skipped
-    ) {
-      return;
-    }
-
-    let nextNotifications =
-      orderResult.data ?? null;
-
-    let nextVendorCount = null;
-
-    if (userRole === "admin") {
-      const vendorResult =
-        await fetchPendingVendorRequestsCount();
-
-      if (vendorResult.success) {
-        nextVendorCount = vendorResult.count;
-      }
-    }
-
+  /*
+   * Admin
+   */
+  if (userRole === "admin") {
+    /*
+     * If we successfully received a new vendor
+     * request count, update both states using
+     * that same count.
+     */
     if (nextVendorCount !== null) {
-      setVendorRequestsCount(nextVendorCount);
-    }
+      setVendorRequestsCount(
+        nextVendorCount
+      );
 
-    if (nextNotifications !== null) {
-      if (userRole === "admin") {
+      if (nextNotifications !== null) {
         setNotifications(
           mergeAdminVendorRequests(
             nextNotifications,
-            nextVendorCount ??
-              vendorRequestsCount
+            nextVendorCount
           )
         );
-      } else {
-        setNotifications(nextNotifications);
       }
+
+      return;
     }
-  }, [
-    canReceiveNotifications,
-    userRole,
-    vendorRequestsCount,
-  ]);
+
+    /*
+     * Vendor-request fetch was skipped/failed.
+     *
+     * Use the current count through a functional
+     * state update instead of depending on
+     * vendorRequestsCount in useCallback.
+     */
+    if (nextNotifications !== null) {
+      setVendorRequestsCount(
+        (currentVendorCount) => {
+          setNotifications(
+            mergeAdminVendorRequests(
+              nextNotifications,
+              currentVendorCount
+            )
+          );
+
+          return currentVendorCount;
+        }
+      );
+    }
+
+    return;
+  }
+
+  /*
+   * Customer / Vendor
+   */
+  if (nextNotifications !== null) {
+    setNotifications(
+      nextNotifications
+    );
+  }
+}, [
+  canReceiveNotifications,
+  userRole,
+]);
 
   useEffect(() => {
     if (

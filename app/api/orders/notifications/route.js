@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
+
 import connectDB from "../../../lib/mongodb";
 import { requireAuth } from "../../../lib/routeAuth";
 import Order from "../../../models/Order";
@@ -8,11 +10,26 @@ const NO_STORE_HEADERS = {
   "Cache-Control": "private, no-store, must-revalidate",
 };
 
+const NOTIFICATION_FIELDS = [
+  "_id",
+  "orderId",
+  "orderStatus",
+  "vendorStatus",
+  "serviceType",
+  "customerName",
+  "customerPhone",
+  "items",
+  "transportationDetails",
+  "createdAt",
+].join(" ");
+
 const toNotification = (order) => {
   if (order.role === "admin") {
     return {
       type: "new-order",
-      text: `New order ${order.orderId} from ${order.customerName || "customer"} is waiting for admin review.`,
+      text: `New order ${order.orderId} from ${
+        order.customerName || "customer"
+      } is waiting for admin review.`,
     };
   }
 
@@ -23,28 +40,62 @@ const toNotification = (order) => {
     };
   }
 
-  if (order.orderStatus === "confirmed" && order.vendorStatus === "accepted" && order.serviceType === "hotel") {
+  if (
+    order.orderStatus === "confirmed" &&
+    order.vendorStatus === "accepted" &&
+    order.serviceType === "hotel"
+  ) {
     return {
       type: "confirmed",
-      text: "Your room booking is confirm ,thank you for using mn-mart",
+      text: "Your room booking is confirmed. Thank you for using MN-Mart.",
     };
   }
 
-  if (order.orderStatus === "confirmed" && order.serviceType === "transportation" && order.vendorStatus === "accepted") {
+  if (
+    order.orderStatus === "confirmed" &&
+    order.serviceType === "transportation" &&
+    order.vendorStatus === "accepted"
+  ) {
     return {
       type: "confirmed",
-      text: "Your ticket buying is successfully.",
-      thankYouMessage: "Please download your ticket and show it to the vendor on ride day.",
+      text: "Your ticket purchase was successful.",
+      thankYouMessage:
+        "Please download your ticket and show it to the vendor on ride day.",
+
       ticketDetails: {
         customerName: order.customerName,
         customerPhone: order.customerPhone,
-        ticketName: order.items?.[0]?.name || "Transportation Ticket",
-        fromCity: order.transportationDetails?.fromCity || "-",
-        toCity: order.transportationDetails?.toCity || "-",
-        departureDate: order.transportationDetails?.departureDate || "-",
-        departureTime: order.transportationDetails?.departureTime || "-",
-        paidDeposit: Number(order.transportationDetails?.depositAmount || 0),
-        leftToPay: Number(order.transportationDetails?.leftToPayAmount || 0),
+
+        ticketName:
+          order.items?.[0]?.name ||
+          "Transportation Ticket",
+
+        fromCity:
+          order.transportationDetails?.fromCity ||
+          "-",
+
+        toCity:
+          order.transportationDetails?.toCity ||
+          "-",
+
+        departureDate:
+          order.transportationDetails?.departureDate ||
+          "-",
+
+        departureTime:
+          order.transportationDetails?.departureTime ||
+          "-",
+
+        paidDeposit: Number(
+          order.transportationDetails?.depositAmount ||
+            0
+        ),
+
+        leftToPay: Number(
+          order.transportationDetails?.leftToPayAmount ||
+            0
+        ),
+
         orderId: order.orderId,
       },
     };
@@ -54,80 +105,248 @@ const toNotification = (order) => {
     return {
       type: "confirmed",
       text: "Your order is confirmed.",
-      thankYouMessage: "Thank you for using MN Mart.",
+      thankYouMessage:
+        "Thank you for using MN Mart.",
     };
   }
 
   if (order.orderStatus === "rejected") {
     return {
       type: "rejected",
-      text: "Your payment was rejected. Please contact support or submit a new receipt.",
+      text:
+        "Your payment was rejected. Please contact support or submit a new receipt.",
     };
   }
 
   return {
     type: "pending",
-    text: "Your order has been placed. Please wait for confirmation.",
+    text:
+      "Your order has been placed. Please wait for confirmation.",
   };
 };
 
+/*
+ * ==================================================
+ * GET /api/orders/notifications
+ * ==================================================
+ */
 export async function GET(req) {
   try {
-    const auth = requireAuth(req, ["customer", "admin", "vendor"]);
-    if (!auth.ok) return auth.response;
+    const auth = requireAuth(req, [
+      "customer",
+      "admin",
+      "vendor",
+    ]);
+
+    if (!auth.ok) {
+      return auth.response;
+    }
 
     await connectDB();
 
     let orders = [];
 
+    /*
+     * ------------------------------------------------
+     * Customer notifications
+     * ------------------------------------------------
+     */
     if (auth.user.role === "customer") {
-      orders = await Order.find({ customerId: auth.user.userId, customerNotificationRead: { $ne: true } })
-        .sort({ createdAt: -1 })
+      orders = await Order.find({
+        customerId: auth.user.userId,
+
+        customerNotificationRead: {
+          $ne: true,
+        },
+      })
+        .select(NOTIFICATION_FIELDS)
+        .sort({
+          createdAt: -1,
+        })
         .limit(20)
         .lean();
     }
 
+    /*
+     * ------------------------------------------------
+     * Admin notifications
+     * ------------------------------------------------
+     */
     if (auth.user.role === "admin") {
-      orders = await Order.find({ orderStatus: "pending", serviceType: { $ne: "transportation" }, adminNotificationRead: { $ne: true } })
-        .sort({ createdAt: -1 })
+      orders = await Order.find({
+        orderStatus: "pending",
+
+        serviceType: {
+          $ne: "transportation",
+        },
+
+        adminNotificationRead: {
+          $ne: true,
+        },
+      })
+        .select(NOTIFICATION_FIELDS)
+        .sort({
+          createdAt: -1,
+        })
         .limit(20)
         .lean();
-      orders = orders.map((order) => ({ ...order, role: "admin" }));
+
+      orders = orders.map((order) => ({
+        ...order,
+        role: "admin",
+      }));
     }
 
+    /*
+     * ------------------------------------------------
+     * Vendor notifications
+     * ------------------------------------------------
+     */
     if (auth.user.role === "vendor") {
-      const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
-      if (!vendor) return NextResponse.json({ success: true, data: [] });
-      orders = await Order.find({ vendorId: vendor._id, orderStatus: "pending", vendorNotificationRead: { $ne: true } })
-        .sort({ createdAt: -1 })
+      /*
+       * We only need the Vendor _id.
+       */
+      const vendor = await Vendor.findOne({
+        userId: auth.user.userId,
+      })
+        .select("_id")
+        .lean();
+
+      if (!vendor) {
+        return NextResponse.json(
+          {
+            success: true,
+            data: [],
+          },
+          {
+            status: 200,
+            headers: NO_STORE_HEADERS,
+          }
+        );
+      }
+
+      orders = await Order.find({
+        vendorId: vendor._id,
+
+        orderStatus: "pending",
+
+        vendorNotificationRead: {
+          $ne: true,
+        },
+      })
+        .select(NOTIFICATION_FIELDS)
+        .sort({
+          createdAt: -1,
+        })
         .limit(20)
         .lean();
-      orders = orders.map((order) => ({ ...order, role: "vendor" }));
+
+      orders = orders.map((order) => ({
+        ...order,
+        role: "vendor",
+      }));
     }
 
-    const notifications = orders.map((order) => ({
-      _id: order._id,
-      orderId: order.orderId,
-      status: order.orderStatus,
-      createdAt: order.createdAt,
-      ...toNotification(order),
-    }));
+    /*
+     * Convert Order documents into the smaller
+     * notification response expected by frontend.
+     */
+    const notifications = orders.map(
+      (order) => ({
+        _id: order._id,
+        orderId: order.orderId,
+        status: order.orderStatus,
+        createdAt: order.createdAt,
 
-    return NextResponse.json({ success: true, data: notifications }, { headers: NO_STORE_HEADERS });
+        ...toNotification(order),
+      })
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: notifications,
+      },
+      {
+        status: 200,
+        headers: NO_STORE_HEADERS,
+      }
+    );
   } catch (error) {
-    console.error("GET /api/orders/notifications error:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500, headers: NO_STORE_HEADERS });
+    console.error(
+      "GET /api/orders/notifications error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Server error",
+      },
+      {
+        status: 500,
+        headers: NO_STORE_HEADERS,
+      }
+    );
   }
 }
 
+/*
+ * ==================================================
+ * PATCH /api/orders/notifications
+ *
+ * Mark one notification as read.
+ * ==================================================
+ */
 export async function PATCH(req) {
   try {
-    const auth = requireAuth(req, ["customer", "admin", "vendor"]);
-    if (!auth.ok) return auth.response;
+    const auth = requireAuth(req, [
+      "customer",
+      "admin",
+      "vendor",
+    ]);
 
-    const { orderId } = await req.json();
+    if (!auth.ok) {
+      return auth.response;
+    }
+
+    const body = await req.json();
+    const { orderId } = body;
+
     if (!orderId) {
-      return NextResponse.json({ success: false, message: "orderId is required." }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "orderId is required.",
+        },
+        {
+          status: 400,
+          headers: NO_STORE_HEADERS,
+        }
+      );
+    }
+
+    /*
+     * Frontend currently sends the MongoDB Order _id,
+     * despite the request field being called orderId.
+     */
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        orderId
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Invalid order ID.",
+        },
+        {
+          status: 400,
+          headers: NO_STORE_HEADERS,
+        }
+      );
     }
 
     await connectDB();
@@ -135,30 +354,135 @@ export async function PATCH(req) {
     let query = {};
     let update = {};
 
+    /*
+     * ------------------------------------------------
+     * Customer
+     * ------------------------------------------------
+     */
     if (auth.user.role === "customer") {
-      query = { _id: orderId, customerId: auth.user.userId };
-      update = { customerNotificationRead: true };
-    } else if (auth.user.role === "admin") {
-      query = { _id: orderId };
-      update = { adminNotificationRead: true };
-    } else if (auth.user.role === "vendor") {
-      const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
+      query = {
+        _id: orderId,
+        customerId:
+          auth.user.userId,
+      };
+
+      update = {
+        $set: {
+          customerNotificationRead:
+            true,
+        },
+      };
+    }
+
+    /*
+     * ------------------------------------------------
+     * Admin
+     * ------------------------------------------------
+     */
+    else if (auth.user.role === "admin") {
+      query = {
+        _id: orderId,
+      };
+
+      update = {
+        $set: {
+          adminNotificationRead:
+            true,
+        },
+      };
+    }
+
+    /*
+     * ------------------------------------------------
+     * Vendor
+     * ------------------------------------------------
+     */
+    else if (auth.user.role === "vendor") {
+      const vendor =
+        await Vendor.findOne({
+          userId:
+            auth.user.userId,
+        })
+          .select("_id")
+          .lean();
+
       if (!vendor) {
-        return NextResponse.json({ success: false, message: "Vendor profile not found." }, { status: 404 });
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Vendor profile not found.",
+          },
+          {
+            status: 404,
+            headers:
+              NO_STORE_HEADERS,
+          }
+        );
       }
-      query = { _id: orderId, vendorId: vendor._id };
-      update = { vendorNotificationRead: true };
+
+      query = {
+        _id: orderId,
+        vendorId: vendor._id,
+      };
+
+      update = {
+        $set: {
+          vendorNotificationRead:
+            true,
+        },
+      };
     }
 
-    const updatedOrder = await Order.findOneAndUpdate(query, update, { new: true }).lean();
+    /*
+     * We only need to know whether a document
+     * matched and was updated, so returning the
+     * entire Order document is unnecessary.
+     */
+    const result =
+      await Order.updateOne(
+        query,
+        update
+      );
 
-    if (!updatedOrder) {
-      return NextResponse.json({ success: false, message: "Notification not found." }, { status: 404 });
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Notification not found.",
+        },
+        {
+          status: 404,
+          headers: NO_STORE_HEADERS,
+        }
+      );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      {
+        success: true,
+      },
+      {
+        status: 200,
+        headers: NO_STORE_HEADERS,
+      }
+    );
   } catch (error) {
-    console.error("PATCH /api/orders/notifications error:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    console.error(
+      "PATCH /api/orders/notifications error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Server error",
+      },
+      {
+        status: 500,
+        headers: NO_STORE_HEADERS,
+      }
+    );
   }
 }
