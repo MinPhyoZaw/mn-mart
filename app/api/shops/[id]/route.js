@@ -66,7 +66,24 @@ export async function GET(req, { params }) {
      * We don't need to query items/count if the
      * shop doesn't exist.
      */
-    const shop = await Shop.findById(id).lean();
+    const shop = await Shop.findById(id)
+  .select(
+    [
+      "_id",
+      "name",
+      "category",
+      "phone",
+      "address",
+      "description",
+      "image",
+      "vendorId",
+      "rating",
+      "isActive",
+      "createdAt",
+      "updatedAt",
+    ].join(" ")
+  )
+  .lean();
 
     if (!shop) {
       return NextResponse.json(
@@ -88,14 +105,33 @@ export async function GET(req, { params }) {
           .lean(),
 
         Item.find({
-          shopId: id,
-        })
-          .sort({
-            createdAt: -1,
-          })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
+  shopId: id,
+})
+  .select(
+    [
+      "_id",
+      "shopId",
+      "name",
+      "price",
+      "retailPrice",
+      "wholesaleTiers",
+      "description",
+      "image",
+      "type",
+      "category",
+      "tagName",
+      "extra",
+      "isAvailable",
+      "createdAt",
+      "updatedAt",
+    ].join(" ")
+  )
+  .sort({
+    createdAt: -1,
+  })
+  .skip(skip)
+  .limit(limit)
+  .lean(),
 
         Item.countDocuments({
           shopId: id,
@@ -170,7 +206,7 @@ export async function GET(req, { params }) {
  */
 export async function PUT(req, { params }) {
   try {
-    const auth = requireAuth(
+    const auth = await requireAuth(
       req,
       ["admin"]
     );
@@ -282,7 +318,7 @@ export async function PUT(req, { params }) {
  */
 export async function DELETE(req, { params }) {
   try {
-    const auth = requireAuth(
+    const auth = await requireAuth(
       req,
       ["admin"]
     );

@@ -212,10 +212,24 @@ export async function GET(req) {
 
     const [routes, total] = await Promise.all([
       TransportationRoute.find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+  .select(
+    [
+      "_id",
+      "companyId",
+      "companyName",
+      "fromCity",
+      "toCity",
+      "boardingPoints",
+      "droppingPoints",
+      "duration",
+      "createdAt",
+      "updatedAt",
+    ].join(" ")
+  )
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(limit)
+  .lean(),
 
       TransportationRoute.countDocuments(filter),
     ]);
