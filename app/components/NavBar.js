@@ -285,128 +285,240 @@ trailer
               )}
             </div>
 
-            <button
-              onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="rounded-lg p-2 text-gray-700 transition hover:bg-gray-100 md:hidden"
-              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            >
-              {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            <div className="flex items-center gap-1 md:hidden">
+  {/* Mobile cart - always visible */}
+  <button
+    type="button"
+    onClick={() => {
+      toggleCart();
+      setIsMenuOpen(false);
+    }}
+    className="relative rounded-full p-2.5 text-gray-700 transition active:scale-95 hover:bg-gray-100"
+    aria-label={`Open shopping cart with ${totalItems} items`}
+  >
+    <ShoppingCart size={23} />
+
+    {totalItems > 0 && (
+      <span
+        key={totalItems}
+        className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 animate-[pulse_0.35s_ease-out] items-center justify-center rounded-full bg-green-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white"
+      >
+        {totalItems > 99 ? "99+" : totalItems}
+      </span>
+    )}
+  </button>
+
+  {/* Mobile hamburger */}
+  <button
+    type="button"
+    onClick={() => {
+      setIsMenuOpen(true);
+      setIsAccountOpen(false);
+      setIsNotificationsOpen(false);
+    }}
+    className="rounded-full p-2.5 text-gray-700 transition active:scale-95 hover:bg-gray-100"
+    aria-label="Open menu"
+  >
+    <Menu size={24} />
+  </button>
+</div>
           </div>
         </div>
 
-        {isMenuOpen && (
-          <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-3 shadow-sm md:hidden">
-            <div className="flex flex-col gap-2">
-              {!user ? (
-                <>
-                  <Link
-                    href="/login"
-                    onClick={closeMenu}
-                    className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/signup"
-                    onClick={closeMenu}
-                    className="rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-green-700"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    {user.role === "admin" && (
-                      <Link
-  href="/admindashboard"
-  prefetch={false}
-  onClick={closeMenu}
-  className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
->
-  <span>Admin Dashboard</span>
-</Link>
-                    )}
+        
+      </nav>
+{/* Mobile menu drawer */}
+{isMenuOpen && (
+  <div className="md:hidden">
+    {/* Backdrop */}
+    <button
+      type="button"
+      aria-label="Close menu"
+      onClick={closeMenu}
+      className="fixed inset-0 z-[70] bg-black/35 backdrop-blur-[1px]"
+    />
 
-                    {user.role === "vendor" && (
-                      <Link
-                        href="/vendordashboard"
-                        onClick={closeMenu}
-                        className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
-                      >
-                        <span>Vendor Dashboard</span>
-                      </Link>
-                    )}
+    {/* Right drawer */}
+    <aside className="fixed right-0 top-0 z-[80] flex h-dvh w-[88%] max-w-sm flex-col bg-white shadow-2xl">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div>
+          <p className="text-lg font-bold text-gray-900">
+            Menu
+          </p>
 
-                    <button
-                      onClick={() => {
-                        toggleCart();
-                        closeMenu();
-                      }}
-                      className="relative flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
-                      aria-label="Open shopping cart"
-                    >
-                      <ShoppingCart size={18} /> Cart
-                      <span className="absolute right-2 top-1 min-w-5 rounded-full bg-green-600 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
-                        {totalItems}
-                      </span>
-                    </button>
+          {user && (
+            <p className="mt-0.5 max-w-[220px] truncate text-xs text-gray-500">
+              {user.name}
+            </p>
+          )}
+        </div>
 
-                    {["customer", "admin", "vendor"].includes(user.role) && (
-                      <button
-                        type="button"
-                        onClick={() => setIsNotificationsOpen((prev) => !prev)}
-                        className="relative flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
-                      >
-                        <Bell size={18} /> Notifications
-                        <span className="absolute right-2 top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
-                          {notifications.reduce((acc, n) => acc + (n.count || 1), 0)}
-                        </span>
-                      </button>
-                    )}
+        <button
+          type="button"
+          onClick={closeMenu}
+          className="rounded-full bg-gray-100 p-2.5 text-gray-600 transition active:scale-95"
+          aria-label="Close menu"
+        >
+          <X size={21} />
+        </button>
+      </div>
 
-                    <button
-                      type="button"
-                      onClick={openAccountPane}
-                      className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700"
-                    >
-                      <User size={18} /> Account
-                    </button>
-                  </div>
+      {/* Scrollable menu */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {!user ? (
+          <div className="space-y-3">
+            <Link
+              href="/login"
+              onClick={closeMenu}
+              className="flex w-full items-center rounded-xl bg-gray-50 px-4 py-3.5 text-sm font-semibold text-gray-800"
+            >
+              Login
+            </Link>
 
-                  {["customer", "admin", "vendor"].includes(user.role) && isNotificationsOpen && (
-                    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
-                      {notifications.length === 0 ? (
-                        <p className="text-xs text-gray-500">No notifications yet.</p>
-                      ) : (
-                        notifications.slice(0, 4).map((notice, idx) => (
-                          <label key={`${notice.orderId}-${idx}`} className="text-xs text-gray-700 py-1 flex gap-2 items-start">
+            <Link
+              href="/signup"
+              onClick={closeMenu}
+              className="flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-3.5 text-sm font-semibold text-white"
+            >
+              Create Account
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {/* Account */}
+            <button
+              type="button"
+              onClick={openAccountPane}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                <User size={20} />
+              </span>
+
+              <div className="min-w-0">
+                <p>My Account</p>
+                <p className="truncate text-xs font-normal text-gray-500">
+                  {user.email}
+                </p>
+              </div>
+            </button>
+
+            {/* Notifications */}
+            {["customer", "admin", "vendor"].includes(
+              user.role
+            ) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNotificationsOpen(
+                    (prev) => !prev
+                  );
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              >
+                <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                  <Bell size={20} />
+
+                  {notifications.length > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                      {notifications.reduce(
+                        (acc, n) =>
+                          acc + (n.count || 1),
+                        0
+                      )}
+                    </span>
+                  )}
+                </span>
+
+                Notifications
+              </button>
+            )}
+
+            {/* Mobile notification content */}
+            {isNotificationsOpen &&
+              ["customer", "admin", "vendor"].includes(
+                user.role
+              ) && (
+                <div className="mx-2 mb-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+                  {notifications.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      No notifications yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {notifications
+                        .slice(0, 4)
+                        .map((notice, idx) => (
+                          <label
+                            key={`${notice.orderId}-${idx}`}
+                            className="flex items-start gap-2 rounded-lg bg-white p-2.5 text-xs text-gray-700"
+                          >
                             <input
                               type="checkbox"
                               className="mt-0.5 h-4 w-4 accent-green-600"
-                              onChange={() => markNotificationAsRead(notice._id)}
+                              onChange={() =>
+                                markNotificationAsRead(
+                                  notice._id
+                                )
+                              }
                             />
+
                             <span>
                               {notice.text}
+
                               {notice.thankYouMessage && (
-                                <span className="mt-1 block rounded border border-green-200 bg-green-50 px-2 py-1 text-green-700">
-                                  {notice.thankYouMessage}
+                                <span className="mt-1 block text-green-700">
+                                  {
+                                    notice.thankYouMessage
+                                  }
                                 </span>
                               )}
                             </span>
                           </label>
-                        ))
-                      )}
+                        ))}
                     </div>
                   )}
-                </>
+                </div>
               )}
-            </div>
+
+            {/* Dashboard */}
+            {user.role === "admin" && (
+              <Link
+                href="/admindashboard"
+                prefetch={false}
+                onClick={closeMenu}
+                className="flex w-full items-center rounded-xl px-4 py-3.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+
+            {user.role === "vendor" && (
+              <Link
+                href="/vendordashboard"
+                onClick={closeMenu}
+                className="flex w-full items-center rounded-xl px-4 py-3.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+              >
+                Vendor Dashboard
+              </Link>
+            )}
+
+            <div className="my-3 border-t border-gray-100" />
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              Logout
+            </button>
           </div>
         )}
-      </nav>
-
+      </div>
+    </aside>
+  </div>
+)}
       {/* Search bar placed below navbar */}
       <SearchBar />
 
