@@ -134,7 +134,7 @@ export default function ShopDetailClient({ shop, items }) {
 
     if (!file.type.startsWith("image/")) {
       setBookingMessage(
-        "Please upload an image file."
+        "Please upload an image"
       );
 
       return;
