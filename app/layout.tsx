@@ -8,6 +8,7 @@ import { NotificationsProvider } from "./context/NotificationsContext";
 import { CartProvider } from "./context/CartContext";
 import { Raleway, Inter, Outfit, Nunito } from "next/font/google";
 import InstallAppButton from "./components/InstallAppButton";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -106,6 +107,7 @@ export default function RootLayout({
             </CartProvider>
           </NotificationsProvider>
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
