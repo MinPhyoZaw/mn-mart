@@ -9,6 +9,7 @@ import { CartProvider } from "./context/CartContext";
 import { Raleway, Inter, Outfit, Nunito } from "next/font/google";
 import InstallAppButton from "./components/InstallAppButton";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import SeptemberPromoBanner from './components/SeptemberPromoBanner';
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -95,6 +96,7 @@ export default function RootLayout({
           <NotificationsProvider>
             <CartProvider>
               <Navbar />
+              <SeptemberPromoBanner/>
 
               <main className="min-h-screen bg-gray-50 pb-24">
                 {children}

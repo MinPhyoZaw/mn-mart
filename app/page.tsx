@@ -3,9 +3,11 @@ export const revalidate = 60;
 import PromoBanner from './components/PromoBanner';
 import Categories from './components/Categories';
 import ProductColumn from './components/ProductColumn';
+import SeptemberVendorPromotion from './components/SeptemberVendorPromotion';
 
 import TicketAdsSection from './components/TicketAdsSection';
 import ShoppingCategoryShowcase from './components/ShoppingCategoryShowcase';
+import IOSInstallGuide from "./components/IOSInstallGuide";
 
 export default function HomePage() {
   return (
@@ -20,7 +22,11 @@ export default function HomePage() {
      
       <TicketAdsSection />
       <ProductColumn tagName="RecomendedForYou" title="Recommended For You" />
-
+      <div className="mx-auto flex w-[96%] flex-col gap-5 py-8 lg:flex-row lg:items-stretch">
+  <IOSInstallGuide />
+  
+</div>
+      <SeptemberVendorPromotion />
       
 
     </div>
