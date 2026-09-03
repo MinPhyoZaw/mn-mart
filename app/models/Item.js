@@ -24,12 +24,6 @@ const itemSchema = new mongoose.Schema(
       min: 0,
     },
 
-    retailPrice: {
-      type: Number,
-      min: 0,
-      default: null,
-    },
-
     wholesaleTiers: {
       type: [
         {

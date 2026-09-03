@@ -87,7 +87,6 @@ export async function PUT(req, { params }) {
       "wholesaleTiers",
       "extra",
       "isAvailable",
-      "retailPrice",
     ];
 
     const update = {};

@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import ProductDetailsModal from "./ProductDetailsModal";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
-import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
+import { normalizeWholesaleTiers } from "../lib/pricing";
+import { normalizeDescription } from "../lib/productDisplay";
 
 type ProductType = {
   _id: string;
@@ -16,7 +17,6 @@ type ProductType = {
   shopName?: string;
   shopId?: string;
   vendorId?: string;
-  retailPrice?: number;
   wholesaleTiers?: {
     minQty: number;
     price: number;
@@ -42,7 +42,7 @@ function ProductCard({
   onOpenDetails: (product: ProductType) => void;
 }) {
   const description = normalizeDescription(product.description);
-  const retailPrice = getDisplayRetailPrice(product.retailPrice, product.price);
+  const wholesaleTier = normalizeWholesaleTiers(product.wholesaleTiers)[0];
   return (
     <article className="group min-w-0">
       <button
@@ -93,10 +93,11 @@ function ProductCard({
             <span className="text-base font-bold text-orange-600 md:text-lg">
               {Number(product.price || 0).toLocaleString()}
             </span>
-            {retailPrice !== null ? (
-              <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
-                Retail Price: {retailPrice.toLocaleString()} MMK
-              </p>
+            {wholesaleTier ? (
+              <div className="mt-1 text-[10px] leading-4 text-green-700 md:text-xs">
+                <p>လက်ကား {wholesaleTier.price.toLocaleString()} MMK မှစ</p>
+                <p>{wholesaleTier.minQty} ခုနှင့်အထက်</p>
+              </div>
             ) : null}
           </div>
 

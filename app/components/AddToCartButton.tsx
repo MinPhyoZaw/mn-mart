@@ -9,7 +9,6 @@ type ProductForCart = {
   _id: string;
   name: string;
   price: number;
-  retailPrice?: number;
   wholesaleTiers?: WholesaleTier[];
   selectedWholesaleTier?: WholesaleTier | null;
   image?: string;
@@ -44,7 +43,6 @@ export default function AddToCartButton({ product }: Props) {
       name: product.name,
       price: selectedWholesaleTier?.price ?? product.price,
       image: product.image || null,
-      retailPrice: product.retailPrice ?? product.price,
       wholesaleTiers: product.wholesaleTiers || [],
       selectedWholesaleTier,
       quantity: selectedWholesaleTier?.minQty || 1,

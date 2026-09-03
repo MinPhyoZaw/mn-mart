@@ -113,7 +113,6 @@ export async function GET(req, { params }) {
       "shopId",
       "name",
       "price",
-      "retailPrice",
       "wholesaleTiers",
       "description",
       "image",
