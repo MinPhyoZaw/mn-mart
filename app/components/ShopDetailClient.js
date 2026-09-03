@@ -8,6 +8,7 @@ import ProductDetailsModal from "./ProductDetailsModal";
 import PaymentQrSelector from "./PaymentQrSelector";
 
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
+import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
 import {
   RECEIPT_IMAGE_BUCKET,
   uploadImageToSupabaseStorage,
@@ -508,9 +509,11 @@ export default function ShopDetailClient({ shop, items }) {
                           {shop.name}
                         </p>
 
-                        <p className="mt-1 line-clamp-2 min-h-[30px] text-[10px] leading-[15px] text-gray-500 md:text-xs">
-                          {item.description || "No description provided."}
-                        </p>
+                        {normalizeDescription(item.description) ? (
+                          <p className="mt-1 line-clamp-2 text-[10px] leading-[15px] text-gray-500 md:text-xs">
+                            {normalizeDescription(item.description)}
+                          </p>
+                        ) : null}
 
                         {/* PRICE */}
 
@@ -526,9 +529,11 @@ export default function ShopDetailClient({ shop, items }) {
                           </span>
                         </div>
 
-                        <p className="mt-0.5 text-[10px] text-gray-500 md:text-xs">
-                          Retail: {Number(item.retailPrice ?? item.price ?? 0).toLocaleString()} MMK
-                        </p>
+                        {getDisplayRetailPrice(item.retailPrice, item.price) !== null ? (
+                          <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
+                            Retail Price: {getDisplayRetailPrice(item.retailPrice, item.price).toLocaleString()} MMK
+                          </p>
+                        ) : null}
 
                         {/* SEE DETAILS */}
 

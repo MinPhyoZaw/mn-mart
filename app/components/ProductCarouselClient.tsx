@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ProductDetailsModal from "./ProductDetailsModal";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
+import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
 
 type ProductType = {
   _id: string;
@@ -40,6 +41,8 @@ function ProductCard({
   product: ProductType;
   onOpenDetails: (product: ProductType) => void;
 }) {
+  const description = normalizeDescription(product.description);
+  const retailPrice = getDisplayRetailPrice(product.retailPrice, product.price);
   return (
     <article className="group min-w-0">
       <button
@@ -75,9 +78,11 @@ function ProductCard({
           {product.shopName || "MN Mart Shop"}
         </p>
 
-        <p className="mt-1 line-clamp-2 min-h-[30px] text-[10px] leading-[15px] text-gray-500 md:text-xs">
-          {product.description || "No description provided."}
-        </p>
+        {description ? (
+          <p className="mt-1 line-clamp-2 text-[10px] leading-[15px] text-gray-500 md:text-xs">
+            {description}
+          </p>
+        ) : null}
 
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <div className="min-w-0">
@@ -88,9 +93,11 @@ function ProductCard({
             <span className="text-base font-bold text-orange-600 md:text-lg">
               {Number(product.price || 0).toLocaleString()}
             </span>
-            <p className="mt-0.5 text-[10px] text-gray-500 md:text-xs">
-              Retail: {Number(product.retailPrice ?? product.price ?? 0).toLocaleString()} MMK
-            </p>
+            {retailPrice !== null ? (
+              <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
+                Retail Price: {retailPrice.toLocaleString()} MMK
+              </p>
+            ) : null}
           </div>
 
           {product.category ? (

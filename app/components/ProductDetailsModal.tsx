@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useCart } from "../context/CartContext";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
 import ProductReviews from "./reviews/ProductReview";
+import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
 
 type ProductType = {
   _id: string;
@@ -67,6 +68,9 @@ export default function ProductDetailsModal({
   }, [product, onClose]);
 
   if (!product) return null;
+
+  const description = normalizeDescription(product.description);
+  const retailPrice = getDisplayRetailPrice(product.retailPrice, product.price);
 
   const handleAddToCart = () => {
     addToCart({
@@ -162,10 +166,11 @@ export default function ProductDetailsModal({
                 </span>
               )}
 
-              <p className="mt-4 text-sm leading-6 text-gray-700">
-                {product.description ||
-                  "No description provided for this product yet."}
-              </p>
+              {description ? (
+                <p className="mt-4 text-sm leading-6 text-gray-700">
+                  {description}
+                </p>
+              ) : null}
 
               <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <p className="text-sm font-medium text-gray-500">
@@ -176,9 +181,11 @@ export default function ProductDetailsModal({
                   {Number(product.price || 0).toLocaleString()} MMK
                 </p>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Retail: {Number(product.retailPrice ?? product.price ?? 0).toLocaleString()} MMK
-                </p>
+                {retailPrice !== null ? (
+                  <p className="mt-1 text-sm text-gray-500 line-through">
+                    Retail Price: {retailPrice.toLocaleString()} MMK
+                  </p>
+                ) : null}
               </div>
             </div>
 

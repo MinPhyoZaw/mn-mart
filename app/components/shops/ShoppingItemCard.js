@@ -6,6 +6,7 @@ import AddToCartButton from "../AddToCartButton";
 import ProductDetailsModal from "../ProductDetailsModal";
 import { normalizeWholesaleTiers } from "../../lib/pricing";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../../lib/shoppingCategories";
+import { getDisplayRetailPrice, normalizeDescription, normalizeRetailPrice } from "../../lib/productDisplay";
 
 function getCategoryLabel(category) {
   if (!category) return "";
@@ -17,7 +18,9 @@ function getCategoryLabel(category) {
 
 export default function ShoppingItemCard({ item }) {
   const numericPrice = typeof item.price === "number" ? item.price : Number(item.price) || 0;
-  const retailPrice = Number(item.retailPrice ?? numericPrice) || 0;
+  const retailPrice = normalizeRetailPrice(item.retailPrice);
+  const displayRetailPrice = getDisplayRetailPrice(retailPrice, numericPrice);
+  const description = normalizeDescription(item.description);
   const wholesaleTiers = useMemo(
     () => normalizeWholesaleTiers(item.wholesaleTiers ?? item.extra?.wholesaleTiers ?? []),
     [item.wholesaleTiers, item.extra?.wholesaleTiers]
@@ -72,9 +75,11 @@ export default function ShoppingItemCard({ item }) {
             {item.shop?.name || "MN Mart Shop"}
           </p>
 
-          <p className="mt-1 line-clamp-2 min-h-[30px] text-[10px] leading-[15px] text-gray-500 md:text-xs">
-            {item.description || "No description provided."}
-          </p>
+          {description ? (
+            <p className="mt-1 line-clamp-2 text-[10px] leading-[15px] text-gray-500 md:text-xs">
+              {description}
+            </p>
+          ) : null}
 
           <div className="mt-1.5 flex items-center justify-between gap-2">
             <div className="min-w-0">
@@ -82,9 +87,11 @@ export default function ShoppingItemCard({ item }) {
               <span className="text-base font-bold text-orange-600 md:text-lg">
                 {Number(numericPrice || 0).toLocaleString()}
               </span>
-              <p className="mt-0.5 text-[10px] text-gray-500 md:text-xs">
-                Retail: {retailPrice.toLocaleString()} MMK
-              </p>
+              {displayRetailPrice !== null ? (
+                <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
+                  Retail Price: {displayRetailPrice.toLocaleString()} MMK
+                </p>
+              ) : null}
             </div>
 
             {item.category ? (

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductDetailsModal from "../components/ProductDetailsModal";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
+import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
 
 type Shop = {
   name?: string;
@@ -80,6 +81,10 @@ export default function ShoppingCategoryContent() {
             (product) => ({
               ...product,
               price: Number(product.price || 0),
+              retailPrice:
+                product.retailPrice === undefined || product.retailPrice === null
+                  ? undefined
+                  : Number(product.retailPrice),
             })
           );
 
@@ -144,14 +149,30 @@ export default function ShoppingCategoryContent() {
         ) : (
           <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 sm:grid-cols-3 md:grid-cols-4 md:gap-x-3 md:gap-y-7 lg:grid-cols-6">
             {products.map((product) => (
-              <article
-                key={product._id}
-                className="group min-w-0"
-              >
-                <button
+              <ProductCard key={product._id} product={product} onOpenDetails={setSelectedProduct} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <ProductDetailsModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
+    </div>
+  );
+}
+
+function ProductCard({ product, onOpenDetails }: { product: Product; onOpenDetails: (product: Product) => void }) {
+  const description = normalizeDescription(product.description);
+  const retailPrice = getDisplayRetailPrice(product.retailPrice, product.price);
+
+  return (
+    <article className="group min-w-0">
+      <button
                   type="button"
                   onClick={() =>
-                    setSelectedProduct(product)
+                    onOpenDetails(product)
                   }
                   className="relative block aspect-square w-full overflow-hidden rounded-xl bg-gray-100"
                 >
@@ -172,7 +193,7 @@ export default function ShoppingCategoryContent() {
                   <button
                     type="button"
                     onClick={() =>
-                      setSelectedProduct(product)
+                    onOpenDetails(product)
                     }
                     className="text-left"
                   >
@@ -187,6 +208,12 @@ export default function ShoppingCategoryContent() {
                       "MN Mart Shop"}
                   </p>
 
+                  {description ? (
+                    <p className="mt-1 line-clamp-2 text-[10px] leading-[15px] text-gray-500 md:text-xs">
+                      {description}
+                    </p>
+                  ) : null}
+
                   <div className="mt-1.5 flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <span className="mr-1 text-[10px] font-semibold text-orange-600">
@@ -196,6 +223,11 @@ export default function ShoppingCategoryContent() {
                       <span className="text-base font-bold text-orange-600 md:text-lg">
                         {product.price.toLocaleString()}
                       </span>
+                      {retailPrice !== null ? (
+                        <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
+                          Retail Price: {retailPrice.toLocaleString()} MMK
+                        </p>
+                      ) : null}
                     </div>
 
                     {product.category ? (
@@ -210,23 +242,13 @@ export default function ShoppingCategoryContent() {
                   <button
                     type="button"
                     onClick={() =>
-                      setSelectedProduct(product)
+                      onOpenDetails(product)
                     }
                     className="mt-2 flex h-8 w-full items-center justify-center rounded-lg bg-orange-500 text-[11px] font-medium text-white transition-colors hover:bg-orange-600 md:text-xs"
                   >
                     See Details
                   </button>
                 </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <ProductDetailsModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
-    </div>
+    </article>
   );
 }
