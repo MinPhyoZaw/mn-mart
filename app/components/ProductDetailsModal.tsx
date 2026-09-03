@@ -175,6 +175,10 @@ export default function ProductDetailsModal({
                 <p className="mt-1 text-2xl font-bold text-orange-600">
                   {Number(product.price || 0).toLocaleString()} MMK
                 </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Retail: {Number(product.retailPrice ?? product.price ?? 0).toLocaleString()} MMK
+                </p>
               </div>
             </div>
 

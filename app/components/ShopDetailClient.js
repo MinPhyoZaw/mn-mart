@@ -508,6 +508,10 @@ export default function ShopDetailClient({ shop, items }) {
                           {shop.name}
                         </p>
 
+                        <p className="mt-1 line-clamp-2 min-h-[30px] text-[10px] leading-[15px] text-gray-500 md:text-xs">
+                          {item.description || "No description provided."}
+                        </p>
+
                         {/* PRICE */}
 
                         <div className="mt-1.5 flex items-baseline">
@@ -521,6 +525,10 @@ export default function ShopDetailClient({ shop, items }) {
                             ).toLocaleString()}
                           </span>
                         </div>
+
+                        <p className="mt-0.5 text-[10px] text-gray-500 md:text-xs">
+                          Retail: {Number(item.retailPrice ?? item.price ?? 0).toLocaleString()} MMK
+                        </p>
 
                         {/* SEE DETAILS */}
 

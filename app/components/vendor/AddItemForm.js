@@ -26,7 +26,7 @@ const INITIAL_FORM = {
     wifi: false,
     swimmingPool: false,
     aircon: false,
-    breakfast: false,
+    description: "",
     extraBed: false,
   },
   routeId: "",
@@ -129,17 +129,6 @@ export default function AddItemForm({
     return (
       <form
         onSubmit={(e) => {
-          e.preventDefault();
-          handleCreateRoute();
-        }}
-        className="border rounded-lg p-3 space-y-2 mb-4"
-      >
-        <p className="font-medium text-sm">Create reusable route template</p>
-        <input
-          placeholder="Company Name"
-          value={routeForm.companyName}
-          onChange={(e) =>
-            setRouteForm((p) => ({ ...p, companyName: e.target.value }))
           }
           className="w-full border rounded-lg px-3 py-2"
         />
@@ -275,6 +264,25 @@ export default function AddItemForm({
             placeholder="Product name"
             value={form.name}
             onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
+          />
+          <textarea
+            name="description"
+            placeholder="Product description"
+            value={form.description}
+            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            rows="3"
+          />
+          <input
+            name="retailPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Retail price"
+            value={form.retailPrice}
+            onChange={(e) => setForm((p) => ({ ...p, retailPrice: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
             required
           />
@@ -561,7 +569,8 @@ export default function AddItemForm({
       shopId: shop._id,
       name: defaultNameByServiceType[serviceType] || enteredName || "Item",
       price: Number(form.price),
-      retailPrice: serviceType === "shopping" ? Number(form.price) : undefined,
+      description: serviceType === "shopping" ? form.description.trim() : undefined,
+      retailPrice: serviceType === "shopping" ? Number(form.retailPrice || form.price) : undefined,
       wholesaleTiers: [],
       image: form.image,
       type: TYPE_MAP[serviceType] || "service",
@@ -572,7 +581,7 @@ export default function AddItemForm({
     };
 
     if (serviceType === "shopping") {
-      const retailPrice = Number(form.price);
+      const retailPrice = Number(form.retailPrice || form.price);
       const wholesaleTiers = (form.wholesaleTiers || [])
         .map((tier) => ({
           minQty: Number(tier.minQty),

@@ -72,12 +72,19 @@ export default function ShoppingItemCard({ item }) {
             {item.shop?.name || "MN Mart Shop"}
           </p>
 
+          <p className="mt-1 line-clamp-2 min-h-[30px] text-[10px] leading-[15px] text-gray-500 md:text-xs">
+            {item.description || "No description provided."}
+          </p>
+
           <div className="mt-1.5 flex items-center justify-between gap-2">
             <div className="min-w-0">
               <span className="mr-1 text-[10px] font-semibold text-orange-600">MMK</span>
               <span className="text-base font-bold text-orange-600 md:text-lg">
                 {Number(numericPrice || 0).toLocaleString()}
               </span>
+              <p className="mt-0.5 text-[10px] text-gray-500 md:text-xs">
+                Retail: {retailPrice.toLocaleString()} MMK
+              </p>
             </div>
 
             {item.category ? (
