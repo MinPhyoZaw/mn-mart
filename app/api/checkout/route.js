@@ -55,7 +55,7 @@ export async function POST(req) {
       _id: { $in: itemIds },
       type: "product",
     })
-      .select("_id shopId name image price retailPrice wholesaleTiers isAvailable")
+      .select("_id shopId name image price wholesaleTiers isAvailable")
       .lean();
 
     const itemMap = new Map(items.map((item) => [String(item._id), item]));

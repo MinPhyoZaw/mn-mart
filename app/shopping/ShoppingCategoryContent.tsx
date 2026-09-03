@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductDetailsModal from "../components/ProductDetailsModal";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
-import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
+import { normalizeWholesaleTiers } from "../lib/pricing";
+import { normalizeDescription } from "../lib/productDisplay";
 
 type Shop = {
   name?: string;
@@ -19,7 +20,7 @@ type Product = {
   shopName?: string;
   shop?: Shop;
   description?: string;
-  retailPrice?: number;
+  wholesaleTiers?: { minQty: number; price: number }[];
   type?: string;
   tagName?: string;
   stock?: number;
@@ -81,10 +82,7 @@ export default function ShoppingCategoryContent() {
             (product) => ({
               ...product,
               price: Number(product.price || 0),
-              retailPrice:
-                product.retailPrice === undefined || product.retailPrice === null
-                  ? undefined
-                  : Number(product.retailPrice),
+              wholesaleTiers: normalizeWholesaleTiers(product.wholesaleTiers),
             })
           );
 
@@ -165,7 +163,7 @@ export default function ShoppingCategoryContent() {
 
 function ProductCard({ product, onOpenDetails }: { product: Product; onOpenDetails: (product: Product) => void }) {
   const description = normalizeDescription(product.description);
-  const retailPrice = getDisplayRetailPrice(product.retailPrice, product.price);
+  const wholesaleTier = normalizeWholesaleTiers(product.wholesaleTiers)[0];
 
   return (
     <article className="group min-w-0">
@@ -223,10 +221,11 @@ function ProductCard({ product, onOpenDetails }: { product: Product; onOpenDetai
                       <span className="text-base font-bold text-orange-600 md:text-lg">
                         {product.price.toLocaleString()}
                       </span>
-                      {retailPrice !== null ? (
-                        <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
-                          Retail Price: {retailPrice.toLocaleString()} MMK
-                        </p>
+                      {wholesaleTier ? (
+                        <div className="mt-1 text-[10px] leading-4 text-green-700 md:text-xs">
+                          <p>လက်ကား {wholesaleTier.price.toLocaleString()} MMK မှစ</p>
+                          <p>{wholesaleTier.minQty} ခုနှင့်အထက်</p>
+                        </div>
                       ) : null}
                     </div>
 

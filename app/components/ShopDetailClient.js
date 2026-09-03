@@ -8,7 +8,8 @@ import ProductDetailsModal from "./ProductDetailsModal";
 import PaymentQrSelector from "./PaymentQrSelector";
 
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
-import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
+import { normalizeWholesaleTiers } from "../lib/pricing";
+import { normalizeDescription } from "../lib/productDisplay";
 import {
   RECEIPT_IMAGE_BUCKET,
   uploadImageToSupabaseStorage,
@@ -82,6 +83,11 @@ export default function ShopDetailClient({ shop, items }) {
             label: key,
           }
       );
+
+  const getWholesaleTier = (item) =>
+    normalizeWholesaleTiers(
+      item?.wholesaleTiers ?? item?.extra?.wholesaleTiers
+    )[0];
 
   const openProductDetails = (item) => {
     setSelectedProduct({
@@ -529,10 +535,11 @@ export default function ShopDetailClient({ shop, items }) {
                           </span>
                         </div>
 
-                        {getDisplayRetailPrice(item.retailPrice, item.price) !== null ? (
-                          <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
-                            Retail Price: {getDisplayRetailPrice(item.retailPrice, item.price).toLocaleString()} MMK
-                          </p>
+                        {getWholesaleTier(item) ? (
+                          <div className="mt-1 text-[10px] leading-4 text-green-700 md:text-xs">
+                            <p>လက်ကား {getWholesaleTier(item).price.toLocaleString()} MMK မှစ</p>
+                            <p>{getWholesaleTier(item).minQty} ခုနှင့်အထက်</p>
+                          </div>
                         ) : null}
 
                         {/* SEE DETAILS */}

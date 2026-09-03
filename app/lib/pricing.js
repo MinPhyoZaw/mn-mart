@@ -12,10 +12,10 @@ export function normalizeWholesaleTiers(tiers = []) {
 
 export function getWholesalePrice(product, qty) {
   const quantity = Math.max(1, Number(qty) || 1);
-  const retailPrice = Number(product?.retailPrice ?? product?.price ?? 0) || 0;
+  const normalPrice = Number(product?.price ?? 0) || 0;
   const wholesaleTiers = normalizeWholesaleTiers(product?.wholesaleTiers ?? product?.extra?.wholesaleTiers ?? []);
 
-  let finalPrice = retailPrice;
+  let finalPrice = normalPrice;
   wholesaleTiers.forEach((tier) => {
     if (quantity >= tier.minQty) {
       finalPrice = tier.price;

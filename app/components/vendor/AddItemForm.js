@@ -43,7 +43,6 @@ const INITIAL_FORM = {
   status: "active",
   driverPhone: "",
   image: "",
-  retailPrice: "",
   wholesaleTiers: [],
 };
 
@@ -286,16 +285,6 @@ export default function AddItemForm({
             onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
             rows="3"
-          />
-          <input
-            name="retailPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Retail price"
-            value={form.retailPrice}
-            onChange={(e) => setForm((p) => ({ ...p, retailPrice: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
           />
           <input
             name="quantity"
@@ -577,15 +566,11 @@ export default function AddItemForm({
     };
 
     const description = serviceType === "shopping" ? form.description.trim() : undefined;
-    const retailPrice = serviceType === "shopping" && form.retailPrice !== ""
-      ? Number(form.retailPrice)
-      : undefined;
     const payload = {
       shopId: shop._id,
       name: defaultNameByServiceType[serviceType] || enteredName || "Item",
       price: Number(form.price),
       description,
-      retailPrice,
       wholesaleTiers: [],
       image: form.image,
       type: TYPE_MAP[serviceType] || "service",

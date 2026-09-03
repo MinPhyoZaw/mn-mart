@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import AddToCartButton from "../AddToCartButton";
 import ProductDetailsModal from "../ProductDetailsModal";
 import { normalizeWholesaleTiers } from "../../lib/pricing";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../../lib/shoppingCategories";
-import { getDisplayRetailPrice, normalizeDescription, normalizeRetailPrice } from "../../lib/productDisplay";
+import { normalizeDescription } from "../../lib/productDisplay";
 
 function getCategoryLabel(category) {
   if (!category) return "";
@@ -18,16 +17,12 @@ function getCategoryLabel(category) {
 
 export default function ShoppingItemCard({ item }) {
   const numericPrice = typeof item.price === "number" ? item.price : Number(item.price) || 0;
-  const retailPrice = normalizeRetailPrice(item.retailPrice);
-  const displayRetailPrice = getDisplayRetailPrice(retailPrice, numericPrice);
   const description = normalizeDescription(item.description);
   const wholesaleTiers = useMemo(
     () => normalizeWholesaleTiers(item.wholesaleTiers ?? item.extra?.wholesaleTiers ?? []),
     [item.wholesaleTiers, item.extra?.wholesaleTiers]
   );
-  const [selectedWholesaleQty, setSelectedWholesaleQty] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const selectedWholesaleTier = wholesaleTiers.find((tier) => tier.minQty === selectedWholesaleQty) || null;
 
   const handleOpenDetails = () => {
     setSelectedProduct({
@@ -39,7 +34,6 @@ export default function ShoppingItemCard({ item }) {
       shopName: item.shop?.name || "MN Mart Shop",
       shopId: item.shop?._id,
       vendorId: item.vendor?._id || item.shop?.vendorId,
-      retailPrice,
       wholesaleTiers,
       category: item.category,
     });
@@ -87,10 +81,11 @@ export default function ShoppingItemCard({ item }) {
               <span className="text-base font-bold text-orange-600 md:text-lg">
                 {Number(numericPrice || 0).toLocaleString()}
               </span>
-              {displayRetailPrice !== null ? (
-                <p className="mt-0.5 text-[10px] text-gray-500 line-through md:text-xs">
-                  Retail Price: {displayRetailPrice.toLocaleString()} MMK
-                </p>
+              {wholesaleTiers[0] ? (
+                <div className="mt-1 text-[10px] leading-4 text-green-700 md:text-xs">
+                  <p>လက်ကား {wholesaleTiers[0].price.toLocaleString()} MMK မှစ</p>
+                  <p>{wholesaleTiers[0].minQty} ခုနှင့်အထက်</p>
+                </div>
               ) : null}
             </div>
 
@@ -110,31 +105,13 @@ export default function ShoppingItemCard({ item }) {
           </button>
         </div>
 
-        {wholesaleTiers.length ? (
-          <div className="mt-3 space-y-1 rounded-lg border border-orange-100 bg-orange-50/70 p-2 text-[11px] text-orange-700">
-            {wholesaleTiers.map((tier) => (
-              <label key={tier.minQty} className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selectedWholesaleQty === tier.minQty}
-                  onChange={(e) => setSelectedWholesaleQty(e.target.checked ? tier.minQty : null)}
-                  className="h-4 w-4 accent-orange-600"
-                />
-                <span>Wholesale: {tier.minQty}+ - {Number(tier.price).toLocaleString()} MMK</span>
-              </label>
-            ))}
-          </div>
-        ) : null}
-
         {/* <div className="mt-3">
           <AddToCartButton
             product={{
               _id: item._id,
               name: item.name,
               price: numericPrice,
-              retailPrice,
               wholesaleTiers,
-              selectedWholesaleTier,
               image: item.image,
               shopId: item.shop?._id,
               shopName: item.shop?.name,

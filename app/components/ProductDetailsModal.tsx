@@ -5,7 +5,8 @@ import Image from "next/image";
 import { useCart } from "../context/CartContext";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
 import ProductReviews from "./reviews/ProductReview";
-import { getDisplayRetailPrice, normalizeDescription } from "../lib/productDisplay";
+import { normalizeWholesaleTiers } from "../lib/pricing";
+import { normalizeDescription } from "../lib/productDisplay";
 
 type ProductType = {
   _id: string;
@@ -16,7 +17,6 @@ type ProductType = {
   shopName?: string;
   shopId?: string;
   vendorId?: string;
-  retailPrice?: number;
   wholesaleTiers?: {
     minQty: number;
     price: number;
@@ -70,7 +70,7 @@ export default function ProductDetailsModal({
   if (!product) return null;
 
   const description = normalizeDescription(product.description);
-  const retailPrice = getDisplayRetailPrice(product.retailPrice, product.price);
+  const wholesaleTier = normalizeWholesaleTiers(product.wholesaleTiers)[0];
 
   const handleAddToCart = () => {
     addToCart({
@@ -78,7 +78,6 @@ export default function ProductDetailsModal({
       name: product.name,
       price: product.price,
       image: product.image || null,
-      retailPrice: product.retailPrice ?? product.price,
       wholesaleTiers: product.wholesaleTiers || [],
       selectedWholesaleTier: null,
       quantity: Math.max(Number(quantity) || 1, 1),
@@ -181,12 +180,15 @@ export default function ProductDetailsModal({
                   {Number(product.price || 0).toLocaleString()} MMK
                 </p>
 
-                {retailPrice !== null ? (
-                  <p className="mt-1 text-sm text-gray-500 line-through">
-                    Retail Price: {retailPrice.toLocaleString()} MMK
-                  </p>
-                ) : null}
               </div>
+
+              {wholesaleTier ? (
+                <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                  <p className="font-semibold">လက်ကားဈေး</p>
+                  <p className="mt-1">{wholesaleTier.price.toLocaleString()} MMK / item</p>
+                  <p>{wholesaleTier.minQty} ခုနှင့်အထက်</p>
+                </div>
+              ) : null}
             </div>
 
             {/* Quantity + Add to Cart */}

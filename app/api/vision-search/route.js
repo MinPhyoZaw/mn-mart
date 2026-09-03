@@ -232,7 +232,6 @@ export async function POST(req) {
           "shopId",
           "name",
           "price",
-          "retailPrice",
           "image",
           "category",
           "tagName",

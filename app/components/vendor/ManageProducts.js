@@ -218,8 +218,6 @@ export default function ManageProducts({
           Boolean(
             editing.isAvailable
           ),
-        retailPrice:
-          editing.retailPrice,
         extra:
           editing.extra,
       };

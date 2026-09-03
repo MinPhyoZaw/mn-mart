@@ -6,7 +6,7 @@ import Shop from "../../models/Shop";
 import Vendor from "../../models/Vendor";
 import { requireVendorAuth } from "../../lib/routeAuth";
 import { isValidShoppingCategory } from "../../lib/shoppingCategories";
-import { normalizeDescription, normalizeRetailPrice } from "../../lib/productDisplay";
+import { normalizeDescription } from "../../lib/productDisplay";
 
 const REQUIRED_FIELDS = ["shopId", "name", "price", "type"];
 
@@ -95,7 +95,6 @@ export async function POST(req) {
       }
     }
 
-    const retailPrice = body.type === "product" ? normalizeRetailPrice(body.retailPrice) : undefined;
     const description = body.type === "product" ? normalizeDescription(body.description) : body.description;
     const wholesaleTiers = body.type === "product" ? normalizeWholesaleTiers(body.wholesaleTiers ?? body?.extra?.wholesaleTiers ?? []) : [];
 
@@ -104,7 +103,6 @@ export async function POST(req) {
       name: body.name,
       price: body.price,
       description,
-      retailPrice: body.type === "product" ? retailPrice : undefined,
       wholesaleTiers: body.type === "product" ? wholesaleTiers : [],
       image: body.image,
       type: body.type,
@@ -285,7 +283,6 @@ export async function GET(req) {
             "shopId",
             "name",
             "price",
-            "retailPrice",
             "wholesaleTiers",
             "description",
             "image",

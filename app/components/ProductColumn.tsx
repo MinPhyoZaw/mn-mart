@@ -5,7 +5,6 @@ import Product from "../models/Product";
 import Item from "../models/Item";
 import Shop from "../models/Shop";
 import ProductCarouselClient from "./ProductCarouselClient";
-import { normalizeRetailPrice } from "../lib/productDisplay";
 
 type WholesaleTier = {
   minQty?: unknown;
@@ -29,7 +28,6 @@ type ProductType = {
   shopName?: string;
   shopId?: string;
   vendorId?: string;
-  retailPrice?: number;
   wholesaleTiers?: SerializedWholesaleTier[];
   category?: string;
 };
@@ -46,7 +44,6 @@ type LeanItem = {
   name?: string;
   description?: string;
   price?: number;
-  retailPrice?: number;
   wholesaleTiers?: WholesaleTier[];
   image?: string;
   shopName?: string;
@@ -251,8 +248,6 @@ async function fetchProductsByTag(
           Number(
             item.price
           ) || 0,
-
-        retailPrice: normalizeRetailPrice(item.retailPrice) ?? undefined,
 
         wholesaleTiers:
           serializeWholesaleTiers(

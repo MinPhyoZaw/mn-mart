@@ -29,7 +29,6 @@ export function CartProvider({ children }) {
       vendorName: item.vendorName || "Unknown Vendor",
       name: item.name || "Unnamed Item",
       price: Number(item.price) || 0,
-      retailPrice: Number(item.retailPrice ?? item.price) || 0,
       wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
       selectedWholesaleTier:
         selectedWholesaleTier && Number.isFinite(selectedWholesaleTier.minQty) && Number.isFinite(selectedWholesaleTier.price)
@@ -83,7 +82,6 @@ export function CartProvider({ children }) {
         vendorId: item.vendorId,
         vendorName: item.vendorName,
         name: item.name,
-        retailPrice: Number(item.retailPrice ?? item.price) || 0,
         wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
         selectedWholesaleTier:
           selectedWholesaleTier && Number.isFinite(selectedWholesaleTier.minQty) && Number.isFinite(selectedWholesaleTier.price)
