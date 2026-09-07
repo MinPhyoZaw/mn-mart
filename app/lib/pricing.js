@@ -10,9 +10,17 @@ export function normalizeWholesaleTiers(tiers = []) {
     .sort((a, b) => a.minQty - b.minQty);
 }
 
+export function getProductPrice(product) {
+  const price = Number(
+    product?.retailPrice ?? product?.basePrice ?? product?.price ?? 0
+  );
+
+  return Number.isFinite(price) ? price : 0;
+}
+
 export function getWholesalePrice(product, qty) {
   const quantity = Math.max(1, Number(qty) || 1);
-  const normalPrice = Number(product?.price ?? 0) || 0;
+  const normalPrice = getProductPrice(product);
   const wholesaleTiers = normalizeWholesaleTiers(product?.wholesaleTiers ?? product?.extra?.wholesaleTiers ?? []);
 
   let finalPrice = normalPrice;

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useCart } from "../context/CartContext";
+import { getProductPrice } from "../lib/pricing";
 
 type WholesaleTier = { minQty: number; price: number };
 
@@ -9,6 +10,8 @@ type ProductForCart = {
   _id: string;
   name: string;
   price: number;
+  retailPrice?: number;
+  basePrice?: number;
   wholesaleTiers?: WholesaleTier[];
   selectedWholesaleTier?: WholesaleTier | null;
   image?: string;
@@ -37,11 +40,13 @@ export default function AddToCartButton({ product }: Props) {
 
   const handle = () => {
     const selectedWholesaleTier = product.selectedWholesaleTier || null;
+    const basePrice = getProductPrice(product);
 
     addToCart({
       _id: product._id,
       name: product.name,
-      price: selectedWholesaleTier?.price ?? product.price,
+      price: basePrice,
+      basePrice,
       image: product.image || null,
       wholesaleTiers: product.wholesaleTiers || [],
       selectedWholesaleTier,

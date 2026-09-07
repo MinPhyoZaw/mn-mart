@@ -45,7 +45,8 @@ export default function CheckoutPage() {
         total: 0,
         items: [],
       };
-      const price = Number(item.price) || 0;
+      const numericPrice = Number(item.price);
+      const price = Number.isFinite(numericPrice) ? numericPrice : 0;
       const qty = Number(item.quantity) || 1;
       prev.total += price * qty;
       prev.items.push({
