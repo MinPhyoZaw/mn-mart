@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useCart } from "../context/CartContext";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
 import ProductReviews from "./reviews/ProductReview";
-import { normalizeWholesaleTiers } from "../lib/pricing";
+import { getProductPrice, normalizeWholesaleTiers } from "../lib/pricing";
 import { normalizeDescription } from "../lib/productDisplay";
 
 type ProductType = {
@@ -13,6 +13,8 @@ type ProductType = {
   name: string;
   description?: string;
   price: number;
+  retailPrice?: number;
+  basePrice?: number;
   image?: string;
   shopName?: string;
   shopId?: string;
@@ -73,10 +75,13 @@ export default function ProductDetailsModal({
   const wholesaleTier = normalizeWholesaleTiers(product.wholesaleTiers)[0];
 
   const handleAddToCart = () => {
+    const basePrice = getProductPrice(product);
+
     addToCart({
       _id: product._id,
       name: product.name,
-      price: product.price,
+      price: basePrice,
+      basePrice,
       image: product.image || null,
       wholesaleTiers: product.wholesaleTiers || [],
       selectedWholesaleTier: null,

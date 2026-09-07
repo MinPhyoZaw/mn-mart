@@ -2,11 +2,36 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
-import { getWholesalePrice, normalizeWholesaleTiers } from "../lib/pricing";
+import { getProductPrice, getWholesalePrice, normalizeWholesaleTiers } from "../lib/pricing";
 
 const CART_STORAGE_PREFIX = "mn-mart-cart";
 
 const CartContext = createContext(null);
+
+function normalizeCartItem(item, requestedQuantity = item?.quantity) {
+  const wholesaleTiers = normalizeWholesaleTiers(
+    item?.wholesaleTiers ?? item?.extra?.wholesaleTiers
+  );
+  const basePrice = getProductPrice(item);
+  const quantity = Math.max(Number(requestedQuantity) || 0, 1);
+  const selectedWholesaleTier =
+    wholesaleTiers.filter((tier) => quantity >= tier.minQty).at(-1) || null;
+
+  return {
+    _id: String(item._id),
+    shopId: String(item.shopId),
+    shopName: item.shopName || "Unknown Shop",
+    vendorId: String(item.vendorId),
+    vendorName: item.vendorName || "Unknown Vendor",
+    name: item.name || "Unnamed Item",
+    basePrice,
+    price: getWholesalePrice({ basePrice, wholesaleTiers }, quantity),
+    wholesaleTiers,
+    selectedWholesaleTier,
+    image: item.image || null,
+    quantity,
+  };
+}
 
 export function CartProvider({ children }) {
   const { user, loading: authLoading } = useAuth();
@@ -17,24 +42,7 @@ export function CartProvider({ children }) {
 
   const sanitizeItem = (item) => {
     if (!item || !item._id || !item.shopId || !item.vendorId) return null;
-    const wholesaleTiers = normalizeWholesaleTiers(item.wholesaleTiers);
-    const basePrice = Number(item.basePrice ?? item.price) || 0;
-    const quantity = Math.max(Number(item.quantity) || 0, 1);
-    const selectedWholesaleTier = wholesaleTiers.filter((tier) => quantity >= tier.minQty).at(-1) || null;
-    return {
-      _id: String(item._id),
-      shopId: String(item.shopId),
-      shopName: item.shopName || "Unknown Shop",
-      vendorId: String(item.vendorId),
-      vendorName: item.vendorName || "Unknown Vendor",
-      name: item.name || "Unnamed Item",
-      basePrice,
-      price: getWholesalePrice({ price: basePrice, wholesaleTiers }, quantity),
-      wholesaleTiers,
-      selectedWholesaleTier,
-      image: item.image || null,
-      quantity,
-    };
+    return normalizeCartItem(item);
   };
 
   useEffect(() => {
@@ -73,23 +81,7 @@ export function CartProvider({ children }) {
         ? { minQty: Number(item.selectedWholesaleTier.minQty), price: Number(item.selectedWholesaleTier.price) }
         : null;
       const requestedQuantity = Math.max(Number(item.quantity) || 0, selectedWholesaleTier?.minQty || 1);
-      const wholesaleTiers = normalizeWholesaleTiers(item.wholesaleTiers);
-      const baseCartItem = {
-        _id: item._id,
-        shopId: item.shopId,
-        shopName: item.shopName,
-        vendorId: item.vendorId,
-        vendorName: item.vendorName,
-        name: item.name,
-        basePrice: Number(item.basePrice ?? item.price) || 0,
-        wholesaleTiers,
-        selectedWholesaleTier:
-          selectedWholesaleTier && Number.isFinite(selectedWholesaleTier.minQty) && Number.isFinite(selectedWholesaleTier.price)
-            ? selectedWholesaleTier
-            : null,
-        image: item.image || null,
-      };
-      const price = getWholesalePrice(baseCartItem, requestedQuantity);
+      const baseCartItem = normalizeCartItem(item, requestedQuantity);
 
       const existing = prevItems.find(
         (cartItem) => cartItem._id === item._id && cartItem.shopId === item.shopId
@@ -99,7 +91,7 @@ export function CartProvider({ children }) {
         return prevItems.map((cartItem) => {
           if (cartItem._id !== item._id || cartItem.shopId !== item.shopId) return cartItem;
           const quantity = cartItem.quantity + requestedQuantity;
-          const selectedTier = normalizeWholesaleTiers(baseCartItem.wholesaleTiers)
+          const selectedTier = baseCartItem.wholesaleTiers
             .filter((tier) => quantity >= tier.minQty)
             .at(-1) || null;
           return {
@@ -116,8 +108,6 @@ export function CartProvider({ children }) {
         ...prevItems,
         {
           ...baseCartItem,
-          price,
-          quantity: requestedQuantity,
         },
       ];
     });
@@ -155,7 +145,7 @@ export function CartProvider({ children }) {
   const totalPrice = useMemo(
     () =>
       cartItems.reduce((sum, item) => {
-        return sum + item.price * item.quantity;
+        return sum + Number(item.price) * Number(item.quantity);
       }, 0),
     [cartItems]
   );
