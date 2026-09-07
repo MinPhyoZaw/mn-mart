@@ -17,10 +17,10 @@ export function CartProvider({ children }) {
 
   const sanitizeItem = (item) => {
     if (!item || !item._id || !item.shopId || !item.vendorId) return null;
-    const selectedWholesaleTier = item.selectedWholesaleTier
-      ? { minQty: Number(item.selectedWholesaleTier.minQty), price: Number(item.selectedWholesaleTier.price) }
-      : null;
-    const quantity = Math.max(Number(item.quantity) || 0, selectedWholesaleTier?.minQty || 1);
+    const wholesaleTiers = normalizeWholesaleTiers(item.wholesaleTiers);
+    const basePrice = Number(item.basePrice ?? item.price) || 0;
+    const quantity = Math.max(Number(item.quantity) || 0, 1);
+    const selectedWholesaleTier = wholesaleTiers.filter((tier) => quantity >= tier.minQty).at(-1) || null;
     return {
       _id: String(item._id),
       shopId: String(item.shopId),
@@ -28,12 +28,10 @@ export function CartProvider({ children }) {
       vendorId: String(item.vendorId),
       vendorName: item.vendorName || "Unknown Vendor",
       name: item.name || "Unnamed Item",
-      price: Number(item.price) || 0,
-      wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
-      selectedWholesaleTier:
-        selectedWholesaleTier && Number.isFinite(selectedWholesaleTier.minQty) && Number.isFinite(selectedWholesaleTier.price)
-          ? selectedWholesaleTier
-          : null,
+      basePrice,
+      price: getWholesalePrice({ price: basePrice, wholesaleTiers }, quantity),
+      wholesaleTiers,
+      selectedWholesaleTier,
       image: item.image || null,
       quantity,
     };
@@ -75,6 +73,7 @@ export function CartProvider({ children }) {
         ? { minQty: Number(item.selectedWholesaleTier.minQty), price: Number(item.selectedWholesaleTier.price) }
         : null;
       const requestedQuantity = Math.max(Number(item.quantity) || 0, selectedWholesaleTier?.minQty || 1);
+      const wholesaleTiers = normalizeWholesaleTiers(item.wholesaleTiers);
       const baseCartItem = {
         _id: item._id,
         shopId: item.shopId,
@@ -82,14 +81,15 @@ export function CartProvider({ children }) {
         vendorId: item.vendorId,
         vendorName: item.vendorName,
         name: item.name,
-        wholesaleTiers: normalizeWholesaleTiers(item.wholesaleTiers),
+        basePrice: Number(item.basePrice ?? item.price) || 0,
+        wholesaleTiers,
         selectedWholesaleTier:
           selectedWholesaleTier && Number.isFinite(selectedWholesaleTier.minQty) && Number.isFinite(selectedWholesaleTier.price)
             ? selectedWholesaleTier
             : null,
         image: item.image || null,
       };
-      const price = baseCartItem.selectedWholesaleTier?.price ?? getWholesalePrice(baseCartItem, requestedQuantity);
+      const price = getWholesalePrice(baseCartItem, requestedQuantity);
 
       const existing = prevItems.find(
         (cartItem) => cartItem._id === item._id && cartItem.shopId === item.shopId
@@ -99,13 +99,15 @@ export function CartProvider({ children }) {
         return prevItems.map((cartItem) => {
           if (cartItem._id !== item._id || cartItem.shopId !== item.shopId) return cartItem;
           const quantity = cartItem.quantity + requestedQuantity;
-          const selectedTier = baseCartItem.selectedWholesaleTier || cartItem.selectedWholesaleTier || null;
+          const selectedTier = normalizeWholesaleTiers(baseCartItem.wholesaleTiers)
+            .filter((tier) => quantity >= tier.minQty)
+            .at(-1) || null;
           return {
             ...cartItem,
             ...baseCartItem,
             selectedWholesaleTier: selectedTier,
             quantity,
-            price: selectedTier?.price ?? getWholesalePrice({ ...cartItem, ...baseCartItem }, quantity),
+            price: getWholesalePrice({ ...cartItem, ...baseCartItem }, quantity),
           };
         });
       }
@@ -126,7 +128,8 @@ export function CartProvider({ children }) {
       prevItems.map((item) => {
         if (item._id !== itemId || item.shopId !== shopId) return item;
         const quantity = item.quantity + 1;
-        return { ...item, quantity, price: item.selectedWholesaleTier?.price ?? getWholesalePrice(item, quantity) };
+        const selectedWholesaleTier = item.wholesaleTiers.filter((tier) => quantity >= tier.minQty).at(-1) || null;
+        return { ...item, quantity, selectedWholesaleTier, price: getWholesalePrice(item, quantity) };
       })
     );
   };
@@ -138,7 +141,8 @@ export function CartProvider({ children }) {
           item._id === itemId && item.shopId === shopId
             ? (() => {
                 const quantity = Math.max(item.quantity - 1, 0);
-                return { ...item, quantity, price: item.selectedWholesaleTier?.price ?? getWholesalePrice(item, quantity || 1) };
+                const selectedWholesaleTier = item.wholesaleTiers.filter((tier) => quantity >= tier.minQty).at(-1) || null;
+                return { ...item, quantity, selectedWholesaleTier, price: getWholesalePrice(item, quantity || 1) };
               })()
             : item
         )
