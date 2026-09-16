@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import ShopsHero from "./ShopsHero";
 import ShoppingItemCard from "./ShoppingItemCard";
+import {
+  getShoppingCategoryLabel,
+  SHOPPING_PRODUCT_CATEGORIES,
+} from "../../lib/shoppingCategories";
 
 const PAGE_SIZE = 24;
 
 export default function ShoppingItemsPage({ title, heroImage }) {
+  const searchParams = useSearchParams();
+  const selectedCategory = searchParams.get("category")?.trim() || "";
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
 
@@ -16,7 +24,7 @@ export default function ShoppingItemsPage({ title, heroImage }) {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchItems = async (targetPage = 1, append = false) => {
+  const fetchItems = useCallback(async (targetPage = 1, append = false) => {
     if (append) {
       setIsLoadingMore(true);
     } else {
@@ -32,6 +40,10 @@ export default function ShoppingItemsPage({ title, heroImage }) {
         page: String(targetPage),
         limit: String(PAGE_SIZE),
       });
+
+      if (selectedCategory) {
+        params.set("category", selectedCategory);
+      }
 
       const res = await fetch(`/api/items?${params.toString()}`, {
         cache: "no-store",
@@ -95,11 +107,11 @@ export default function ShoppingItemsPage({ title, heroImage }) {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  };
+  }, [selectedCategory]);
 
   useEffect(() => {
     void fetchItems(1, false);
-  }, []);
+  }, [fetchItems]);
 
   const handleLoadMore = () => {
     if (isLoadingMore || !hasNextPage) {
@@ -117,6 +129,55 @@ export default function ShoppingItemsPage({ title, heroImage }) {
       />
 
       <div className="mx-auto max-w-7xl px-4 py-10">
+        <section className="mb-8" aria-labelledby="shop-by-category-heading">
+          <div className="mb-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">
+              Browse products
+            </p>
+            <h2
+              id="shop-by-category-heading"
+              className="mt-1 text-2xl font-bold text-gray-900"
+            >
+              Shop by Category
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Choose a category to find products from MN-Mart shops.
+            </p>
+          </div>
+
+          <nav
+            aria-label="Product categories"
+            className="max-w-full overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <div className="flex w-max min-w-full gap-2 whitespace-nowrap md:flex-wrap">
+              <CategoryLink href="/shops" active={!selectedCategory}>
+                All
+              </CategoryLink>
+              {SHOPPING_PRODUCT_CATEGORIES.map((category) => (
+                <CategoryLink
+                  key={category.value}
+                  href={`/shops?category=${encodeURIComponent(category.value)}`}
+                  active={selectedCategory === category.value}
+                >
+                  {category.emoji ? `${category.emoji} ` : ""}
+                  {category.label}
+                </CategoryLink>
+              ))}
+            </div>
+          </nav>
+        </section>
+
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-orange-500">Products</p>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {selectedCategory
+                ? getShoppingCategoryLabel(selectedCategory)
+                : "All shopping products"}
+            </h2>
+          </div>
+        </div>
+
         {error ? (
           <div className="mb-6 rounded-lg border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
             {error}
@@ -128,9 +189,21 @@ export default function ShoppingItemsPage({ title, heroImage }) {
             Loading shopping items...
           </p>
         ) : items.length === 0 ? (
-          <p className="text-center text-gray-500">
-            No shopping items available
-          </p>
+          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+            <p>
+              {selectedCategory
+                ? "No products found in this category."
+                : "No shopping products are available yet."}
+            </p>
+            {selectedCategory ? (
+              <Link
+                href="/shops"
+                className="mt-4 inline-flex rounded-lg bg-orange-500 px-4 py-2 font-medium text-white transition-colors hover:bg-orange-600"
+              >
+                View all products
+              </Link>
+            ) : null}
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 sm:grid-cols-3 md:grid-cols-4 md:gap-x-3 md:gap-y-7 lg:grid-cols-6">
@@ -160,5 +233,21 @@ export default function ShoppingItemsPage({ title, heroImage }) {
         )}
       </div>
     </div>
+  );
+}
+
+function CategoryLink({ href, active, children }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
+        active
+          ? "border-orange-500 bg-orange-500 text-white shadow-sm"
+          : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }

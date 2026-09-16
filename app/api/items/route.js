@@ -210,6 +210,13 @@ export async function GET(req) {
       filter.type = type;
     }
 
+    if (category && type === "product" && !isValidShoppingCategory(category)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid shopping category" },
+        { status: 400 }
+      );
+    }
+
     if (category) {
       filter.category = category;
     }
