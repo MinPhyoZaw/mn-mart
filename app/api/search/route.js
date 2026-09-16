@@ -13,6 +13,7 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get("q") || "").trim();
+    const scope = searchParams.get("scope");
 
     if (!q) {
       return NextResponse.json({ success: true, data: { shops: [], products: [] } }, { status: 200 });
@@ -20,14 +21,20 @@ export async function GET(req) {
 
     const regex = new RegExp(escapeRegExp(q), "i");
 
-    const shopsPromise = Shop.find({ name: { $regex: regex } })
-      .limit(10)
-      .lean();
+    const searchShops = scope !== "products";
+    const searchProducts = scope !== "shops";
 
-    const productsPromise = Item.find({ type: "product", isAvailable: true, name: { $regex: regex } })
-      .limit(10)
-      .populate("shopId", "name")
-      .lean();
+    const shopsPromise = searchShops
+      ? Shop.find({ name: { $regex: regex } }).select("_id name").limit(10).lean()
+      : Promise.resolve([]);
+
+    const productsPromise = searchProducts
+      ? Item.find({ type: "product", isAvailable: true, name: { $regex: regex } })
+          .select("_id shopId name description price image category wholesaleTiers")
+          .limit(10)
+          .populate("shopId", "_id name vendorId")
+          .lean()
+      : Promise.resolve([]);
 
     const [shops, products] = await Promise.all([shopsPromise, productsPromise]);
 
