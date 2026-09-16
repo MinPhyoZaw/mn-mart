@@ -167,7 +167,7 @@ export default function SearchBar() {
 
   return (
     <div ref={rootRef} className="mx-auto w-full max-w-7xl px-3 py-3 sm:px-6">
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4">
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         <section className="relative min-w-0" aria-label="Product Search">
           <label htmlFor="product-search" className="sr-only">Product Search</label>
           <div className="relative">
