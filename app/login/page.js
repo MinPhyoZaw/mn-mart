@@ -56,7 +56,7 @@ export default function LoginPage() {
           <div className="w-full max-w-sm">
 
             <h2 className="text-xl md:text-2xl font-bold text-center mb-8 text-gray-800 font-['Raleway']">
-              Welcome to MN Mart
+              Welcome to Manaw Mart
             </h2>
 
             {error && (

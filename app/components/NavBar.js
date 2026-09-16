@@ -146,7 +146,7 @@ trailer
   {/* Brand Text */}
   <div className="flex flex-col leading-tight">
     <h1 className={`${raleway.className} text-xl md:text-2xl font-black tracking-tight`}>
-  <span className="font-[family-name:var(--font-nunito)]  text-green-700">MN</span>
+  <span className="font-[family-name:var(--font-nunito)]  text-green-700">Manaw</span>
 
   <span className=" font-[family-name:var(--font-nunito)] text-red-600">Mart</span>
 </h1>

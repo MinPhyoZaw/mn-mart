@@ -61,7 +61,7 @@ export default function SplashScreen() {
           />
 
           <h1 className="font-[family-name:var(--font-nunito)] text-5xl font-extrabold">
-  <span className="text-emerald-600">MN</span>
+  <span className="text-emerald-600">Manaw</span>
   <span className="text-gray-300">-</span>
   <span className="text-rose-600">Mart</span>
 </h1>

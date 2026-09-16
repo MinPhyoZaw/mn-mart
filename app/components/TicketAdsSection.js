@@ -40,7 +40,7 @@ export default function TicketAdsSection() {
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-xl">
             <CheckCircle2 size={15} className="text-emerald-400" />
             <span className="text-xs font-semibold text-white">
-              MN-Mart Verified Transportation
+              Manaw-Mart Verified Transportation
             </span>
           </div>
 
@@ -71,7 +71,7 @@ export default function TicketAdsSection() {
             </div>
 
             <p className="max-w-xl text-sm leading-7 text-white/85 sm:text-base">
-              MN-Mart မှတစ်ဆင့် ယုံကြည်စိတ်ချရသော ကားလက်မှတ်များကို
+              Manaw-Mart မှတစ်ဆင့် ယုံကြည်စိတ်ချရသော ကားလက်မှတ်များကို
               လွယ်ကူမြန်ဆန်စွာ ရှာဖွေပြီး ကြိုတင်မှာယူနိုင်ပါသည်။
             </p>
 
