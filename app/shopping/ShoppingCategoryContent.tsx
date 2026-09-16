@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import ProductDetailsModal from "../components/ProductDetailsModal";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../lib/shoppingCategories";
@@ -33,7 +34,7 @@ type ProductsApiResponse = {
 
 function getCategoryLabel(category?: string) {
   if (!category || category === "guess-you-like") {
-    return "Guess you like";
+    return "All products";
   }
 
   const match = SHOPPING_PRODUCT_CATEGORIES.find(
@@ -46,8 +47,13 @@ function getCategoryLabel(category?: string) {
 export default function ShoppingCategoryContent() {
   const searchParams = useSearchParams();
 
+  // `guess-you-like` is retained as an alias for links created by the
+  // previous shopping page. An absent category is the canonical "All" URL.
+  const categoryParam = searchParams.get("category");
   const category =
-    searchParams.get("category") || "guess-you-like";
+    !categoryParam || categoryParam === "guess-you-like"
+      ? ""
+      : categoryParam;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,9 +67,10 @@ export default function ShoppingCategoryContent() {
       setLoading(true);
 
       try {
-        const endpoint = `/api/items/category?category=${encodeURIComponent(
-          category
-        )}&limit=18`;
+        const params = new URLSearchParams({ limit: "18" });
+        if (category) params.set("category", category);
+
+        const endpoint = `/api/items/category?${params.toString()}`;
 
         const res = await fetch(endpoint, {
           cache: "no-store",
@@ -136,13 +143,45 @@ export default function ShoppingCategoryContent() {
           </div>
         </div>
 
+        <nav
+          aria-label="Product categories"
+          className="mb-6 max-w-full overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <div className="flex w-max min-w-full gap-2 whitespace-nowrap">
+            <CategoryLink href="/shopping" active={!category}>
+              All
+            </CategoryLink>
+            {SHOPPING_PRODUCT_CATEGORIES.map((item) => (
+              <CategoryLink
+                key={item.value}
+                href={`/shopping?category=${encodeURIComponent(item.value)}`}
+                active={category === item.value}
+              >
+                {item.label}
+              </CategoryLink>
+            ))}
+          </div>
+        </nav>
+
         {loading ? (
           <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
             Loading products...
           </div>
         ) : products.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
-            No products available for this category yet.
+            <p>
+              {category
+                ? "No products found in this category."
+                : "No shopping products are available yet."}
+            </p>
+            {category ? (
+              <Link
+                href="/shopping"
+                className="mt-3 inline-flex rounded-lg bg-orange-500 px-4 py-2 font-medium text-white transition-colors hover:bg-orange-600"
+              >
+                View all products
+              </Link>
+            ) : null}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 sm:grid-cols-3 md:grid-cols-4 md:gap-x-3 md:gap-y-7 lg:grid-cols-6">
@@ -158,6 +197,30 @@ export default function ShoppingCategoryContent() {
         onClose={() => setSelectedProduct(null)}
       />
     </div>
+  );
+}
+
+function CategoryLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "border-orange-500 bg-orange-500 text-white"
+          : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }
 
