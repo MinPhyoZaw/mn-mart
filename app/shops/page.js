@@ -4,10 +4,7 @@ import ShoppingItemsPage from "../components/shops/ShoppingItemsPage";
 export default function ShopsPage() {
   return (
     <Suspense fallback={<ShopsPageLoading />}>
-      <ShoppingItemsPage
-        title="Shopping"
-        heroImage="/images/kachin62dfcc5.webp"
-      />
+      <ShoppingItemsPage />
     </Suspense>
   );
 }

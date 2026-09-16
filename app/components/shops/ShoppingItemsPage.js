@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import ShopsHero from "./ShopsHero";
 import ShoppingItemCard from "./ShoppingItemCard";
 import {
   getShoppingCategoryLabel,
@@ -12,7 +11,7 @@ import {
 
 const PAGE_SIZE = 24;
 
-export default function ShoppingItemsPage({ title, heroImage }) {
+export default function ShoppingItemsPage() {
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get("category")?.trim() || "";
   const [items, setItems] = useState([]);
@@ -123,28 +122,8 @@ export default function ShoppingItemsPage({ title, heroImage }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ShopsHero
-        title={title}
-        heroImage={heroImage}
-      />
-
-      <div className="mx-auto max-w-7xl px-4 py-10">
-        <section className="mb-8" aria-labelledby="shop-by-category-heading">
-          <div className="mb-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">
-              Browse products
-            </p>
-            <h2
-              id="shop-by-category-heading"
-              className="mt-1 text-2xl font-bold text-gray-900"
-            >
-              Shop by Category
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Choose a category to find products from MN-Mart shops.
-            </p>
-          </div>
-
+      <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
+        <section className="mb-8">
           <nav
             aria-label="Product categories"
             className="max-w-full overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -198,6 +177,7 @@ export default function ShoppingItemsPage({ title, heroImage }) {
             {selectedCategory ? (
               <Link
                 href="/shops"
+                scroll={false}
                 className="mt-4 inline-flex rounded-lg bg-orange-500 px-4 py-2 font-medium text-white transition-colors hover:bg-orange-600"
               >
                 View all products
@@ -240,6 +220,7 @@ function CategoryLink({ href, active, children }) {
   return (
     <Link
       href={href}
+      scroll={false}
       aria-current={active ? "page" : undefined}
       className={`rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
         active
