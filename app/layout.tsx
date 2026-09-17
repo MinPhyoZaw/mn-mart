@@ -9,6 +9,7 @@ import { CartProvider } from "./context/CartContext";
 import { Raleway, Inter, Outfit, Nunito } from "next/font/google";
 import InstallAppButton from "./components/InstallAppButton";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next"
 import SeptemberPromoBanner from './components/SeptemberPromoBanner';
 
 const nunito = Nunito({
@@ -110,6 +111,7 @@ export default function RootLayout({
           </NotificationsProvider>
         </AuthProvider>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
