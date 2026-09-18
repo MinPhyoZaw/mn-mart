@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
-import PaymentQrSelector from "../components/PaymentQrSelector";
+import PaymentQrCard from "../components/PaymentQrCard";
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
 import { RECEIPT_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supabase";
 
@@ -16,7 +16,7 @@ export default function CheckoutPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
-  const [paymentProvider, setPaymentProvider] = useState(DEFAULT_PAYMENT_PROVIDER);
+  const paymentProvider = DEFAULT_PAYMENT_PROVIDER;
   const [receiptImage, setReceiptImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
@@ -242,32 +242,30 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Payment */}
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                  2
+            <div className="grid gap-5 md:grid-cols-2 md:items-start">
+              {/* Payment */}
+              <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                    2
+                  </div>
+
+                  <div>
+                    <h2 className="font-semibold text-gray-900">
+                      Payment
+                    </h2>
+
+                    <p className="text-xs text-gray-500">
+                      Complete your payment with KBZPay.
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <h2 className="font-semibold text-gray-900">
-                    Payment
-                  </h2>
-
-                  <p className="text-xs text-gray-500">
-                    Choose a payment method and complete your payment.
-                  </p>
-                </div>
+                <PaymentQrCard amount={totalPrice} />
               </div>
 
-              <PaymentQrSelector
-                value={paymentProvider}
-                onChange={setPaymentProvider}
-              />
-            </div>
-
-            {/* Receipt upload */}
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+              {/* Receipt upload */}
+              <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
                   3
@@ -319,13 +317,13 @@ export default function CheckoutPage() {
               </label>
 
               {uploadingReceipt && (
-                <div className="mt-4 rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                <div role="status" className="mt-4 rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-700">
                   Uploading your receipt...
                 </div>
               )}
 
               {receiptImage && (
-                <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <div role="status" className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-sm text-white">
                     ✓
                   </div>
@@ -340,11 +338,12 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
 
             {/* Message */}
             {message && (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              <div role="status" aria-live="polite" className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
                 {message}
               </div>
             )}

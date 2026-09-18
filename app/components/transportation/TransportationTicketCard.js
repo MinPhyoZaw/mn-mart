@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import PaymentQrSelector from "../PaymentQrSelector";
+import PaymentQrCard from "../PaymentQrCard";
 import { DEFAULT_PAYMENT_PROVIDER } from "../../lib/paymentAccounts";
 import {
   RECEIPT_IMAGE_BUCKET,
@@ -201,16 +201,8 @@ export default function TransportationTicketCard({
                 {DEPOSIT_NOTICE}
               </p>
 
-              {/* QR Selector */}
-              <PaymentQrSelector
-                value={form.paymentProvider}
-                onChange={(paymentProvider) =>
-                  setForm({
-                    ...form,
-                    paymentProvider,
-                  })
-                }
-              />
+              {/* Payment QR */}
+              <PaymentQrCard />
 
               {/* Route Info */}
               <div className="mt-3 grid grid-cols-1 gap-2 rounded-lg border border-green-200 bg-white p-3">

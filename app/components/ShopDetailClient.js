@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import ProductDetailsModal from "./ProductDetailsModal";
-import PaymentQrSelector from "./PaymentQrSelector";
+import PaymentQrCard from "./PaymentQrCard";
 
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
 import { normalizeWholesaleTiers } from "../lib/pricing";
@@ -943,21 +943,7 @@ export default function ShopDetailClient({ shop, items }) {
                       : HOTEL_BOOKING_TEXT}
                   </div>
 
-                  <PaymentQrSelector
-                    value={
-                      bookingForm.paymentProvider
-                    }
-                    onChange={(
-                      paymentProvider
-                    ) =>
-                      setBookingForm(
-                        (prev) => ({
-                          ...prev,
-                          paymentProvider,
-                        })
-                      )
-                    }
-                  />
+                  <PaymentQrCard />
 
                   {/* RECEIPT */}
 
