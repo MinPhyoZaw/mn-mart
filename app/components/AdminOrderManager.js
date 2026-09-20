@@ -17,6 +17,100 @@ function InfoBox({ label, value }) {
     </div>
   );
 }
+
+function getStoredNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function formatMoney(value) {
+  const amount = getStoredNumber(value);
+  return amount === null ? "-" : `${amount.toLocaleString()} MMK`;
+}
+
+function OrderItems({ items }) {
+  const orderItems = Array.isArray(items) ? items : [];
+
+  return (
+    <section className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-900">Order Items</p>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Products to pick up from this shop
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+          {orderItems.length} {orderItems.length === 1 ? "item" : "items"}
+        </span>
+      </div>
+
+      {orderItems.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-gray-200 bg-white px-3 py-4 text-sm text-gray-500">
+          No item details are available for this order.
+        </p>
+      ) : (
+        <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-100 bg-white">
+          {orderItems.map((item, index) => {
+            const quantity = getStoredNumber(item?.quantity);
+            const unitPrice = getStoredNumber(item?.price);
+            const storedLineTotal = getStoredNumber(item?.lineTotal);
+            const hasQuantity = quantity !== null;
+            const hasUnitPrice = unitPrice !== null;
+            const lineTotal = storedLineTotal !== null
+              ? storedLineTotal
+              : hasQuantity && hasUnitPrice
+                ? unitPrice * quantity
+                : null;
+
+            return (
+              <div
+                key={`${item?.itemId || "legacy-item"}-${index}`}
+                className="flex min-w-0 items-start gap-3 p-3"
+              >
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 sm:h-16 sm:w-16">
+                  {item?.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.name || "Ordered product"}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center px-1 text-center text-[10px] leading-tight text-gray-400">
+                      No image
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm font-semibold leading-5 text-gray-900">
+                    {item?.name || "Item name unavailable"}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-blue-700">
+                    Qty: {hasQuantity ? quantity.toLocaleString() : "-"}
+                  </p>
+                  <div className="mt-1 flex flex-col gap-0.5 text-xs text-gray-600 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
+                    <span>
+                      {formatMoney(item?.price)} × {hasQuantity ? quantity.toLocaleString() : "-"}
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {formatMoney(lineTotal)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function AdminOrderManager() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,8 +233,6 @@ export default function AdminOrderManager() {
 
           const isPending = order.orderStatus === "pending";
           const isConfirmed = order.orderStatus === "confirmed";
-          const isRejected = order.orderStatus === "rejected";
-
           return (
             <article
               key={order._id}
@@ -231,6 +323,10 @@ export default function AdminOrderManager() {
                         </p>
                       </div>
                     )}
+
+                  {order.serviceType === "shopping" && (
+                    <OrderItems items={order.items} />
+                  )}
 
                   {/* SPA */}
                   {order.serviceType === "spa" && (
