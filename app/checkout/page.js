@@ -231,6 +231,21 @@ export default function CheckoutPage() {
 
                 <div className="sm:col-span-2">
                   <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Delivery Address
+                  </label>
+
+                  <textarea
+                    required
+                    rows={3}
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    placeholder="အိမ်အမှတ် ၊ လမ်းအမည် အနီးဆုံးအမှတ်အသား"
+                    className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
                     Ward / ရပ်ကွက်
                   </label>
 
@@ -271,20 +286,7 @@ export default function CheckoutPage() {
                   </p>
                 </div>
 
-                <div className="sm:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Delivery Address
-                  </label>
-
-                  <textarea
-                    required
-                    rows={3}
-                    value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
-                    placeholder="Street, ward, township, nearby landmark..."
-                    className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                  />
-                </div>
+                
               </div>
             </div>
 
