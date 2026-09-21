@@ -8,6 +8,7 @@ import Item from "../../models/Item";
 import Order from "../../models/Order";
 import { getShoppingCommissionRate } from "../../lib/shoppingCommission";
 import { getWholesalePrice, normalizeWholesaleTiers } from "../../lib/pricing";
+import { WARDS } from "../../lib/wards";
 
 const DEFAULT_COMMISSION_RATE = 1.5;
 
@@ -21,7 +22,7 @@ export async function POST(req) {
     if (!auth.ok) return auth.response;
 
     const body = await req.json();
-    const { cartItems, customerName, customerPhone, customerAddress, paymentProvider, receiptImage, checkoutKey } = body;
+    const { cartItems, customerName, customerPhone, customerAddress, ward, paymentProvider, receiptImage, checkoutKey } = body;
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ success: false, message: "Cart is empty." }, { status: 400 });
@@ -30,6 +31,15 @@ export async function POST(req) {
     if (!customerName || !customerPhone || !customerAddress || !paymentProvider || !receiptImage) {
       return NextResponse.json({ success: false, message: "Missing required checkout fields." }, { status: 400 });
     }
+
+    if (typeof ward !== "string" || !WARDS.includes(ward.trim())) {
+      return NextResponse.json(
+        { success: false, message: "Please select a valid ward." },
+        { status: 400 }
+      );
+    }
+
+    const selectedWard = ward.trim();
 
     if (typeof checkoutKey !== "string" || checkoutKey.length < 16 || checkoutKey.length > 200) {
       return NextResponse.json({ success: false, message: "A valid checkout key is required." }, { status: 400 });
@@ -150,6 +160,7 @@ export async function POST(req) {
           customerName,
           customerPhone,
           customerAddress,
+          ward: selectedWard,
           serviceType: shop.category,
           items: normalizedItems,
           receiptImage,

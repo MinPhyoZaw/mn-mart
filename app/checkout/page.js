@@ -7,6 +7,8 @@ import { useCart } from "../context/CartContext";
 import PaymentQrCard from "../components/PaymentQrCard";
 import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
 import { RECEIPT_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supabase";
+import { WARDS } from "../lib/wards";
+import { Truck } from "lucide-react";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -16,6 +18,7 @@ export default function CheckoutPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
   const paymentProvider = DEFAULT_PAYMENT_PROVIDER;
   const [receiptImage, setReceiptImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -116,6 +119,7 @@ export default function CheckoutPage() {
           customerName,
           customerPhone,
           customerAddress,
+          ward: selectedWard,
           paymentProvider,
           receiptImage,
           checkoutKey,
@@ -223,6 +227,48 @@ export default function CheckoutPage() {
                     placeholder="09xxxxxxxxx"
                     className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                   />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Ward / ရပ်ကွက်
+                  </label>
+
+                  <select
+                    required
+                    value={selectedWard}
+                    onChange={(e) => setSelectedWard(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm leading-6 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                  >
+                    <option value="" disabled>
+                      ရပ်ကွက်ရွေးချယ်ပါ
+                    </option>
+                    {WARDS.map((ward) => (
+                      <option key={ward} value={ward}>
+                        {ward}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-900">
+                    <Truck className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    <span>ပို့ဆောင်ခ</span>
+                  </div>
+                  <div className="mt-3 grid gap-1.5 text-sm text-emerald-950 sm:grid-cols-2 sm:gap-4">
+                    <p className="flex justify-between gap-3 sm:block">
+                      <span>မြို့တွင်း ပို့ခ</span>{" "}
+                      <strong className="whitespace-nowrap sm:ml-2">2,000 ကျပ်</strong>
+                    </p>
+                    <p className="flex justify-between gap-3 sm:block">
+                      <span>မြို့ပြင် ပို့ခ</span>{" "}
+                      <strong className="whitespace-nowrap sm:ml-2">3,000 ကျပ်</strong>
+                    </p>
+                  </div>
+                  <p className="mt-3 rounded-xl bg-white/80 px-3 py-2 text-sm font-semibold text-emerald-700">
+                    ✨ Promotion ကာလအတွင်းသာ။
+                  </p>
                 </div>
 
                 <div className="sm:col-span-2">
