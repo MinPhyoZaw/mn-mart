@@ -47,6 +47,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    ward: {
+      type: String,
+      trim: true,
+    },
+
     bookingDetails: {
       guestCount: {
         type: Number,

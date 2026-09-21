@@ -27,6 +27,7 @@ export async function GET(req) {
           "customerName",
           "customerPhone",
           "customerAddress",
+          "ward",
 
           "vendorId",
           "shopId",

@@ -300,6 +300,11 @@ export default function AdminOrderManager() {
                     />
 
                     <InfoBox
+                      label="Ward / ရပ်ကွက်"
+                      value={order.ward || "—"}
+                    />
+
+                    <InfoBox
                       label="Vendor"
                       value={order.vendorId?.vendorName || "Unknown"}
                     />
