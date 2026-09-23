@@ -21,6 +21,7 @@ const INITIAL_FORM = {
   price: "",
   quantity: "",
   category: "",
+  shopCategoryId: "",
   tagName: "NewArrival",
   roomType: "",
   amenities: {
@@ -92,6 +93,23 @@ export default function AddItemForm({
   const [submitting, setSubmitting] = useState(false);
   const [creatingRoute, setCreatingRoute] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [shopCategories, setShopCategories] = useState([]);
+
+  useEffect(() => {
+    if (serviceType !== "shopping" || !shop?._id) return;
+    const loadCategories = async () => {
+      try {
+        const res = await fetch("/api/vendor/categories", { cache: "no-store" });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setShopCategories((data.data || []).filter((category) => category.isActive));
+        }
+      } catch {
+        setMessage?.("Unable to load shop categories");
+      }
+    };
+    void loadCategories();
+  }, [serviceType, shop?._id, setMessage]);
 
   useEffect(() => {
     if (serviceType !== "transportation") return;
@@ -330,6 +348,24 @@ export default function AddItemForm({
             ))}
           </select>
 
+          <div>
+            <label htmlFor="shop-category" className="mb-1 block text-sm font-medium text-gray-700">
+              Shop category (optional)
+            </label>
+            <select
+              id="shop-category"
+              name="shopCategoryId"
+              value={form.shopCategoryId}
+              onChange={(e) => setForm((p) => ({ ...p, shopCategoryId: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2"
+            >
+              <option value="">No Category</option>
+              {shopCategories.map((category) => (
+                <option key={category._id} value={category._id}>{category.name}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="rounded-lg border border-green-200 bg-green-50/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-green-800">လက်ကားဈေး</h3>
@@ -506,7 +542,7 @@ export default function AddItemForm({
         }
       </>
     );
-  }, [serviceType, form, routes]);
+  }, [serviceType, form, routes, shopCategories]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -575,6 +611,7 @@ export default function AddItemForm({
       image: form.image,
       type: TYPE_MAP[serviceType] || "service",
       category: serviceType === "shopping" ? form.category : undefined,
+      shopCategoryId: serviceType === "shopping" ? form.shopCategoryId || null : undefined,
       tagName: serviceType === "shopping" ? form.tagName : undefined,
       extra: {},
       isAvailable: true,

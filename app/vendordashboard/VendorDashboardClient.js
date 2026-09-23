@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Package, Plus, CheckCircle } from "lucide-react";
+import { Package, Plus, CheckCircle, Tags } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +10,7 @@ const OrdersPanel = dynamic(() => import("../components/vendor/OrdersPanel"), { 
 const CheckoutSummary = dynamic(() => import("../components/vendor/CheckoutSummary"), { ssr: false });
 const RoomsList = dynamic(() => import("../components/vendor/RoomsList"), { ssr: false });
 const ManageProducts = dynamic(() => import("../components/vendor/ManageProducts"), { ssr: false });
+const ManageCategories = dynamic(() => import("../components/vendor/ManageCategories"), { ssr: false });
 
 export default function VendorDashboardClient() {
   const router = useRouter();
@@ -149,6 +150,21 @@ export default function VendorDashboardClient() {
 
               <button
                 type="button"
+                onClick={() => setShoppingPanel("manageCategories")}
+                className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  shoppingPanel === "manageCategories" ? "border-violet-500 bg-violet-50" : "border-gray-200 bg-white"
+                }`}
+                aria-pressed={shoppingPanel === "manageCategories"}
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+                  <Tags aria-hidden="true" className="h-8 w-8" />
+                </span>
+                <span className="mt-4 block text-xl font-semibold text-gray-900">Manage Categories</span>
+                <span className="mt-1 block text-sm text-gray-500">Organize products within your shop.</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShoppingPanel("addProduct")}
                 className={`rounded-2xl border p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                   shoppingPanel === "addProduct" ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white"
@@ -188,6 +204,10 @@ export default function VendorDashboardClient() {
 
             {shoppingPanel === "manageProducts" ? (
               <ManageProducts shop={shop} serviceType={serviceType} setMessage={setMessage} onUpdated={handleCreated} />
+            ) : null}
+
+            {shoppingPanel === "manageCategories" ? (
+              <ManageCategories shop={shop} setMessage={setMessage} />
             ) : null}
           </>
         ) : (

@@ -11,6 +11,12 @@ const itemSchema = new mongoose.Schema(
       index: true,
     },
 
+    shopCategoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ShopCategory",
+      default: null,
+    },
+
     name: {
       type: String,
       required: true,
@@ -132,6 +138,13 @@ const itemSchema = new mongoose.Schema(
  */
 itemSchema.index({
   shopId: 1,
+  createdAt: -1,
+});
+
+/* Shop detail pages filtered by a vendor-defined category. */
+itemSchema.index({
+  shopId: 1,
+  shopCategoryId: 1,
   createdAt: -1,
 });
 

@@ -22,6 +22,7 @@ export default function ManageProducts({
 
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [shopCategories, setShopCategories] = useState([]);
 
   const loadItems = async (targetPage = 1) => {
     if (!shop?._id) return;
@@ -69,6 +70,20 @@ export default function ManageProducts({
     setPage(1);
     void loadItems(1);
   }, [shop?._id]);
+
+  useEffect(() => {
+    if (serviceType !== "shopping" || !shop?._id) return;
+    const loadCategories = async () => {
+      try {
+        const res = await fetch("/api/vendor/categories", { cache: "no-store" });
+        const data = await res.json();
+        if (res.ok && data.success) setShopCategories(data.data || []);
+      } catch {
+        setMessage?.("Unable to load shop categories");
+      }
+    };
+    void loadCategories();
+  }, [serviceType, shop?._id, setMessage]);
 
   const handleDelete = async (id) => {
     if (
@@ -214,6 +229,7 @@ export default function ManageProducts({
           editing.category,
         tagName:
           editing.tagName,
+        shopCategoryId: editing.shopCategoryId || null,
         isAvailable:
           Boolean(
             editing.isAvailable
@@ -538,6 +554,28 @@ export default function ManageProducts({
                   }
                   className="mb-2 w-full rounded border px-3 py-2"
                 />
+
+                <label className="mb-1 block text-sm text-gray-700" htmlFor="edit-shop-category">
+                  Shop category (optional)
+                </label>
+                <select
+                  id="edit-shop-category"
+                  value={editing.shopCategoryId || ""}
+                  onChange={(e) => setEditing((previous) => ({
+                    ...previous,
+                    shopCategoryId: e.target.value,
+                  }))}
+                  className="mb-2 w-full rounded border px-3 py-2"
+                >
+                  <option value="">No Category</option>
+                  {shopCategories
+                    .filter((category) => category.isActive || String(category._id) === String(editing.shopCategoryId))
+                    .map((category) => (
+                      <option key={category._id} value={category._id}>
+                        {category.name}{category.isActive ? "" : " (disabled)"}
+                      </option>
+                    ))}
+                </select>
 
                 <input
                   value={

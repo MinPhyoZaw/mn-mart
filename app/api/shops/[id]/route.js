@@ -5,6 +5,7 @@ import connectDB from "../../../lib/mongodb";
 import Shop from "../../../models/Shop";
 import Item from "../../../models/Item";
 import Vendor from "../../../models/Vendor";
+import ShopCategory from "../../../models/ShopCategory";
 import { requireAuth } from "../../../lib/routeAuth";
 
 const DEFAULT_ITEM_LIMIT = 20;
@@ -34,6 +35,7 @@ export async function GET(req, { params }) {
     }
 
     const { searchParams } = new URL(req.url);
+    const categorySlug = searchParams.get("category");
 
     const rawPage = Number.parseInt(
       searchParams.get("page") || "1",
@@ -95,22 +97,40 @@ export async function GET(req, { params }) {
       );
     }
 
-    /*
-     * Load vendor + bounded shop items.
-     */
+    const categories = shop.category === "shopping"
+      ? await ShopCategory.find({ shopId: id, isActive: true })
+          .select("_id name slug sortOrder")
+          .sort({ sortOrder: 1, name: 1, _id: 1 })
+          .limit(30)
+          .lean()
+      : [];
+
+    const selectedCategory = categorySlug
+      ? categories.find((category) => category.slug === categorySlug)
+      : null;
+    if (categorySlug && !selectedCategory) {
+      return NextResponse.json(
+        { success: false, message: "Category not found" },
+        { status: 404 }
+      );
+    }
+
+    const itemFilter = { shopId: id };
+    if (selectedCategory) itemFilter.shopCategoryId = selectedCategory._id;
+
+    /* Load vendor + one bounded, database-filtered item page. */
     const [vendor, items, totalItems] =
       await Promise.all([
         Vendor.findById(shop.vendorId)
           .select("_id vendorName")
           .lean(),
 
-        Item.find({
-  shopId: id,
-})
+        Item.find(itemFilter)
   .select(
     [
       "_id",
       "shopId",
+      "shopCategoryId",
       "name",
       "price",
       "wholesaleTiers",
@@ -132,9 +152,7 @@ export async function GET(req, { params }) {
   .limit(limit)
   .lean(),
 
-        Item.countDocuments({
-          shopId: id,
-        }),
+        Item.countDocuments(itemFilter),
       ]);
 
     const totalPages =
@@ -164,6 +182,7 @@ export async function GET(req, { params }) {
            * continue working.
            */
           items,
+          categories,
 
           pagination: {
             page,

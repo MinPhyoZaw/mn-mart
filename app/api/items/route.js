@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import connectDB from "../../lib/mongodb";
 import Item from "../../models/Item";
 import Shop from "../../models/Shop";
-import Vendor from "../../models/Vendor";
+import ShopCategory from "../../models/ShopCategory";
 import { requireVendorAuth } from "../../lib/routeAuth";
 import { isValidShoppingCategory } from "../../lib/shoppingCategories";
 import { normalizeDescription } from "../../lib/productDisplay";
@@ -83,16 +83,31 @@ export async function POST(req) {
 
     await connectDB();
 
-    if (auth.user.role === "vendor") {
-      const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
-      if (!vendor) {
-        return NextResponse.json({ success: false, message: "Vendor profile not found" }, { status: 404 });
-      }
+    const targetShop = await Shop.findById(body.shopId).select("_id vendorId").lean();
+    if (!targetShop) {
+      return NextResponse.json({ success: false, message: "Shop not found" }, { status: 404 });
+    }
 
-      const ownShop = await Shop.findOne({ _id: body.shopId, vendorId: vendor._id }).lean();
-      if (!ownShop) {
+    if (auth.user.role === "vendor") {
+      if (String(targetShop.vendorId) !== String(auth.vendor._id)) {
         return NextResponse.json({ success: false, message: "You can only create services for your own shop" }, { status: 403 });
       }
+    }
+
+    let shopCategoryId = null;
+    if (body.type === "product" && body.shopCategoryId) {
+      if (!mongoose.Types.ObjectId.isValid(body.shopCategoryId)) {
+        return NextResponse.json({ success: false, message: "Invalid shop category" }, { status: 400 });
+      }
+      const category = await ShopCategory.findOne({
+        _id: body.shopCategoryId,
+        shopId: targetShop._id,
+        isActive: true,
+      }).select("_id").lean();
+      if (!category) {
+        return NextResponse.json({ success: false, message: "Active shop category not found" }, { status: 400 });
+      }
+      shopCategoryId = category._id;
     }
 
     const description = body.type === "product" ? normalizeDescription(body.description) : body.description;
@@ -100,6 +115,7 @@ export async function POST(req) {
 
     const createdItem = await Item.create({
       shopId: body.shopId,
+      shopCategoryId,
       name: body.name,
       price: body.price,
       description,
@@ -288,6 +304,7 @@ export async function GET(req) {
           [
             "_id",
             "shopId",
+            "shopCategoryId",
             "name",
             "price",
             "wholesaleTiers",
