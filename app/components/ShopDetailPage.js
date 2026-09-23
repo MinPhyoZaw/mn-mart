@@ -27,5 +27,12 @@ export default async function ShopDetailPage({ params }) {
     throw new Error("Shop not found");
   }
 
-  return <ShopDetailClient shop={data.shop} items={data.items || []} />;
+  return (
+    <ShopDetailClient
+      shop={data.shop}
+      items={data.items || []}
+      categories={data.categories || []}
+      pagination={data.pagination || null}
+    />
+  );
 }

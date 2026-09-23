@@ -29,7 +29,17 @@ const HOTEL_BOOKING_TEXT =
 const SPA_BOOKING_TEXT =
   "Spa Service booking တင်ရန်အတွက် ကျသင့်ငွေမှ 3000MMK (၃ထောင်ကျပ်)အား စရံငွေအနေဖြင့် အောက်တွင်ဖော်ပြထားသော အကောင့်ထဲသို ထည့်ပေးပါခင်ဗျာ။";
 
-export default function ShopDetailClient({ shop, items }) {
+export default function ShopDetailClient({
+  shop,
+  items: initialItems,
+  categories = [],
+  pagination: initialPagination = null,
+}) {
+  const [items, setItems] = useState(initialItems);
+  const [pagination, setPagination] = useState(initialPagination);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemsError, setItemsError] = useState("");
   const [activeBookingItemId, setActiveBookingItemId] =
     useState(null);
 
@@ -63,6 +73,30 @@ export default function ShopDetailClient({ shop, items }) {
   const isHotel = shop?.category === "hotel";
   const isSpa = shop?.category === "spa";
   const isShopping = shop?.category === "shopping";
+
+  const loadItemPage = async (categorySlug, page) => {
+    setItemsLoading(true);
+    setItemsError("");
+    try {
+      const query = new URLSearchParams({ page: String(page), limit: "20" });
+      if (categorySlug) query.set("category", categorySlug);
+      const res = await fetch(`/api/shops/${shop._id}?${query}`, { cache: "no-store" });
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result?.message || "Unable to load products");
+      setItems(result.data?.items || []);
+      setPagination(result.data?.pagination || null);
+    } catch (error) {
+      setItemsError(error.message || "Unable to load products");
+    } finally {
+      setItemsLoading(false);
+    }
+  };
+
+  const chooseCategory = (slug) => {
+    if (itemsLoading || slug === selectedCategory) return;
+    setSelectedCategory(slug);
+    void loadItemPage(slug, 1);
+  };
 
   const visibleItems = isHotel
     ? items.filter((item) => item.isAvailable !== false)
@@ -442,6 +476,33 @@ export default function ShopDetailClient({ shop, items }) {
         ========================== */}
 
         <section>
+          {isShopping && categories.length > 0 ? (
+            <nav aria-label="Product categories" className="mt-6 overflow-x-auto pb-1">
+              <div className="flex min-w-max gap-2">
+                {[{ _id: "all", name: "All", slug: "" }, ...categories].map((category) => {
+                  const active = selectedCategory === category.slug;
+                  return (
+                    <button
+                      key={category._id}
+                      type="button"
+                      onClick={() => chooseCategory(category.slug)}
+                      aria-pressed={active}
+                      disabled={itemsLoading}
+                      className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${
+                        active
+                          ? "border-orange-500 bg-orange-500 text-white"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-600"
+                      } disabled:opacity-60`}
+                    >
+                      {category.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
+          ) : null}
+
+          {itemsError ? <p role="alert" className="mt-4 text-sm text-red-600">{itemsError}</p> : null}
           {visibleItems.length === 0 ? (
             <div className="mt-8 rounded-2xl border border-dashed border-gray-200 bg-white px-5 py-10 text-center">
               <p className="text-sm font-medium text-gray-600">
@@ -674,6 +735,23 @@ export default function ShopDetailClient({ shop, items }) {
               })}
             </div>
           )}
+          {pagination?.totalPages > 1 ? (
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                disabled={itemsLoading || !pagination.hasPreviousPage}
+                onClick={() => loadItemPage(selectedCategory, pagination.page - 1)}
+                className="rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-40"
+              >Previous</button>
+              <span className="text-sm text-gray-600">Page {pagination.page} of {pagination.totalPages}</span>
+              <button
+                type="button"
+                disabled={itemsLoading || !pagination.hasNextPage}
+                onClick={() => loadItemPage(selectedCategory, pagination.page + 1)}
+                className="rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-40"
+              >Next</button>
+            </div>
+          ) : null}
         </section>
 
         {/* =========================

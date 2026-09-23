@@ -3,6 +3,7 @@ import connectDB from "../../../lib/mongodb";
 import Item from "../../../models/Item";
 import Shop from "../../../models/Shop";
 import Vendor from "../../../models/Vendor";
+import ShopCategory from "../../../models/ShopCategory";
 // import Vendor from "../../../../models/Vendor";
 import { requireVendorAuth } from "../../../lib/routeAuth";
 import mongoose from "mongoose";
@@ -12,7 +13,7 @@ export async function PATCH(req, { params }) {
     const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
-    const { id } = params;
+    const { id } = await params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ success: false, message: "Invalid item id" }, { status: 400 });
     }
@@ -54,7 +55,7 @@ export async function PUT(req, { params }) {
     const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
-    const { id } = params;
+    const { id } = await params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ success: false, message: "Invalid item id" }, { status: 400 });
     }
@@ -70,9 +71,7 @@ export async function PUT(req, { params }) {
     if (!shop) return NextResponse.json({ success: false, message: "Shop not found" }, { status: 404 });
 
     if (auth.user.role === "vendor") {
-      const vendor = await Vendor.findOne({ userId: auth.user.userId }).lean();
-      if (!vendor) return NextResponse.json({ success: false, message: "Vendor profile not found" }, { status: 404 });
-      if (String(shop.vendorId) !== String(vendor._id)) {
+      if (String(shop.vendorId) !== String(auth.vendor._id)) {
         return NextResponse.json({ success: false, message: "Not authorized to update this item" }, { status: 403 });
       }
     }
@@ -94,6 +93,31 @@ export async function PUT(req, { params }) {
       if (body[key] !== undefined) update[key] = body[key];
     }
 
+    if (body.shopCategoryId !== undefined) {
+      if (item.type !== "product" && body.shopCategoryId) {
+        return NextResponse.json({ success: false, message: "Shop categories only apply to products" }, { status: 400 });
+      }
+      if (body.shopCategoryId === null || body.shopCategoryId === "") {
+        update.shopCategoryId = null;
+      } else {
+        if (!mongoose.Types.ObjectId.isValid(body.shopCategoryId)) {
+          return NextResponse.json({ success: false, message: "Invalid shop category" }, { status: 400 });
+        }
+        const categoryFilter = {
+          _id: body.shopCategoryId,
+          shopId: item.shopId,
+        };
+        if (String(item.shopCategoryId || "") !== String(body.shopCategoryId)) {
+          categoryFilter.isActive = true;
+        }
+        const category = await ShopCategory.findOne(categoryFilter).select("_id").lean();
+        if (!category) {
+          return NextResponse.json({ success: false, message: "Active shop category not found" }, { status: 400 });
+        }
+        update.shopCategoryId = category._id;
+      }
+    }
+
     await Item.updateOne({ _id: id }, { $set: update });
     const updated = await Item.findById(id).lean();
 
@@ -109,7 +133,7 @@ export async function DELETE(req, { params }) {
     const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
-    const { id } = params;
+    const { id } = await params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ success: false, message: "Invalid item id" }, { status: 400 });
     }
