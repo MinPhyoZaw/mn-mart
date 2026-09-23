@@ -23,6 +23,9 @@ export default function VendorDashboardClient() {
   const [roomsRefreshToken, setRoomsRefreshToken] = useState(0);
   const [shoppingPanel, setShoppingPanel] = useState(null);
   const [vendorPanel, setVendorPanel] = useState(null);
+  const [shopName, setShopName] = useState("");
+  const [shopNameStatus, setShopNameStatus] = useState({ type: "", message: "" });
+  const [isUpdatingShopName, setIsUpdatingShopName] = useState(false);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -49,6 +52,7 @@ export default function VendorDashboardClient() {
         if (vendorData.success) {
           setVendor(vendorData.data.vendor);
           setShop(vendorData.data.shop);
+          setShopName(vendorData.data.shop.name || "");
         } else {
           setMessage(vendorData.message || "Unable to load vendor dashboard");
         }
@@ -63,7 +67,7 @@ export default function VendorDashboardClient() {
     };
 
     fetchVendor();
-  }, []);
+  }, [router]);
 
   const serviceType = vendor?.serviceType || shop?.category || "";
   const isShoppingDashboard = serviceType === "shopping";
@@ -108,6 +112,40 @@ export default function VendorDashboardClient() {
     await refreshData();
   };
 
+  const handleShopNameUpdate = async (event) => {
+    event.preventDefault();
+    if (isUpdatingShopName) return;
+
+    setIsUpdatingShopName(true);
+    setShopNameStatus({ type: "", message: "" });
+
+    try {
+      const response = await fetch("/api/vendor/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: shopName }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setShopNameStatus({ type: "error", message: data.message || "Unable to update shop name." });
+        return;
+      }
+
+      const updatedShop = data.data.shop;
+      setShop(updatedShop);
+      setShopName(updatedShop.name);
+      setShopNameStatus({
+        type: "success",
+        message: data.unchanged ? "Shop name is already up to date." : "Shop name updated successfully.",
+      });
+    } catch {
+      setShopNameStatus({ type: "error", message: "Unable to update shop name. Please try again." });
+    } finally {
+      setIsUpdatingShopName(false);
+    }
+  };
+
   if (loading) return <div className="p-8">Loading vendor dashboard...</div>;
 
   if (!shop || !vendor) {
@@ -123,6 +161,41 @@ export default function VendorDashboardClient() {
       <CheckoutSummary vendor={vendor} shop={shop} checkoutSummary={checkoutSummary} serviceType={serviceType} />
 
       <div className="max-w-3xl mx-auto p-6">
+        <form onSubmit={handleShopNameUpdate} className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <label htmlFor="shop-name" className="block text-sm font-semibold text-gray-900">
+            Shop Name
+          </label>
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+            <input
+              id="shop-name"
+              type="text"
+              value={shopName}
+              onChange={(event) => setShopName(event.target.value)}
+              maxLength={100}
+              required
+              aria-describedby={shopNameStatus.message ? "shop-name-status" : undefined}
+              disabled={isUpdatingShopName}
+              className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100"
+            />
+            <button
+              type="submit"
+              disabled={isUpdatingShopName}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isUpdatingShopName ? "Updating..." : "Update Shop Name"}
+            </button>
+          </div>
+          {shopNameStatus.message ? (
+            <p
+              id="shop-name-status"
+              role="status"
+              className={`mt-3 text-sm ${shopNameStatus.type === "success" ? "text-green-700" : "text-red-600"}`}
+            >
+              {shopNameStatus.message}
+            </p>
+          ) : null}
+        </form>
+
         {message && (
           <div className="mb-4 flex items-start gap-3 rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
             <CheckCircle className="h-6 w-6 text-green-600 flex-none" />
