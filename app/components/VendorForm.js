@@ -76,6 +76,12 @@ const handleImageChange = async (e) => {
     return;
   }
 
+  if (file.size > 10 * 1024 * 1024) {
+    setMessage("Image source size must be 10 MB or less.");
+    e.target.value = "";
+    return;
+  }
+
   setMessage("");
   setIsUploadingImage(true);
 
@@ -557,6 +563,11 @@ const handleImageChange = async (e) => {
                     source size 10 MB
                   </p>
 
+                  <p className="mt-1 text-xs text-gray-500">
+                    Recommended banner size: 1200 ×
+                    400 px (3:1)
+                  </p>
+
                   <input
                     type="file"
                     accept="image/*"
@@ -579,7 +590,7 @@ const handleImageChange = async (e) => {
 
                 {imagePreview && (
                   <div className="mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 p-2">
-                    <div className="relative h-52 w-full overflow-hidden rounded-xl">
+                    <div className="relative aspect-[3/1] w-full overflow-hidden rounded-xl">
                       <Image
                         src={imagePreview}
                         alt="Shop preview"

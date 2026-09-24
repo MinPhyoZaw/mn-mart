@@ -401,14 +401,14 @@ export default function ShopDetailClient({
         ========================== */}
 
         <section>
-          <div className="relative h-44 w-full overflow-hidden rounded-2xl bg-gray-100 sm:h-56 md:h-72">
+          <div className="relative aspect-[3/1] w-full overflow-hidden rounded-2xl bg-gray-100">
             {shop?.image ? (
               <Image
                 src={shop.image}
                 alt={shop.name || "Shop"}
                 fill
                 priority
-                sizes="(max-width: 768px) 94vw, 1280px"
+                sizes="(max-width: 639px) 94vw, (max-width: 1391px) 92vw, 1280px"
                 className="object-cover"
               />
             ) : (
