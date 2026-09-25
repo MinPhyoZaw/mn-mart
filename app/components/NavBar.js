@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationsContext";
 import { useCart } from "../context/CartContext";
 import SearchBar from "./SearchBar";
+import PushNotificationOptIn from "./PushNotificationOptIn";
 
 import { Raleway } from "next/font/google";
 
@@ -560,6 +561,8 @@ trailer
 
                 
               </div>
+
+              <PushNotificationOptIn />
 
               <button
                 onClick={handleLogout}
