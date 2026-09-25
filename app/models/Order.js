@@ -317,11 +317,12 @@ orderSchema.index({
 });
 
 /*
- * Vendor pending unread notifications:
+ * Vendor actionable unread notifications:
  *
  * Order.find({
  *   vendorId,
- *   orderStatus: "pending",
+ *   orderStatus: "confirmed",
+ *   vendorStatus: "new",
  *   vendorNotificationRead: { $ne: true }
  * })
  * .sort({ createdAt: -1 })
