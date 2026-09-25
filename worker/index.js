@@ -45,8 +45,12 @@ self.addEventListener("notificationclick", (event) => {
   const destination = new URL(path, self.location.origin).href;
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      const existingClient = clients.find((client) => {
+    (async () => {
+      const windowClients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const existingClient = windowClients.find((client) => {
         try {
           return new URL(client.url).origin === self.location.origin;
         } catch {
@@ -55,13 +59,21 @@ self.addEventListener("notificationclick", (event) => {
       });
 
       if (existingClient) {
-        return existingClient
-          .navigate(destination)
-          .then(() => existingClient.focus())
-          .catch(() => self.clients.openWindow(destination));
+        try {
+          await existingClient.focus();
+
+          if (existingClient.url !== destination) {
+            const navigatedClient = await existingClient.navigate(destination);
+            await navigatedClient?.focus();
+          }
+
+          return;
+        } catch {
+          // Fall back to opening the target when a stale client cannot be used.
+        }
       }
 
-      return self.clients.openWindow(destination);
-    })
+      await self.clients.openWindow(destination);
+    })()
   );
 });
