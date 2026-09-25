@@ -101,6 +101,27 @@ const toNotification = (order) => {
     };
   }
 
+  if (
+    order.orderStatus === "confirmed" &&
+    order.vendorStatus === "accepted"
+  ) {
+    return {
+      type: "confirmed",
+      text: "Your order has been accepted by the vendor.",
+      thankYouMessage: "Thank you for using MN Mart.",
+    };
+  }
+
+  if (
+    order.orderStatus === "confirmed" &&
+    order.vendorStatus === "rejected"
+  ) {
+    return {
+      type: "rejected",
+      text: "Your order was rejected by the vendor.",
+    };
+  }
+
   if (order.orderStatus === "confirmed") {
     return {
       type: "confirmed",
@@ -228,7 +249,9 @@ export async function GET(req) {
       orders = await Order.find({
         vendorId: vendor._id,
 
-        orderStatus: "pending",
+        orderStatus: "confirmed",
+
+        vendorStatus: "new",
 
         vendorNotificationRead: {
           $ne: true,

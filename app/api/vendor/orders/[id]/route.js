@@ -14,6 +14,10 @@ export async function PATCH(req, { params }) {
     const { id } = params;
     const { action } = await req.json();
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ success: false, message: "Invalid order ID" }, { status: 400 });
+    }
+
     if (!["accepted", "rejected"].includes(action)) {
       return NextResponse.json({ success: false, message: "Invalid action" }, { status: 400 });
     }
@@ -56,12 +60,14 @@ export async function PATCH(req, { params }) {
               _id: id,
               vendorId: vendor._id,
               orderStatus: "confirmed",
+              vendorStatus: "new",
               settlementStatus: { $ne: "settled" },
             },
             {
               $set: {
                 vendorStatus: "accepted",
                 settlementStatus: "settled",
+                customerNotificationRead: false,
               },
             },
             { new: true, session }
@@ -90,18 +96,34 @@ export async function PATCH(req, { params }) {
 
             order = claimedOrder;
           } else {
-            order = await Order.findOneAndUpdate(
-              { _id: id, vendorId: vendor._id },
-              { $set: { vendorStatus: action } },
-              { new: true, session }
-            ).lean();
+            throw Object.assign(
+              new Error("Order has already been processed"),
+              { status: 409 }
+            );
           }
         } else {
           order = await Order.findOneAndUpdate(
-            { _id: id, vendorId: vendor._id },
-            { $set: { vendorStatus: action } },
+            {
+              _id: id,
+              vendorId: vendor._id,
+              orderStatus: "confirmed",
+              vendorStatus: "new",
+            },
+            {
+              $set: {
+                vendorStatus: "rejected",
+                customerNotificationRead: false,
+              },
+            },
             { new: true, session }
           ).lean();
+
+          if (!order) {
+            throw Object.assign(
+              new Error("Order has already been processed"),
+              { status: 409 }
+            );
+          }
         }
       });
     } finally {

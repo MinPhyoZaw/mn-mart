@@ -29,6 +29,7 @@ export async function PATCH(req, { params }) {
             orderStatus: "confirmed",
             settlementStatus: "unsettled",
             customerNotificationRead: false,
+            vendorNotificationRead: false,
           }
         : {
             paymentStatus: "rejected",
