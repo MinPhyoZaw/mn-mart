@@ -24,13 +24,6 @@ export async function getPushSupportStatus() {
   }
 }
 
-function getPlatform() {
-  return window.matchMedia?.("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true
-    ? "pwa"
-    : "web";
-}
-
 async function readResponse(response) {
   try {
     return await response.json();
@@ -44,15 +37,23 @@ export async function enablePushNotifications() {
   const support = await getPushSupportStatus();
   if (!support.supported) return support;
 
-  let permission = Notification.permission;
-  if (permission === "default") {
-    permission = await Notification.requestPermission();
-  }
-  if (permission !== "granted") {
-    return { supported: true, status: permission === "denied" ? "permission-denied" : "permission-not-granted" };
-  }
-
   try {
+    let permission = Notification.permission;
+    if (permission === "default") {
+      permission = await Notification.requestPermission();
+    }
+    if (permission !== "granted") {
+      return {
+        supported: true,
+        status:
+          permission === "denied"
+            ? "permission-denied"
+            : "permission-not-granted",
+      };
+    }
+
+    // next-pwa owns the app's root worker. Waiting for that registration and
+    // passing it to getToken prevents Firebase from creating another worker.
     const registration = await navigator.serviceWorker.ready;
     const { getMessaging, getToken } = await import("firebase/messaging");
     const messaging = getMessaging(getFirebaseClientApp());
@@ -70,7 +71,7 @@ export async function enablePushNotifications() {
       credentials: "include",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, platform: getPlatform() }),
+      body: JSON.stringify({ token, platform: "web" }),
     });
     const result = await readResponse(response);
     if (!response.ok || !result?.success) {
