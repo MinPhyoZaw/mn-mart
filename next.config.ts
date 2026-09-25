@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
 
 export default withPWA({
   dest: "public",
+  customWorkerDir: "worker",
   register: false,
   skipWaiting: true,
   buildExcludes: [/app-build-manifest\.json$/],
