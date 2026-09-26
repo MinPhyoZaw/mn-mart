@@ -6,6 +6,8 @@ import Vendor from "../../models/Vendor";
 import Shop from "../../models/Shop";
 import Item from "../../models/Item";
 import Order from "../../models/Order";
+import User from "../../models/User";
+import { sendPushToUser } from "../../lib/pushNotifications";
 import { getShoppingCommissionRate } from "../../lib/shoppingCommission";
 import { getWholesalePrice, normalizeWholesaleTiers } from "../../lib/pricing";
 import { WARDS } from "../../lib/wards";
@@ -15,6 +17,42 @@ const DEFAULT_COMMISSION_RATE = 1.5;
 const makeOrderId = () => `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 const isIdempotencyDuplicate = (error) =>
   error?.code === 11000 && error?.keyPattern?.idempotencyKey;
+
+async function sendSubmittedOrderPushes({ order, vendorUserId, adminUserIds }) {
+  const push = {
+    type: "shopping-order-submitted",
+    eventId: `shopping-order-submitted:${order._id}`,
+    orderId: order.orderId,
+  };
+
+  try {
+    await Promise.all([
+      ...adminUserIds.map((userId) =>
+        sendPushToUser({
+          userId,
+          title: "New Order Submitted",
+          body: "A new shopping order is waiting for payment verification.",
+          url: "/admindashboard",
+          ...push,
+        })
+      ),
+      ...(vendorUserId
+        ? [
+            sendPushToUser({
+              userId: vendorUserId,
+              title: "New Order Received",
+              body: "You have a new order waiting for admin confirmation.",
+              url: "/vendordashboard",
+              ...push,
+            }),
+          ]
+        : []),
+    ]);
+  } catch (error) {
+    // Push is best-effort and must never roll back a successfully persisted order.
+    console.error("Checkout order push delivery failed:", order.orderId, error?.message);
+  }
+}
 
 export async function POST(req) {
   try {
@@ -84,7 +122,7 @@ export async function POST(req) {
 
     const vendorIds = [...new Set(shops.map((shop) => String(shop.vendorId)))];
     const vendors = await Vendor.find({ _id: { $in: vendorIds } })
-      .select("_id vendorName")
+      .select("_id vendorName userId")
       .lean();
     const vendorMap = new Map(vendors.map((vendor) => [String(vendor._id), vendor]));
 
@@ -139,6 +177,7 @@ export async function POST(req) {
     }
 
     const createdOrders = [];
+    const ordersNeedingPush = [];
     const shoppingCommissionRate = await getShoppingCommissionRate();
 
     for (const { shop, vendor, items: normalizedItems } of ordersByShop.values()) {
@@ -150,6 +189,7 @@ export async function POST(req) {
       const idempotencyKey = `${checkoutKey}:${shop._id}`;
 
       let order;
+      let wasCreated = false;
       try {
         order = await Order.create({
           orderId: makeOrderId(),
@@ -170,6 +210,7 @@ export async function POST(req) {
           commissionAmount,
           vendorEarning,
         });
+        wasCreated = true;
       } catch (error) {
         if (!isIdempotencyDuplicate(error)) throw error;
         order = await Order.findOne({
@@ -186,6 +227,23 @@ export async function POST(req) {
         totalAmount: order.totalAmount,
         commissionAmount: order.commissionAmount,
       });
+
+      if (wasCreated) {
+        ordersNeedingPush.push({ order, vendorUserId: vendor.userId });
+      }
+    }
+
+    if (ordersNeedingPush.length > 0) {
+      try {
+        const adminUserIds = await User.find({ role: "admin" }).distinct("_id");
+        await Promise.all(
+          ordersNeedingPush.map(({ order, vendorUserId }) =>
+            sendSubmittedOrderPushes({ order, vendorUserId, adminUserIds })
+          )
+        );
+      } catch (error) {
+        console.error("Checkout push recipient lookup failed:", error?.message);
+      }
     }
 
     return NextResponse.json(

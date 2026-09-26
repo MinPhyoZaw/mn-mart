@@ -3,6 +3,61 @@ import mongoose from "mongoose";
 import connectDB from "../../../../lib/mongodb";
 import { requireAuth } from "../../../../lib/routeAuth";
 import Order from "../../../../models/Order";
+import Vendor from "../../../../models/Vendor";
+import { sendPushToUser } from "../../../../lib/pushNotifications";
+
+async function sendAdminDecisionPushes(order, action) {
+  const event = action === "approve" ? "confirmed" : "rejected";
+  const common = {
+    type: `shopping-order-${event}`,
+    eventId: `shopping-order-${event}:${order._id}`,
+    orderId: order.orderId,
+  };
+
+  try {
+    if (action === "reject") {
+      if (order.customerId) {
+        await sendPushToUser({
+          userId: order.customerId,
+          title: "Payment Not Confirmed",
+          body: "We couldn't verify your payment. Please review your order.",
+          url: "/",
+          ...common,
+        });
+      }
+      return;
+    }
+
+    const vendor = await Vendor.findById(order.vendorId).select("userId").lean();
+    await Promise.all([
+      ...(vendor?.userId
+        ? [
+            sendPushToUser({
+              userId: vendor.userId,
+              title: "Order Confirmed",
+              body: "Payment has been confirmed. You can now process the order.",
+              url: "/vendordashboard",
+              ...common,
+            }),
+          ]
+        : []),
+      ...(order.customerId
+        ? [
+            sendPushToUser({
+              userId: order.customerId,
+              title: "Payment Confirmed",
+              body: "Your payment has been confirmed. The shop can now process your order.",
+              url: "/",
+              ...common,
+            }),
+          ]
+        : []),
+    ]);
+  } catch (error) {
+    // The state transition is already committed; push delivery is best-effort.
+    console.error("Admin order push delivery failed:", order.orderId, error?.message);
+  }
+}
 
 export async function PATCH(req, { params }) {
   try {
@@ -55,6 +110,10 @@ export async function PATCH(req, { params }) {
         { success: false, message: "Order has already been processed" },
         { status: 409 }
       );
+    }
+
+    if (order.serviceType === "shopping") {
+      await sendAdminDecisionPushes(order, action);
     }
 
     return NextResponse.json({ success: true, data: order });
