@@ -1,95 +1,118 @@
 "use client";
 
-import { BellRing } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
+  disablePushNotifications,
   enablePushNotifications,
-  getPushSupportStatus,
+  getPushRegistrationStatus,
 } from "../lib/pushRegistration";
 
 const COPY = {
-  default: "Enable notifications to receive order updates.",
-  denied:
-    "Notifications are blocked. Allow them in your browser or app settings, then try again.",
-  enabled: "Notifications are enabled on this device.",
-  error: "Notifications could not be enabled. Please try again.",
-  requesting: "Enabling notifications…",
+  denied: "Notifications are blocked in browser settings.",
+  error: "Notification settings could not be updated. Please try again.",
   unsupported: "Notifications are not supported in this browser.",
 };
 
 export default function PushNotificationOptIn() {
-  const [state, setState] = useState("default");
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [available, setAvailable] = useState(true);
 
   useEffect(() => {
     let active = true;
 
-    async function checkSupport() {
-      const support = await getPushSupportStatus();
+    async function loadRegistrationStatus() {
+      const result = await getPushRegistrationStatus();
       if (!active) return;
 
-      if (!support.supported) {
-        setState("unsupported");
-      } else if (Notification.permission === "denied") {
-        setState("denied");
+      setEnabled(result.registered === true);
+      if (!result.supported) {
+        setAvailable(false);
+        setMessage(COPY.unsupported);
+      } else if (result.status === "permission-denied") {
+        setAvailable(false);
+        setMessage(COPY.denied);
+      } else if (!["registered", "not-registered"].includes(result.status)) {
+        setMessage(COPY.error);
       }
+      setLoading(false);
     }
 
-    checkSupport();
+    loadRegistrationStatus();
     return () => {
       active = false;
     };
   }, []);
 
-  const enableNotifications = async () => {
-    if (state === "requesting" || state === "denied" || state === "unsupported") {
-      return;
-    }
+  const toggleNotifications = async () => {
+    if (loading || !available) return;
 
-    setState("requesting");
-    const result = await enablePushNotifications();
+    const previousValue = enabled;
+    setLoading(true);
+    setMessage("");
+
+    const result = previousValue
+      ? await disablePushNotifications()
+      : await enablePushNotifications();
 
     if (result.status === "registered") {
-      setState("enabled");
-    } else if (result.status === "permission-denied") {
-      setState("denied");
-    } else if (!result.supported) {
-      setState("unsupported");
+      setEnabled(true);
+    } else if (["unregistered", "not-registered"].includes(result.status)) {
+      setEnabled(false);
     } else {
-      setState("error");
+      setEnabled(previousValue);
+      if (result.status === "permission-denied") {
+        setAvailable(false);
+        setMessage(COPY.denied);
+      } else if (!result.supported) {
+        setAvailable(false);
+        setMessage(COPY.unsupported);
+      } else {
+        setMessage(COPY.error);
+      }
     }
+
+    setLoading(false);
   };
 
-  const disabled = ["requesting", "denied", "unsupported"].includes(state);
-  const buttonLabel =
-    state === "requesting"
-      ? "Enabling…"
-      : state === "enabled"
-        ? "Refresh Notifications"
-        : "Enable Notifications";
-
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-700">
-          <BellRing aria-hidden="true" size={20} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-gray-900">Notifications</h3>
-          <p className="mt-1 text-sm text-gray-600">Get order updates on your phone.</p>
-          <p className="mt-2 text-xs text-gray-500" aria-live="polite">
-            {COPY[state]}
+    <section className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Receive order and account updates
           </p>
-          <button
-            type="button"
-            onClick={enableNotifications}
-            disabled={disabled}
-            className="mt-4 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            {buttonLabel}
-          </button>
         </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          aria-label="Notifications"
+          onClick={toggleNotifications}
+          disabled={loading || !available}
+          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+            enabled ? "bg-emerald-600" : "bg-gray-300"
+          }`}
+        >
+          <span className="sr-only">{enabled ? "Turn notifications off" : "Turn notifications on"}</span>
+          <span
+            aria-hidden="true"
+            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+              enabled ? "translate-x-6" : "translate-x-1"
+            } ${loading ? "animate-pulse" : ""}`}
+          />
+        </button>
       </div>
+
+      {message && (
+        <p className="mt-2 text-xs text-gray-500" aria-live="polite">
+          {message}
+        </p>
+      )}
     </section>
   );
 }
