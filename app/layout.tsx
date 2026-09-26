@@ -11,6 +11,7 @@ import InstallAppButton from "./components/InstallAppButton";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next"
 import SeptemberPromoBanner from './components/SeptemberPromoBanner';
+import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -91,6 +92,7 @@ export default function RootLayout({
           font-[var(--font-inter)]
         `}
       >
+        <ServiceWorkerRegistration />
         <SplashVideo />
 
         <AuthProvider>
