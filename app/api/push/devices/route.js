@@ -106,6 +106,35 @@ async function registerToken(token, values) {
   }
 }
 
+export async function GET(req) {
+  const auth = authenticated(req);
+  if (!auth.ok) return auth.response;
+
+  try {
+    const validated = validateToken(req.headers.get("x-push-device-token"));
+    if (validated.error) {
+      return json(
+        { success: false, message: validated.error },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+    const registered = await PushDevice.exists({
+      token: validated.token,
+      userId: auth.user.userId,
+    });
+
+    return json({ success: true, registered: Boolean(registered) });
+  } catch (error) {
+    console.error("GET /api/push/devices error:", error);
+    return json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req) {
   const auth = authenticated(req);
   if (!auth.ok) return auth.response;
