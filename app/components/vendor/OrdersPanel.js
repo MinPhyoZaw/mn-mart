@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-export default function OrdersPanel({ orders = [], onAction, messageSetter }) {
+export default function OrdersPanel({ orders = [], onAction, processingAction }) {
   const getServiceTag = (serviceType) => {
     const label = serviceType || "shopping";
     const colorMap = {
@@ -78,8 +78,12 @@ export default function OrdersPanel({ orders = [], onAction, messageSetter }) {
               </div>
               {order.orderStatus === "confirmed" && order.vendorStatus === "new" && (
                 <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={() => onAction(order._id, "accepted")} className="px-3 py-2 rounded bg-green-600 text-white text-sm">Accept order</button>
-                  <button type="button" onClick={() => onAction(order._id, "rejected")} className="px-3 py-2 rounded bg-rose-600 text-white text-sm">Reject order</button>
+                  <button type="button" disabled={Boolean(processingAction)} aria-busy={processingAction?.id === order._id && processingAction.action === "accepted"} onClick={() => onAction(order._id, "accepted")} className="rounded bg-green-600 px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50">
+                    {processingAction?.id === order._id && processingAction.action === "accepted" ? "Accepting..." : "Accept order"}
+                  </button>
+                  <button type="button" disabled={Boolean(processingAction)} aria-busy={processingAction?.id === order._id && processingAction.action === "rejected"} onClick={() => onAction(order._id, "rejected")} className="rounded bg-rose-600 px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50">
+                    {processingAction?.id === order._id && processingAction.action === "rejected" ? "Rejecting..." : "Reject order"}
+                  </button>
                 </div>
               )}
 

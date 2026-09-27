@@ -26,6 +26,7 @@ export default function VendorDashboardClient() {
   const [shopName, setShopName] = useState("");
   const [shopNameStatus, setShopNameStatus] = useState({ type: "", message: "" });
   const [isUpdatingShopName, setIsUpdatingShopName] = useState(false);
+  const [processingOrderAction, setProcessingOrderAction] = useState(null);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -73,20 +74,29 @@ export default function VendorDashboardClient() {
   const isShoppingDashboard = serviceType === "shopping";
 
   const handleOrderAction = async (id, action) => {
-    const res = await fetch(`/api/vendor/orders/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
+    if (processingOrderAction) return;
 
-    const data = await res.json();
-    if (!data.success) {
-      setMessage(data.message || "Unable to update order status.");
-      return;
+    setProcessingOrderAction({ id, action });
+    setMessage("");
+    try {
+      const res = await fetch(`/api/vendor/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Unable to update order status.");
+      }
+
+      setOrders((prev) => prev.map((order) => (order._id === id ? data.data : order)));
+      setMessage(`Order marked as ${action}.`);
+    } catch (error) {
+      setMessage(error?.message || "Unable to update order status.");
+    } finally {
+      setProcessingOrderAction(null);
     }
-
-    setOrders((prev) => prev.map((order) => (order._id === id ? data.data : order)));
-    setMessage(`Order marked as ${action}.`);
   };
 
   const refreshData = async () => {
@@ -268,7 +278,7 @@ export default function VendorDashboardClient() {
             </div>
 
             {shoppingPanel === "orders" ? (
-              <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+              <OrdersPanel orders={orders} onAction={handleOrderAction} processingAction={processingOrderAction} />
             ) : null}
 
             {shoppingPanel === "addProduct" ? (
@@ -335,7 +345,7 @@ export default function VendorDashboardClient() {
                 </div>
 
                 {vendorPanel === "orders" ? (
-                  <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+                  <OrdersPanel orders={orders} onAction={handleOrderAction} processingAction={processingOrderAction} />
                 ) : null}
 
                 {vendorPanel === "addItem" ? (
@@ -348,7 +358,7 @@ export default function VendorDashboardClient() {
               </>
             ) : (
               <>
-                <OrdersPanel orders={orders} onAction={handleOrderAction} messageSetter={setMessage} />
+                <OrdersPanel orders={orders} onAction={handleOrderAction} processingAction={processingOrderAction} />
 
                 {serviceType === "hotel" ? <RoomsList shop={shop} refreshToken={roomsRefreshToken} /> : null}
 
