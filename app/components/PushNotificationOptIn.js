@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   disablePushNotifications,
@@ -16,9 +16,11 @@ const COPY = {
 
 export default function PushNotificationOptIn() {
   const [enabled, setEnabled] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const [available, setAvailable] = useState(true);
+  const syncingRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -37,7 +39,7 @@ export default function PushNotificationOptIn() {
       } else if (!["registered", "not-registered"].includes(result.status)) {
         setMessage(COPY.error);
       }
-      setLoading(false);
+      setInitializing(false);
     }
 
     loadRegistrationStatus();
@@ -47,34 +49,51 @@ export default function PushNotificationOptIn() {
   }, []);
 
   const toggleNotifications = async () => {
-    if (loading || !available) return;
+    // The ref closes the small gap before React applies the disabled state.
+    if (initializing || syncingRef.current || !available) return;
 
     const previousValue = enabled;
-    setLoading(true);
+    const permissionAlreadyGranted = Notification.permission === "granted";
+    syncingRef.current = true;
+    setSyncing(true);
     setMessage("");
 
-    const result = previousValue
-      ? await disablePushNotifications()
-      : await enablePushNotifications();
-
-    if (result.status === "registered") {
-      setEnabled(true);
-    } else if (["unregistered", "not-registered"].includes(result.status)) {
-      setEnabled(false);
-    } else {
-      setEnabled(previousValue);
-      if (result.status === "permission-denied") {
-        setAvailable(false);
-        setMessage(COPY.denied);
-      } else if (!result.supported) {
-        setAvailable(false);
-        setMessage(COPY.unsupported);
-      } else {
-        setMessage(COPY.error);
-      }
+    // Granted changes are optimistic. A first-time permission prompt remains
+    // OFF until the browser confirms permission through the callback below.
+    if (previousValue || permissionAlreadyGranted) {
+      setEnabled(!previousValue);
     }
 
-    setLoading(false);
+    try {
+      const result = previousValue
+        ? await disablePushNotifications()
+        : await enablePushNotifications({
+            onPermissionGranted: () => setEnabled(true),
+          });
+
+      if (result.status === "registered") {
+        setEnabled(true);
+      } else if (["unregistered", "not-registered"].includes(result.status)) {
+        setEnabled(false);
+      } else {
+        setEnabled(previousValue);
+        if (result.status === "permission-denied") {
+          setAvailable(false);
+          setMessage(COPY.denied);
+        } else if (!result.supported) {
+          setAvailable(false);
+          setMessage(COPY.unsupported);
+        } else {
+          setMessage(COPY.error);
+        }
+      }
+    } catch {
+      setEnabled(previousValue);
+      setMessage(COPY.error);
+    } finally {
+      syncingRef.current = false;
+      setSyncing(false);
+    }
   };
 
   return (
@@ -93,7 +112,8 @@ export default function PushNotificationOptIn() {
           aria-checked={enabled}
           aria-label="Notifications"
           onClick={toggleNotifications}
-          disabled={loading || !available}
+          disabled={initializing || syncing || !available}
+          aria-busy={syncing}
           className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
             enabled ? "bg-emerald-600" : "bg-gray-300"
           }`}
@@ -103,10 +123,16 @@ export default function PushNotificationOptIn() {
             aria-hidden="true"
             className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
               enabled ? "translate-x-6" : "translate-x-1"
-            } ${loading ? "animate-pulse" : ""}`}
+            } ${initializing || syncing ? "animate-pulse" : ""}`}
           />
         </button>
       </div>
+
+      {syncing && (
+        <p className="mt-2 text-xs text-gray-400" aria-live="polite">
+          Syncing…
+        </p>
+      )}
 
       {message && (
         <p className="mt-2 text-xs text-gray-500" aria-live="polite">
