@@ -2,6 +2,9 @@
 
 import { getFirebaseClientApp, getFirebaseVapidKey } from "./firebaseClient";
 
+let pushSupportPromise;
+let serviceWorkerRegistrationPromise;
+
 export async function getPushSupportStatus() {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return { supported: false, status: "not-browser" };
@@ -13,15 +16,19 @@ export async function getPushSupportStatus() {
     return { supported: false, status: "service-worker-unavailable" };
   }
 
-  try {
-    const { isSupported } = await import("firebase/messaging");
-    if (!(await isSupported())) {
-      return { supported: false, status: "firebase-messaging-unsupported" };
+  pushSupportPromise ??= (async () => {
+    try {
+      const { isSupported } = await import("firebase/messaging");
+      if (!(await isSupported())) {
+        return { supported: false, status: "firebase-messaging-unsupported" };
+      }
+      return { supported: true, status: "supported" };
+    } catch {
+      return { supported: false, status: "support-check-failed" };
     }
-    return { supported: true, status: "supported" };
-  } catch {
-    return { supported: false, status: "support-check-failed" };
-  }
+  })();
+
+  return pushSupportPromise;
 }
 
 async function readResponse(response) {
@@ -32,10 +39,21 @@ async function readResponse(response) {
   }
 }
 
+async function getServiceWorkerRegistration() {
+  serviceWorkerRegistrationPromise ??= (async () => {
+    // An already-active next-pwa registration can be used immediately. Only
+    // wait for `ready` during first installation/activation.
+    const existing = await navigator.serviceWorker.getRegistration();
+    return existing?.active ? existing : navigator.serviceWorker.ready;
+  })();
+
+  return serviceWorkerRegistrationPromise;
+}
+
 async function getCurrentToken() {
-  // next-pwa owns the app's root worker. Waiting for that registration and
-  // passing it to getToken prevents Firebase from creating another worker.
-  const registration = await navigator.serviceWorker.ready;
+  // next-pwa owns the app's root worker. Passing its registration to getToken
+  // prevents Firebase from creating another worker.
+  const registration = await getServiceWorkerRegistration();
   const { getMessaging, getToken } = await import("firebase/messaging");
   const messaging = getMessaging(getFirebaseClientApp());
   const token = await getToken(messaging, {
@@ -105,7 +123,7 @@ export async function getPushRegistrationStatus() {
 }
 
 // Call only from an explicit user gesture, such as the notifications switch.
-export async function enablePushNotifications() {
+export async function enablePushNotifications({ onPermissionGranted } = {}) {
   const support = await getPushSupportStatus();
   if (!support.supported) return support;
 
@@ -123,6 +141,8 @@ export async function enablePushNotifications() {
             : "permission-not-granted",
       };
     }
+
+    onPermissionGranted?.();
 
     const { token } = await getCurrentToken();
     if (!token) {
