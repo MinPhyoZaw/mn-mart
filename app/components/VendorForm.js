@@ -207,7 +207,7 @@ const handleImageChange = async (e) => {
 
       setMessageType("success");
       setMessage(
-        "Vendor request submitted successfully!"
+        "Vendor request sent successfully."
       );
 
       /*
@@ -229,6 +229,8 @@ const handleImageChange = async (e) => {
 
       setImagePreview("");
 
+      // Keep the confirmed success state visible before continuing the existing redirect.
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       router.replace("/");
     } catch (error) {
       console.error(
@@ -274,6 +276,8 @@ const handleImageChange = async (e) => {
         {/* Message */}
         {message && (
           <div
+            role="status"
+            aria-live="polite"
             className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${
               messageType === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -700,18 +704,26 @@ const handleImageChange = async (e) => {
 
               <button
                 type="submit"
+                aria-busy={loading}
                 disabled={
                   loading ||
                   !user ||
                   isUploadingImage
                 }
-                className="w-full rounded-2xl bg-emerald-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading
-                  ? "Submitting Request..."
+                {loading ? (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                    />
+                    Sending Request...
+                  </>
+                )
                   : isUploadingImage
                   ? "Uploading Image..."
-                  : "Submit Vendor Request"}
+                  : "Send Vendor Request"}
               </button>
             </div>
           </div>

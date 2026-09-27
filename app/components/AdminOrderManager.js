@@ -116,6 +116,7 @@ export default function AdminOrderManager() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [activeReceipt, setActiveReceipt] = useState(null);
+  const [processingAction, setProcessingAction] = useState(null);
 
   const loadOrders = async () => {
     try {
@@ -134,19 +135,27 @@ export default function AdminOrderManager() {
   }, []);
 
   const onAction = async (id, action) => {
+    if (processingAction) return;
+
+    setProcessingAction({ id, action });
     setMessage("");
-    const res = await fetch(`/api/admin/orders/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-    const data = await res.json();
-    if (!data.success) {
-      setMessage(data.message || "Unable to update order.");
-      return;
+    try {
+      const res = await fetch(`/api/admin/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Unable to update order.");
+      }
+      setMessage(`Order ${action === "approve" ? "approved" : "rejected"} successfully.`);
+      await loadOrders();
+    } catch (error) {
+      setMessage(error?.message || "Unable to update order.");
+    } finally {
+      setProcessingAction(null);
     }
-    setMessage(`Order ${action === "approve" ? "approved" : "rejected"} successfully.`);
-    await loadOrders();
   };
 
   const getServiceTag = (serviceType) => {
@@ -494,17 +503,21 @@ export default function AdminOrderManager() {
                         <button
                           type="button"
                           onClick={() => onAction(order._id, "reject")}
-                          className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                          disabled={Boolean(processingAction)}
+                          aria-busy={processingAction?.id === order._id && processingAction.action === "reject"}
+                          className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Reject
+                          {processingAction?.id === order._id && processingAction.action === "reject" ? "Rejecting..." : "Reject"}
                         </button>
 
                         <button
                           type="button"
                           onClick={() => onAction(order._id, "approve")}
-                          className="rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                          disabled={Boolean(processingAction)}
+                          aria-busy={processingAction?.id === order._id && processingAction.action === "approve"}
+                          className="rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Approve
+                          {processingAction?.id === order._id && processingAction.action === "approve" ? "Approving..." : "Approve"}
                         </button>
                       </div>
                     ) : (

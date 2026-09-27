@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/* Native controls should communicate clickability without overriding disabled UX. */
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    @apply cursor-pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    @apply cursor-not-allowed;
+  }
+}
+
 
 
 .perspective {
