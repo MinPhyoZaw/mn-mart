@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { Resend } from "resend";
 
 import User from "../../../models/User";
 import connectDB from "../../../lib/mongodb";
+import { EMAIL_FROM, getResendClient, getSiteUrl } from "../../../lib/email";
 
 export async function POST(req) {
   try {
     await connectDB();
 
-    const resendApiKey = process.env.RESEND_API_KEY;
+    const resend = getResendClient();
 
-    if (!resendApiKey) {
+    if (!resend) {
       console.error("RESEND_API_KEY is missing");
 
       return NextResponse.json(
@@ -22,8 +22,6 @@ export async function POST(req) {
         { status: 500 }
       );
     }
-
-    const resend = new Resend(resendApiKey);
 
     const { email } = await req.json();
 
@@ -72,9 +70,7 @@ export async function POST(req) {
 
     await user.save();
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://www.mn-mart.store";
+    const baseUrl = getSiteUrl();
 
     const resetUrl =
       `${baseUrl}/reset-password?token=${resetToken}`;
@@ -83,7 +79,7 @@ export async function POST(req) {
 
     // Send email with Resend
     const { data, error } = await resend.emails.send({
-      from: "MN Mart <noreply@mn-mart.store>",
+      from: EMAIL_FROM,
       to: email,
       subject: "Reset your MN Mart password",
       html: `
