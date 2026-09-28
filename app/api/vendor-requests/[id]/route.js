@@ -6,6 +6,7 @@ import Vendor from "../../../models/Vendor";
 import User from "../../../models/User";
 import Shop from "../../../models/Shop";
 import { requireAuth } from "../../../lib/routeAuth";
+import { sendVendorApprovalEmail } from "../../../lib/email";
 
 function getSafeShopImage(value) {
   return typeof value === "string" && /^https?:\/\//i.test(value)
@@ -123,7 +124,14 @@ export async function PATCH(req, context) {
             { new: true, upsert: true, setDefaultsOnInsert: true, session }
           );
 
-          result = { vendor: newVendor, shop, request: vr };
+          result = {
+            vendor: newVendor,
+            shop,
+            request: vr,
+            customer: requestUser
+              ? { email: requestUser.email, name: requestUser.name }
+              : null,
+          };
         });
       } finally {
         await session.endSession();
@@ -141,6 +149,20 @@ export async function PATCH(req, context) {
           { success: false, message: "Already processed" },
           { status: 409 }
         );
+      }
+
+      if (result.customer?.email) {
+        try {
+          await sendVendorApprovalEmail(result.customer);
+        } catch {
+          console.error("Vendor approval email could not be sent", {
+            vendorRequestId: String(result.request._id),
+          });
+        }
+      } else {
+        console.warn("Vendor approval email skipped: customer email unavailable", {
+          vendorRequestId: String(result.request._id),
+        });
       }
 
       return NextResponse.json(
