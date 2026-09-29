@@ -51,9 +51,7 @@ export async function sendVendorApprovalEmail({ email, name }) {
           <p style="line-height:1.6;">Great news! Your vendor request has been approved.</p>
           <p style="line-height:1.6;">You can now access your Vendor Dashboard and start setting up your shop on MN-Mart.</p>
           <p style="line-height:1.6;">Sign in using your existing MN-Mart account to get started.</p>
-          <p style="margin:24px 0;">
-            <a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;background:#000;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;font-weight:600;">Open Vendor Dashboard</a>
-          </p>
+          
           <p style="margin-bottom:8px;line-height:1.6;"><strong>Next steps:</strong></p>
           <ul style="padding-left:22px;line-height:1.8;">
             <li>Open your Vendor Dashboard</li>
