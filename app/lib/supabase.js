@@ -110,5 +110,17 @@ export const uploadImageToSupabaseStorage =
       publicUrlData.publicUrl
     );
 
+    if (options.includePath) {
+      return { publicUrl: publicUrlData.publicUrl, path: data.path, bucket };
+    }
+
     return publicUrlData.publicUrl;
   };
+
+export const removeImageFromSupabaseStorage = async (bucket, path) => {
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+
+  if (error) {
+    throw new Error(error.message || "Failed to remove image from Supabase.");
+  }
+};
