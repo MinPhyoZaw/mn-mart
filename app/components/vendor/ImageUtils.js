@@ -2,6 +2,8 @@
 
 const MAX_IMAGE_SIDE = 1280;
 const OUTPUT_QUALITY = 0.8;
+const SHOP_BANNER_WIDTH = 1200;
+const SHOP_BANNER_HEIGHT = 400;
 
 export const fileToDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -48,4 +50,46 @@ export const compressItemImageBlob = async (file) => {
   return dataUrlToBlob(dataUrl);
 };
 
-export default null;
+export const compressShopBannerBlob = async (file) => {
+  const sourceDataUrl = await fileToDataUrl(file);
+  const image = await loadImageElement(sourceDataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = SHOP_BANNER_WIDTH;
+  canvas.height = SHOP_BANNER_HEIGHT;
+
+  const sourceAspect = image.width / image.height;
+  const bannerAspect = SHOP_BANNER_WIDTH / SHOP_BANNER_HEIGHT;
+  let sourceX = 0;
+  let sourceY = 0;
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
+
+  if (sourceAspect > bannerAspect) {
+    sourceWidth = image.height * bannerAspect;
+    sourceX = (image.width - sourceWidth) / 2;
+  } else if (sourceAspect < bannerAspect) {
+    sourceHeight = image.width / bannerAspect;
+    sourceY = (image.height - sourceHeight) / 2;
+  }
+
+  const ctx = canvas.getContext("2d", { alpha: false });
+  ctx.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    SHOP_BANNER_WIDTH,
+    SHOP_BANNER_HEIGHT,
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Unable to process the selected image."))),
+      "image/webp",
+      0.8,
+    );
+  });
+};

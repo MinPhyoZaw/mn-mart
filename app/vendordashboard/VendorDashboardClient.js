@@ -11,6 +11,7 @@ const CheckoutSummary = dynamic(() => import("../components/vendor/CheckoutSumma
 const RoomsList = dynamic(() => import("../components/vendor/RoomsList"), { ssr: false });
 const ManageProducts = dynamic(() => import("../components/vendor/ManageProducts"), { ssr: false });
 const ManageCategories = dynamic(() => import("../components/vendor/ManageCategories"), { ssr: false });
+const ShopImageManager = dynamic(() => import("../components/vendor/ShopImageManager"), { ssr: false });
 
 export default function VendorDashboardClient() {
   const router = useRouter();
@@ -205,6 +206,8 @@ export default function VendorDashboardClient() {
             </p>
           ) : null}
         </form>
+
+        <ShopImageManager shop={shop} onShopUpdated={setShop} />
 
         {message && (
           <div className="mb-4 flex items-start gap-3 rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
