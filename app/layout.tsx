@@ -13,6 +13,7 @@ import { Analytics } from "@vercel/analytics/next"
 import SeptemberPromoBanner from './components/SeptemberPromoBanner';
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 import Script from "next/script";
+import FastBotsWidgetLayout from "./components/FastBotsWidgetLayout";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -115,6 +116,7 @@ export default function RootLayout({
         </AuthProvider>
         <SpeedInsights />
         <Analytics />
+        <FastBotsWidgetLayout />
          <Script
           id="fastbots-chat"
           src="https://app.fastbots.ai/embed.js"
