@@ -10,7 +10,7 @@ import { Raleway, Inter, Outfit, Nunito } from "next/font/google";
 import InstallAppButton from "./components/InstallAppButton";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next"
-import SeptemberPromoBanner from './components/SeptemberPromoBanner';
+
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 import Script from "next/script";
 
@@ -100,7 +100,7 @@ export default function RootLayout({
           <NotificationsProvider>
             <CartProvider>
               <Navbar />
-              <SeptemberPromoBanner/>
+              {/* <SeptemberPromoBanner/> */}
 
               <main className="min-h-screen bg-gray-50 pb-24">
                 {children}
