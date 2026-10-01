@@ -107,11 +107,10 @@ export default function InstallAppButton() {
   return (
     <>
       <button
-        data-install-app-button=""
         type="button"
         onClick={handleInstall}
         className="
-          install-app-button fixed right-4 z-50
+          fixed bottom-24 right-4 z-50
           flex items-center gap-2
           rounded-full
           bg-green-600
@@ -128,10 +127,7 @@ export default function InstallAppButton() {
       </button>
 
       {showIOSModal && (
-        <div
-          data-install-app-modal=""
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
-        >
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center">
           <button
             type="button"
             className="absolute inset-0"
