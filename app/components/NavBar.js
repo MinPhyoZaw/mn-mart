@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Menu, ShoppingCart, User, X } from "lucide-react";
+import { Bell, Menu, ShieldCheck, ShoppingCart, User, X } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
@@ -159,6 +159,12 @@ trailer
 </Link>
 
             <div className="hidden items-center gap-2 md:flex">
+              <Link
+                href="/privacy"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
+              >
+                Privacy
+              </Link>
               {!user ? (
                 <>
                   <Link
@@ -516,6 +522,19 @@ trailer
             </button>
           </div>
         )}
+
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <Link
+            href="/privacy"
+            onClick={closeMenu}
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold text-gray-800 transition hover:bg-emerald-50 hover:text-emerald-700"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+              <ShieldCheck size={20} />
+            </span>
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </aside>
   </div>
@@ -563,6 +582,15 @@ trailer
               </div>
 
               <PushNotificationOptIn />
+
+              <Link
+                href="/privacy"
+                onClick={() => setIsAccountOpen(false)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+              >
+                <ShieldCheck size={17} />
+                Privacy Policy
+              </Link>
 
               <button
                 onClick={handleLogout}
