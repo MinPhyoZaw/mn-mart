@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Menu, ShieldCheck, ShoppingCart, User, X } from "lucide-react";
+import { Bell, Menu, ShieldCheck, ShoppingCart, Trash2, User, X } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
@@ -591,6 +591,17 @@ trailer
                 <ShieldCheck size={17} />
                 Privacy Policy
               </Link>
+
+              {user.role !== "admin" && (
+                <Link
+                  href="/delete-account"
+                  onClick={() => setIsAccountOpen(false)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                >
+                  <Trash2 size={17} />
+                  Delete Account
+                </Link>
+              )}
 
               <button
                 onClick={handleLogout}
