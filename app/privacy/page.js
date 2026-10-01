@@ -152,7 +152,7 @@ export default function PrivacyPolicyPage() {
               <li>You can choose whether to supply optional information and whether to enable browser or app push notifications. You can disable notifications in the account panel and in your device or browser settings.</li>
               <li>You can remove locally stored cart information by clearing the cart or your browser/app data. You may choose not to use optional image search or upload a profile image.</li>
               <li>You may ask to access, correct, or delete your account information, or object to or restrict certain processing where applicable. We may need to verify your identity before acting on a request.</li>
-              <li>To request account and personal-data deletion, use the contact method in Section 9 and include the email address associated with your account. Some transaction records may be retained where reasonably required for legal, security, accounting, or dispute-resolution purposes; we will explain any applicable limitation.</li>
+              <li>To request account and personal-data deletion, visit the <Link href="/delete-account" className="font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4">ManawMart account deletion page</Link>. Signed-in customers and vendors can submit a secure request there; people who cannot sign in can follow its support instructions. Some transaction records may be retained where reasonably required for legal, security, accounting, or dispute-resolution purposes; we will explain any applicable limitation.</li>
             </ul>
           </PolicySection>
 
@@ -175,6 +175,7 @@ export default function PrivacyPolicyPage() {
               <p><strong className="text-slate-800">Service:</strong> ManawMart — Myanmar Digital Marketplace</p>
               <p><strong className="text-slate-800">Website:</strong> <a href="https://www.mn-mart.store" className="font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4">https://www.mn-mart.store</a></p>
               <p><strong className="text-slate-800">Privacy policy:</strong> <a href="https://www.mn-mart.store/privacy" className="font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4">https://www.mn-mart.store/privacy</a></p>
+              <p><strong className="text-slate-800">Account deletion:</strong> <Link href="/delete-account" className="font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4">https://www.mn-mart.store/delete-account</Link></p>
             </div>
             <p>Include “Privacy Request” and your account email in your message. Do not include your password or unnecessary payment information.</p>
           </PolicySection>
