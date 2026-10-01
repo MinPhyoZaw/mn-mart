@@ -159,12 +159,12 @@ trailer
 </Link>
 
             <div className="hidden items-center gap-2 md:flex">
-              <Link
+              {/* <Link
                 href="/privacy"
                 className="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-green-600"
               >
                 Privacy
-              </Link>
+              </Link> */}
               {!user ? (
                 <>
                   <Link
