@@ -1,6 +1,10 @@
 const DEFAULT_URL = "/";
 const NOTIFICATION_ICON = "/icons/icon-192.png";
 
+self.addEventListener("activate", (event) => {
+  event.waitUntil(caches.delete("apis"));
+});
+
 function internalUrl(value) {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
     return DEFAULT_URL;

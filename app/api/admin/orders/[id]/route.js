@@ -94,7 +94,12 @@ export async function PATCH(req, { params }) {
           };
 
     const order = await Order.findOneAndUpdate(
-      { _id: id, orderStatus: "pending" },
+      {
+        _id: id,
+        orderStatus: "pending",
+        paymentStatus: "pending",
+        settlementStatus: "unsettled",
+      },
       { $set: update },
       { new: true }
     ).lean();
