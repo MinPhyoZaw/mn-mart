@@ -160,6 +160,8 @@ export async function GET(req) {
     const shopCategory = searchParams.get("shopCategory");
     const type = searchParams.get("type");
     const category = searchParams.get("category");
+    const randomProductSelection =
+      type === "product" && searchParams.get("random") === "true";
 
     /*
      * --------------------------------------------------
@@ -224,6 +226,10 @@ export async function GET(req) {
 
     if (type) {
       filter.type = type;
+    }
+
+    if (randomProductSelection) {
+      filter.isAvailable = true;
     }
 
     if (category && type === "product" && !isValidShoppingCategory(category)) {
@@ -298,8 +304,48 @@ export async function GET(req) {
      * from being accidentally returned later.
      */
 
-    const [items, total] = await Promise.all([
-      Item.find(filter)
+    const itemsPromise = randomProductSelection
+      ? Item.aggregate([
+          { $match: filter },
+          // Keep the candidate pool bounded while sampling across eligible items.
+          { $sample: { size: Math.min(limit * 5, 100) } },
+          {
+            $lookup: {
+              from: Shop.collection.name,
+              localField: "shopId",
+              foreignField: "_id",
+              as: "shop",
+            },
+          },
+          { $unwind: "$shop" },
+          { $match: { "shop.isActive": { $ne: false } } },
+          { $limit: limit },
+          {
+            $project: {
+              _id: 1,
+              shopCategoryId: 1,
+              name: 1,
+              price: 1,
+              wholesaleTiers: 1,
+              description: 1,
+              image: 1,
+              type: 1,
+              category: 1,
+              tagName: 1,
+              extra: 1,
+              isAvailable: 1,
+              createdAt: 1,
+              updatedAt: 1,
+              shopId: {
+                _id: "$shop._id",
+                name: "$shop.name",
+                category: "$shop.category",
+                vendorId: "$shop.vendorId",
+              },
+            },
+          },
+        ])
+      : Item.find(filter)
         .select(
           [
             "_id",
@@ -328,7 +374,10 @@ export async function GET(req) {
         })
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .lean();
+
+    const [items, total] = await Promise.all([
+      itemsPromise,
 
       Item.countDocuments(filter),
     ]);

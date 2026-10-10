@@ -16,7 +16,7 @@ export default function ShoppingCategoryShowcase() {
       setLoading(true);
       try {
         const endpoint = selectedCategory === "guess-you-like"
-          ? "/api/items?type=product&limit=12"
+          ? "/api/items?type=product&random=true&limit=12"
           : `/api/items?type=product&category=${encodeURIComponent(selectedCategory)}&limit=8`;
 
         const res = await fetch(endpoint, {
@@ -26,8 +26,10 @@ export default function ShoppingCategoryShowcase() {
 
         if (active && data.success) {
           const items = data.data || [];
-          const shuffled = [...items].sort(() => Math.random() - 0.5);
-          setProducts(shuffled.slice(0, 12));
+          const displayedItems = selectedCategory === "guess-you-like"
+            ? items
+            : [...items].sort(() => Math.random() - 0.5);
+          setProducts(displayedItems.slice(0, 12));
         }
       } catch (error) {
         console.error("Failed to load shopping products", error);
