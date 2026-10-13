@@ -56,3 +56,43 @@
     transform: scale(1);
   }
 }
+
+@media (max-width: 767px) {
+  .splash-screen {
+    height: 100vh;
+    height: 100dvh;
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
+      url("/images/thadingyut-splash-bg.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  .splash-screen__orb {
+    display: none;
+  }
+
+  .splash-screen__skip {
+    top: calc(1.25rem + env(safe-area-inset-top, 0px));
+    right: calc(1.25rem + env(safe-area-inset-right, 0px));
+  }
+
+  .splash-screen__content {
+    padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .splash-screen__logo {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  }
+
+  .splash-screen__title {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+  }
+
+  .splash-screen__tagline {
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  }
+}
