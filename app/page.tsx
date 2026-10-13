@@ -26,7 +26,7 @@ export default function HomePage() {
   <IOSInstallGuide />
   
 </div>
-      <SeptemberVendorPromotion />
+    
       
 
     </div>
