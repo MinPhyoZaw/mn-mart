@@ -19,7 +19,7 @@ export async function GET(req) {
     if (!["active", "history", "all"].includes(filter)) return errorResponse(400, "VALIDATION_ERROR", "filter must be active, history, or all.");
     const query = { ...riderDeliveryQuery(auth.user._id), ...(filter === "active" ? { status: { $ne: "delivered" } } : filter === "history" ? { status: "delivered" } : {}) };
     const [rows, total] = await Promise.all([Delivery.find(query).sort({ updatedAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit).lean(), Delivery.countDocuments(query)]);
-    const orders = await Order.find({ _id: { $in: rows.map((row) => row.orderId) } }).select("_id orderId serviceType orderStatus paymentStatus vendorStatus customerAddress customerPhone ward shopId createdAt customerCoordinates").populate("shopId", "name address").lean();
+    const orders = await Order.find({ _id: { $in: rows.map((row) => row.orderId) } }).select("_id orderId serviceType orderStatus paymentStatus vendorStatus customerAddress customerPhone ward deliveryInstructions shopId createdAt customerCoordinates").populate("shopId", "name address").lean();
     const orderMap = new Map(orders.map((order) => [String(order._id), order]));
     const data = rows.flatMap((row) => { const order = orderMap.get(String(row.orderId)); return order && isEligibleShoppingOrder(order) ? [riderDeliveryView(row, order)] : []; });
     return NextResponse.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNextPage: page * limit < total } });

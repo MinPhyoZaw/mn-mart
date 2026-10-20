@@ -9,6 +9,7 @@ import { DEFAULT_PAYMENT_PROVIDER } from "../lib/paymentAccounts";
 import { RECEIPT_IMAGE_BUCKET, uploadImageToSupabaseStorage } from "../lib/supabase";
 import { WARDS } from "../lib/wards";
 import { Truck } from "lucide-react";
+import DeliveryLocationPicker from "../components/DeliveryLocationPicker";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -19,6 +20,8 @@ export default function CheckoutPage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [selectedWard, setSelectedWard] = useState("");
+  const [customerCoordinates, setCustomerCoordinates] = useState(null);
+  const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const paymentProvider = DEFAULT_PAYMENT_PROVIDER;
   const [receiptImage, setReceiptImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -120,6 +123,8 @@ export default function CheckoutPage() {
           customerPhone,
           customerAddress,
           ward: selectedWard,
+          customerCoordinates,
+          deliveryInstructions,
           paymentProvider,
           receiptImage,
           checkoutKey,
@@ -238,7 +243,7 @@ export default function CheckoutPage() {
                     required
                     rows={3}
                     value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    onChange={(e) => { setCustomerAddress(e.target.value); setCustomerCoordinates(null); }}
                     placeholder="အိမ်အမှတ် ၊ လမ်းအမည် အနီးဆုံးအမှတ်အသား"
                     className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                   />
@@ -252,7 +257,7 @@ export default function CheckoutPage() {
                   <select
                     required
                     value={selectedWard}
-                    onChange={(e) => setSelectedWard(e.target.value)}
+                    onChange={(e) => { setSelectedWard(e.target.value); setCustomerCoordinates(null); }}
                     className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm leading-6 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                   >
                     <option value="" disabled>
@@ -264,6 +269,13 @@ export default function CheckoutPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <DeliveryLocationPicker value={customerCoordinates} onConfirm={setCustomerCoordinates} />
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">Landmark / delivery instructions (optional)</label>
+                  <textarea maxLength={300} rows={2} value={deliveryInstructions} onChange={(e) => setDeliveryInstructions(e.target.value)} placeholder="Nearby landmark, gate, or helpful directions" className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100" />
+                  <p className="mt-1 text-xs text-gray-500">Up to 300 characters.</p>
                 </div>
 
                 <div className="sm:col-span-2 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">

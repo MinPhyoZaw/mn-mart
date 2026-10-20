@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canAssignDelivery, customerOrderQuery, deliveryLocation, isApprovedRiderAccount, isEligibleShoppingOrder, matchesDeliveryVersion, riderDeliveryQuery, transitionDelivery } from "../../app/lib/delivery.js";
+import { canAssignDelivery, checkoutDropoffFields, customerOrderQuery, deliveryLocation, isApprovedRiderAccount, isEligibleShoppingOrder, matchesDeliveryVersion, riderDeliveryQuery, transitionDelivery, validateCustomerCoordinates, validateDeliveryInstructions, riderDeliveryView } from "../../app/lib/delivery.js";
 import Delivery from "../../app/models/Delivery.js";
 
 test("delivery eligibility requires confirmed, paid, accepted shopping orders only", () => {
@@ -43,8 +43,30 @@ test("assignment can be changed until pickup; prior assignment loses current-use
 });
 
 test("missing coordinates remain unavailable and valid saved coordinates pass through", () => {
-  assert.deepEqual(deliveryLocation({}), { available: false, coordinates: undefined });
+  assert.deepEqual(deliveryLocation({}), { available: false, coordinates: null });
   assert.deepEqual(deliveryLocation({ customerCoordinates: { latitude: 16.8, longitude: 96.15 } }), { available: true, coordinates: { latitude: 16.8, longitude: 96.15 } });
+  assert.deepEqual(validateCustomerCoordinates(null), { valid: true, coordinates: undefined });
+  assert.deepEqual(validateCustomerCoordinates({ latitude: 0, longitude: 0 }), { valid: true, coordinates: { latitude: 0, longitude: 0 } });
+  for (const invalid of [{ latitude: 0 }, { longitude: 0 }, { latitude: 91, longitude: 0 }, { latitude: 0, longitude: -181 }, { latitude: "0", longitude: 0 }, { latitude: 0, longitude: 0, note: "extra" }, [], "" ]) assert.equal(validateCustomerCoordinates(invalid).valid, false);
+});
+
+test("rider location response includes explicit optional coordinates and instructions", () => {
+  const view = riderDeliveryView({ _id: "d", status: "assigned", version: 1 }, { _id: "o", customerCoordinates: { latitude: 0, longitude: 0 }, deliveryInstructions: "Blue gate", items: [] });
+  assert.deepEqual(view.dropoff.coordinates, { latitude: 0, longitude: 0 });
+  assert.equal(view.locationAvailable, true);
+  assert.equal(view.dropoff.landmarkInstructions, "Blue gate");
+  const absent = riderDeliveryView({ _id: "d" }, { _id: "o", items: [] });
+  assert.equal(absent.dropoff.coordinates, null);
+  assert.equal(absent.locationAvailable, false);
+  assert.equal(validateDeliveryInstructions("x".repeat(301)).valid, false);
+});
+
+test("multi-shop checkout can only copy the same confirmed destination to each order", () => {
+  const dropoff = checkoutDropoffFields({ latitude: 25, longitude: 97 }, "Near the market");
+  const createdShoppingOrders = ["shop-a", "shop-b"].map((shopId) => ({ shopId, ...dropoff }));
+  assert.deepEqual(createdShoppingOrders[0].customerCoordinates, createdShoppingOrders[1].customerCoordinates);
+  assert.equal(createdShoppingOrders[0].deliveryInstructions, createdShoppingOrders[1].deliveryInstructions);
+  assert.deepEqual(checkoutDropoffFields(undefined, ""), { deliveryInstructions: "" });
 });
 
 test("delivery fields do not mutate the separate order payment settlement", () => {

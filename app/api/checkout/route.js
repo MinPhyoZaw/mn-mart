@@ -11,6 +11,7 @@ import { sendPushToUser } from "../../lib/pushNotifications";
 import { getShoppingCommissionRate } from "../../lib/shoppingCommission";
 import { getWholesalePrice, normalizeWholesaleTiers } from "../../lib/pricing";
 import { WARDS } from "../../lib/wards";
+import { checkoutDropoffFields, validateCustomerCoordinates, validateDeliveryInstructions } from "../../lib/delivery";
 
 const DEFAULT_COMMISSION_RATE = 1.5;
 
@@ -61,6 +62,10 @@ export async function POST(req) {
 
     const body = await req.json();
     const { cartItems, customerName, customerPhone, customerAddress, ward, paymentProvider, receiptImage, checkoutKey } = body;
+    const coordinateResult = validateCustomerCoordinates(body.customerCoordinates);
+    const instructionsResult = validateDeliveryInstructions(body.deliveryInstructions);
+    if (!coordinateResult.valid) return NextResponse.json({ success: false, message: "Delivery coordinates must include valid numeric latitude and longitude only." }, { status: 400 });
+    if (!instructionsResult.valid) return NextResponse.json({ success: false, message: "Delivery instructions must be plain text of at most 300 characters." }, { status: 400 });
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return NextResponse.json({ success: false, message: "Cart is empty." }, { status: 400 });
@@ -78,6 +83,7 @@ export async function POST(req) {
     }
 
     const selectedWard = ward.trim();
+    const dropoffFields = checkoutDropoffFields(coordinateResult.coordinates, instructionsResult.value);
 
     if (typeof checkoutKey !== "string" || checkoutKey.length < 16 || checkoutKey.length > 200) {
       return NextResponse.json({ success: false, message: "A valid checkout key is required." }, { status: 400 });
@@ -200,6 +206,7 @@ export async function POST(req) {
           customerName,
           customerPhone,
           customerAddress,
+          ...dropoffFields,
           ward: selectedWard,
           serviceType: shop.category,
           items: normalizedItems,

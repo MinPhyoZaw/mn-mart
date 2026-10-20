@@ -17,7 +17,7 @@ export async function GET(req, { params }) {
     await connectDB();
     const delivery = await Delivery.findOne(riderDeliveryQuery(auth.user._id, id)).lean();
     if (!delivery) return errorResponse(404, "NOT_FOUND", "Assigned delivery not found.");
-    const order = await Order.findById(delivery.orderId).select("_id orderId serviceType orderStatus paymentStatus vendorStatus customerName customerPhone customerAddress ward shopId items customerCoordinates").populate("shopId", "name address").lean();
+    const order = await Order.findById(delivery.orderId).select("_id orderId serviceType orderStatus paymentStatus vendorStatus customerName customerPhone customerAddress ward deliveryInstructions shopId items customerCoordinates").populate("shopId", "name address").lean();
     if (!isEligibleShoppingOrder(order)) return errorResponse(409, "ORDER_NOT_ELIGIBLE", "The linked order is no longer eligible. Contact an admin.");
     return NextResponse.json({ success: true, data: riderDeliveryView(delivery, order, { detail: true }) });
   } catch (error) {

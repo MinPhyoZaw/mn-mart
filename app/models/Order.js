@@ -52,6 +52,8 @@ const orderSchema = new mongoose.Schema(
       longitude: { type: Number, min: -180, max: 180 },
     },
 
+    deliveryInstructions: { type: String, trim: true, maxlength: 300, default: "" },
+
     ward: {
       type: String,
       trim: true,

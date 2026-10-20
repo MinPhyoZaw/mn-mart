@@ -34,12 +34,27 @@ export function isEligibleShoppingOrder(order) {
 
 export function deliveryLocation(order) {
   const coordinates = order?.customerCoordinates;
-  const rawLatitude = coordinates?.latitude ?? coordinates?.lat;
-  const rawLongitude = coordinates?.longitude ?? coordinates?.lng;
-  const latitude = Number(rawLatitude);
-  const longitude = Number(rawLongitude);
-  const available = rawLatitude !== null && rawLatitude !== undefined && rawLongitude !== null && rawLongitude !== undefined && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
-  return { available, coordinates: available ? { latitude, longitude } : undefined };
+  const keys = coordinates && typeof coordinates === "object" && !Array.isArray(coordinates) ? Object.keys(coordinates) : [];
+  const latitude = coordinates?.latitude;
+  const longitude = coordinates?.longitude;
+  const available = keys.length === 2 && keys.includes("latitude") && keys.includes("longitude") && typeof latitude === "number" && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 && typeof longitude === "number" && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+  return { available, coordinates: available ? { latitude, longitude } : null };
+}
+
+export function validateCustomerCoordinates(value) {
+  if (value === undefined || value === null) return { valid: true, coordinates: undefined };
+  const location = deliveryLocation({ customerCoordinates: value });
+  return location.available ? { valid: true, coordinates: location.coordinates } : { valid: false };
+}
+
+export function validateDeliveryInstructions(value) {
+  if (value === undefined) return { valid: true, value: "" };
+  if (typeof value !== "string" || value.length > 300) return { valid: false };
+  return { valid: true, value: value.trim() };
+}
+
+export function checkoutDropoffFields(coordinates, instructions) {
+  return { ...(coordinates ? { customerCoordinates: { latitude: coordinates.latitude, longitude: coordinates.longitude } } : {}), deliveryInstructions: instructions || "" };
 }
 
 export function riderDeliveryView(delivery, order, { detail = false } = {}) {
@@ -48,7 +63,7 @@ export function riderDeliveryView(delivery, order, { detail = false } = {}) {
     deliveryId: String(delivery._id), orderId: String(order._id), orderNumber: order.orderId,
     status: delivery.status, version: delivery.version, locationAvailable: location.available,
     pickup: { address: delivery.pickup?.address || order.shopId?.address || "" },
-    dropoff: { address: delivery.dropoff?.address || order.customerAddress || "", ward: delivery.dropoff?.ward || order.ward || "", phone: delivery.dropoff?.phone || order.customerPhone || "", ...(location.coordinates ? { coordinates: location.coordinates } : {}) },
+    dropoff: { address: delivery.dropoff?.address || order.customerAddress || "", ward: delivery.dropoff?.ward || order.ward || "", phone: delivery.dropoff?.phone || order.customerPhone || "", coordinates: location.coordinates, landmarkInstructions: order.deliveryInstructions || "" },
     shop: order.shopId && typeof order.shopId === "object" ? { id: String(order.shopId._id), name: order.shopId.name || "" } : null,
     assignedAt: delivery.assignments?.at(-1)?.assignedAt || null,
     updatedAt: delivery.updatedAt, deliveredAt: delivery.events?.find((event) => event.status === "delivered")?.at || null,
