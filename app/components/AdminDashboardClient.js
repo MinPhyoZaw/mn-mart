@@ -8,11 +8,13 @@ import {
   CurrencyDollarIcon,
   ShieldCheckIcon,
   UserGroupIcon,
+  TruckIcon,
 } from "@heroicons/react/24/outline";
 import AdminOrderManager from "./AdminOrderManager";
 import AdminVendorRequests from "./AdminVendorRequests";
 import AdminUserRoles from "./AdminUserRoles";
 import AdminShoppingCommission from "./AdminShoppingCommission";
+import AdminRiderApplications from "./AdminRiderApplications";
 import { useNotifications } from "../context/NotificationsContext";
 
 export default function AdminDashboardClient({
@@ -37,6 +39,7 @@ export default function AdminDashboardClient({
     () => [
       { id: "orders", label: "Order List", icon: ClipboardDocumentListIcon },
       { id: "requests", label: "Vendor Request", icon: UserGroupIcon },
+      { id: "riders", label: "Rider Applications", icon: TruckIcon },
       { id: "profit", label: "Profit Notification", icon: CurrencyDollarIcon },
       { id: "commission", label: "Shopping Percentage", icon: ChartBarSquareIcon },
       { id: "roles", label: "User Role Management", icon: ShieldCheckIcon },
@@ -110,6 +113,8 @@ export default function AdminDashboardClient({
               />
             </section>
           )}
+
+          {activeScreen === "riders" && <AdminRiderApplications />}
 
           {activeScreen === "profit" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
