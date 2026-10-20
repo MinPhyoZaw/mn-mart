@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import RiderProfile from "../models/RiderProfile.js";
 import { verifyToken } from "./jwt.js";
 import connectDB from "./mongodb.js";
+import { isApprovedRiderAccount } from "./delivery.js";
 
 
 const MOBILE_AUDIENCE = "mn-mart-rider-mobile";
@@ -57,7 +58,7 @@ export async function requireApprovedRider(req) {
   await connectDB();
   const user = await User.findById(auth.user.userId).select("_id role").lean();
   const profile = user ? await RiderProfile.findOne({ userId: user._id }).select("status").lean() : null;
-  if (!user || !profile || profile.status !== "approved") {
+  if (!isApprovedRiderAccount(user, profile)) {
     return { ok: false, response: NextResponse.json({ success: false, error: { code: "RIDER_NOT_APPROVED", message: "An approved rider account is required." } }, { status: 403 }) };
   }
   return { ok: true, user, profile };

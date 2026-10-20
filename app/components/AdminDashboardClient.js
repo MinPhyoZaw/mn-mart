@@ -15,6 +15,7 @@ import AdminVendorRequests from "./AdminVendorRequests";
 import AdminUserRoles from "./AdminUserRoles";
 import AdminShoppingCommission from "./AdminShoppingCommission";
 import AdminRiderApplications from "./AdminRiderApplications";
+import AdminDeliveries from "./AdminDeliveries";
 import { useNotifications } from "../context/NotificationsContext";
 
 export default function AdminDashboardClient({
@@ -40,6 +41,7 @@ export default function AdminDashboardClient({
       { id: "orders", label: "Order List", icon: ClipboardDocumentListIcon },
       { id: "requests", label: "Vendor Request", icon: UserGroupIcon },
       { id: "riders", label: "Rider Applications", icon: TruckIcon },
+      { id: "deliveries", label: "Deliveries", icon: TruckIcon },
       { id: "profit", label: "Profit Notification", icon: CurrencyDollarIcon },
       { id: "commission", label: "Shopping Percentage", icon: ChartBarSquareIcon },
       { id: "roles", label: "User Role Management", icon: ShieldCheckIcon },
@@ -115,6 +117,8 @@ export default function AdminDashboardClient({
           )}
 
           {activeScreen === "riders" && <AdminRiderApplications />}
+
+          {activeScreen === "deliveries" && <AdminDeliveries />}
 
           {activeScreen === "profit" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

@@ -47,6 +47,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    customerCoordinates: {
+      latitude: { type: Number, min: -90, max: 90 },
+      longitude: { type: Number, min: -180, max: 180 },
+    },
+
     ward: {
       type: String,
       trim: true,
