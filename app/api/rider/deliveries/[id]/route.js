@@ -6,6 +6,7 @@ import { errorResponse } from "../../../../lib/riderSecurity";
 import { isEligibleShoppingOrder, matchesDeliveryVersion, riderDeliveryQuery, riderDeliveryView, transitionDelivery } from "../../../../lib/delivery";
 import Delivery from "../../../../models/Delivery";
 import Order from "../../../../models/Order";
+import "../../../../models/Shop";
 
 export async function GET(req, { params }) {
   try {

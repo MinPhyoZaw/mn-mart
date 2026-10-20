@@ -4,6 +4,7 @@ import { requireApprovedRider } from "../../../lib/riderAuth";
 import { errorResponse } from "../../../lib/riderSecurity";
 import Delivery from "../../../models/Delivery";
 import Order from "../../../models/Order";
+import "../../../models/Shop";
 import { isEligibleShoppingOrder, riderDeliveryQuery, riderDeliveryView } from "../../../lib/delivery";
 
 export async function GET(req) {

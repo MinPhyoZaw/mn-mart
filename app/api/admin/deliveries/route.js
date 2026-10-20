@@ -4,6 +4,7 @@ import connectDB from "../../../lib/mongodb";
 import { requireCurrentAdmin, errorResponse } from "../../../lib/riderSecurity";
 import Order from "../../../models/Order";
 import Delivery from "../../../models/Delivery";
+import "../../../models/Shop";
 import RiderProfile from "../../../models/RiderProfile";
 import User from "../../../models/User";
 import { deliveryLocation, isApprovedRiderAccount, isEligibleShoppingOrder, matchesDeliveryVersion } from "../../../lib/delivery";
