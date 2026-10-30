@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canAssignDelivery, checkoutDropoffFields, customerOrderQuery, deliveryLocation, isApprovedRiderAccount, isEligibleShoppingOrder, matchesDeliveryVersion, riderDeliveryQuery, transitionDelivery, validateCustomerCoordinates, validateDeliveryInstructions, riderDeliveryView } from "../../app/lib/delivery.js";
+import { canAssignDelivery, checkoutDropoffFields, customerOrderQuery, deliveryLocation, isApprovedRiderAccount, isEligibleShoppingOrder, matchesDeliveryVersion, riderDeliveryDetailPipeline, riderDeliveryQuery, transitionDelivery, validateCustomerCoordinates, validateDeliveryInstructions, riderDeliveryView } from "../../app/lib/delivery.js";
 import Delivery from "../../app/models/Delivery.js";
 
 test("delivery eligibility requires confirmed, paid, accepted shopping orders only", () => {
@@ -40,6 +40,17 @@ test("assignment can be changed until pickup; prior assignment loses current-use
   assert.equal(canAssignDelivery("picked_up"), false);
   assert.deepEqual(riderDeliveryQuery("new-rider", "delivery-id"), { assignedRiderId: "new-rider", _id: "delivery-id" });
   assert.notDeepEqual(riderDeliveryQuery("new-rider", "delivery-id"), { assignedRiderId: "old-rider", _id: "delivery-id" });
+});
+
+test("delivery detail aggregation scopes by assigned rider and joins order and shop", () => {
+  const pipeline = riderDeliveryDetailPipeline("rider-id", "delivery-id", "orders", "shops");
+  assert.deepEqual(pipeline[0], { $match: { assignedRiderId: "rider-id", _id: "delivery-id" } });
+  assert.deepEqual(pipeline[2].$lookup, { from: "orders", localField: "orderId", foreignField: "_id", as: "order" });
+  assert.deepEqual(pipeline[4].$lookup, { from: "shops", localField: "order.shopId", foreignField: "_id", as: "shop" });
+  assert.equal(pipeline[3].$unwind.preserveNullAndEmptyArrays, true);
+  assert.equal(pipeline[6].$project["order.customerName"], 1);
+  assert.equal(pipeline[6].$project["order.items.selectedWholesaleTier.price"], 1);
+  assert.equal(pipeline[6].$project["order.shopId.name"], 1);
 });
 
 test("missing coordinates remain unavailable and valid saved coordinates pass through", () => {

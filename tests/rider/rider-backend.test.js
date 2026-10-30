@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 import { validateRiderRegistration, buildRiderAccountDocuments, buildExistingAccountRiderApplication } from "../../app/lib/riderInput.js";
 import { reviewTransition } from "../../app/lib/riderReview.js";
+import RiderRefreshSession from "../../app/models/RiderRefreshSession.js";
 
 process.env.JWT_SECRET = "test-only-rider-secret-do-not-use-in-production";
 process.env.MONGODB_URI ??= "mongodb://127.0.0.1:27017/rider-test";
@@ -60,4 +61,10 @@ test("refresh credentials are random and stored as non-reversible hashes", () =>
   assert.notEqual(hash, first);
   assert.equal(riderTokenHash(first), hash);
   assert.equal(hash.length, 64);
+});
+
+test("refresh session expiresAt has exactly one TTL index", () => {
+  const expiryIndexes = RiderRefreshSession.schema.indexes().filter(([keys]) => keys.expiresAt === 1);
+  assert.equal(expiryIndexes.length, 1);
+  assert.equal(expiryIndexes[0][1].expireAfterSeconds, 0);
 });

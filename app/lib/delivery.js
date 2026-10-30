@@ -16,6 +16,75 @@ export function riderDeliveryQuery(userId, deliveryId = null) {
   return { assignedRiderId: userId, ...(deliveryId ? { _id: deliveryId } : {}) };
 }
 
+export function riderDeliveryDetailPipeline(userId, deliveryId, orderCollection, shopCollection) {
+  return [
+    { $match: riderDeliveryQuery(userId, deliveryId) },
+    {
+      $project: {
+        _id: 1,
+        orderId: 1,
+        status: 1,
+        version: 1,
+        "pickup.address": 1,
+        "dropoff.address": 1,
+        "dropoff.ward": 1,
+        "dropoff.phone": 1,
+        "assignments.assignedAt": 1,
+        "events.status": 1,
+        "events.at": 1,
+        updatedAt: 1,
+      },
+    },
+    { $lookup: { from: orderCollection, localField: "orderId", foreignField: "_id", as: "order" } },
+    { $unwind: { path: "$order", preserveNullAndEmptyArrays: true } },
+    { $lookup: { from: shopCollection, localField: "order.shopId", foreignField: "_id", as: "shop" } },
+    {
+      $set: {
+        order: {
+          $cond: [
+            { $ne: ["$order", null] },
+            { $mergeObjects: ["$order", { shopId: { $ifNull: [{ $arrayElemAt: ["$shop", 0] }, null] } }] },
+            null,
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        orderId: 1,
+        status: 1,
+        version: 1,
+        pickup: 1,
+        dropoff: 1,
+        assignments: 1,
+        events: 1,
+        updatedAt: 1,
+        "order._id": 1,
+        "order.orderId": 1,
+        "order.serviceType": 1,
+        "order.orderStatus": 1,
+        "order.paymentStatus": 1,
+        "order.vendorStatus": 1,
+        "order.customerName": 1,
+        "order.customerPhone": 1,
+        "order.customerAddress": 1,
+        "order.ward": 1,
+        "order.deliveryInstructions": 1,
+        "order.customerCoordinates": 1,
+        "order.items.name": 1,
+        "order.items.image": 1,
+        "order.items.quantity": 1,
+        "order.items.selectedWholesaleTier.minQty": 1,
+        "order.items.selectedWholesaleTier.price": 1,
+        "order.shopId._id": 1,
+        "order.shopId.name": 1,
+        "order.shopId.address": 1,
+      },
+    },
+  ];
+}
+
 export function customerOrderQuery(userId) {
   return { customerId: userId };
 }

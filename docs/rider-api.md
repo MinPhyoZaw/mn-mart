@@ -69,6 +69,8 @@ Request: `{ "refreshToken": "CURRENT_REFRESH_TOKEN" }`
 
 Response (`200`): same shape as login, with a new access token and a **new refresh token**. The submitted refresh token is revoked as part of rotation and cannot be reused. An invalid, expired, revoked, or already-used token returns `401 INVALID_REFRESH_TOKEN`. Rate limit: 20 per IP per minute.
 
+The server logs privacy-safe phase timings for MongoDB connection, refresh-session lookup, transaction/rotation, user/profile loading, and total request duration. Logs contain only outcome and durations, never credentials, tokens, connection strings, or customer data.
+
 ### `POST /rider/logout`
 
 Request: `{ "refreshToken": "CURRENT_REFRESH_TOKEN" }`
