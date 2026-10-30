@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server.js";
+import { performance } from "node:perf_hooks";
 import User from "../models/User.js";
 import RiderProfile from "../models/RiderProfile.js";
 import { verifyToken } from "./jwt.js";
@@ -52,12 +53,22 @@ export async function authenticateRiderRequest(req, { allowWeb = true } = {}) {
   }
 }
 
-export async function requireApprovedRider(req) {
+export async function requireApprovedRider(req, { onTiming } = {}) {
+  const authenticationStartedAt = performance.now();
   const auth = await authenticateRiderRequest(req, { allowWeb: false });
+  onTiming?.("authenticationMs", performance.now() - authenticationStartedAt);
   if (!auth.ok) return auth;
+
+  const connectionStartedAt = performance.now();
   await connectDB();
-  const user = await User.findById(auth.user.userId).select("_id role").lean();
-  const profile = user ? await RiderProfile.findOne({ userId: user._id }).select("status").lean() : null;
+  onTiming?.("approvalDatabaseConnectionMs", performance.now() - connectionStartedAt);
+
+  const approvalCheckStartedAt = performance.now();
+  const [user, profile] = await Promise.all([
+    User.findById(auth.user.userId).select("_id role").lean(),
+    RiderProfile.findOne({ userId: auth.user.userId }).select("status").lean(),
+  ]);
+  onTiming?.("approvalChecksMs", performance.now() - approvalCheckStartedAt);
   if (!isApprovedRiderAccount(user, profile)) {
     return { ok: false, response: NextResponse.json({ success: false, error: { code: "RIDER_NOT_APPROVED", message: "An approved rider account is required." } }, { status: 403 }) };
   }
