@@ -105,7 +105,64 @@ Response (`200`):
 { "success": true, "data": { "user": { "id": "USER_ID", "name": "Aye Aye", "email": "aye@example.com", "role": "customer" }, "rider": { "profileId": "RIDER_PROFILE_ID", "status": "approved", "reason": null, "appliedAt": "2026-10-20T00:00:00.000Z", "reviewedAt": "2026-10-20T00:30:00.000Z" } } }
 ```
 
-The `rider.status` examples are `not_applied`, `pending`, `approved`, `rejected`, or `suspended`. `reason` is null unless rejection/suspension has a reason. An approved-rider server guard is available as `requireApprovedRider` in `app/lib/riderAuth.js`; it checks both the current User record and current RiderProfile status in MongoDB. No delivery routes are added in this phase.
+The `rider.status` examples are `not_applied`, `pending`, `approved`, `rejected`, or `suspended`. `reason` is null unless rejection/suspension has a reason. The approved-rider server guard `requireApprovedRider` in `app/lib/riderAuth.js` checks both the current User record and current RiderProfile status in MongoDB. Delivery actions are documented in [delivery-api.md](delivery-api.md).
+
+## Account Center monthly earnings
+
+### `GET /api/rider/summary`
+
+Requires `Authorization: Bearer ACCESS_TOKEN` from rider mobile login/refresh and **current** approved-rider access. Browser cookies alone are not accepted. The server checks the existing User and RiderProfile on every request; pending, rejected, suspended, deleted, or otherwise ineligible accounts cannot read totals. Identity comes exclusively from verified mobile authentication. No rider ID or period parameter is supported; supplied query parameters cannot select another rider or month.
+
+Exact success response (`200`, example for October 2026):
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": "2026-10",
+    "timezone": "Asia/Yangon",
+    "currency": "MMK",
+    "successfulDeliveries": 10,
+    "earnedAmount": 18000,
+    "unpricedDeliveries": 0
+  }
+}
+```
+
+- `period`: server-selected current calendar month, `YYYY-MM`, in `Asia/Yangon` (UTC+06:30).
+- `successfulDeliveries`: actual `status=delivered` records completed by this rider during that month, including attributable historical records without a price. This is not a counter stored on RiderProfile and does not depend on the current assignee or subsequent order/payment changes.
+- `earnedAmount`: sum of recorded, non-negative MMK earning snapshots for those deliveries; never recomputed using the current rate. **Earned is not paid out, withdrawn, or an available payout balance.** This endpoint does not change or report payout/settlement state.
+- `unpricedDeliveries`: number of those completed records without a usable earning snapshot. If nonzero, the UI must label `earnedAmount` as recorded/partial earnings, display the unpriced count, and avoid presenting it as final or payable. Example: 10 completed deliveries, 2 unpriced, and 8 snapshots of 1,800 produce `successfulDeliveries: 10`, `earnedAmount: 14400`, `unpricedDeliveries: 2`.
+
+Monthly filtering uses `deliveredAt >= local-month-start` and `< next-local-month-start`. October 2026 runs from `2026-09-30T17:30:00.000Z` inclusive to `2026-10-31T17:30:00.000Z` exclusive. At November's midnight, a rider with no November completions receives period `2026-11` and all three numeric totals `0`. Nothing deletes or resets history; there is no reset cron job. Account Center should refetch on opening/resuming and when the local calendar month changes.
+
+All outcomes, including errors, use `Cache-Control: private, no-store, max-age=0` and `Vary: Authorization`. Errors use the standard envelope: `401 UNAUTHORIZED` (missing/invalid/expired mobile token), `403 RIDER_NOT_APPROVED` (current account/profile ineligible), or `500 SERVER_ERROR` (unable to load summary). No customer, bank, payment, or other riders' data is returned.
+
+### Completion snapshots and duplicate protection
+
+The existing sequential `PATCH /api/rider/deliveries/{deliveryId}` action remains unchanged. On `out_for_delivery → delivered`, the server atomically records:
+
+```json
+{
+  "deliveredAt": "2026-10-20T12:00:00.000Z",
+  "completedBy": "COMPLETING_USER_OBJECT_ID",
+  "earning": { "amount": 1800, "currency": "MMK" }
+}
+```
+
+`completedBy` is the authenticated rider's User `_id`, not a client-supplied value or RiderProfile ID. The timestamp is server-generated and matches the completion event. These fields are immutable snapshots; a future rate change applies only to future completions. They are written in the same compare-and-set as status, event, and version increment, conditioned on current assignment, status, version, and absent completion fields. Concurrent/repeated/stale requests cannot award twice or overwrite a snapshot; they receive the existing `409 VERSION_CONFLICT` or `409 INVALID_TRANSITION` response. Existing acceptance, eligibility checks, payment fields, and settlement behavior remain unchanged.
+
+### Historical-data policy and explicit backfill proposal
+
+Old deliveries have completion events but no dedicated timestamp, completing-rider field, or earning snapshot. Read-only summary aggregation uses the first recorded rider `delivered` event's `actorId` and `at` as the legacy completion attribution and `deliveredAt` equivalent. It never uses `assignedRiderId`, `updatedAt`, or today's rate to invent historical earnings. Such records contribute to successful and unpriced counts, but contribute zero to recorded earnings. Records without an identifiable completion event/date cannot be assigned to a rider/month safely; they are excluded and require a separate historical-data audit. Multiple/conflicting completion events also require audit; the fallback consistently uses the first recorded rider completion and never counts one delivery twice.
+
+No production-history reads, backfills, resets, or rate assumptions are performed automatically by this change. The endpoint reports the authenticated rider's attributable unpriced count for the current month; it is not an all-time production audit. Proposed backfill, as a separate explicitly approved operation:
+
+1. Run a read-only audit on a backed-up database to enumerate all delivered records missing completion/snapshot fields, grouped by event-derived rider/month. Separately list missing dates/actors and conflicting events; do not guess their ownership or month.
+2. Review historical rate/payment evidence and explicitly approve per-record or effective-date MMK amounts. Do not presume today's 1,800 rate was payable historically. Resolve ambiguous attribution/timestamps manually.
+3. Dry-run an auditable manifest containing delivery IDs, completion evidence, approved amount/currency, and reviewer approval. Test it on a disposable copy first.
+4. Only after explicit authorization, apply guarded, idempotent updates to still-delivered records whose snapshot is still absent. Recheck completion evidence, preserve all events/payment/settlement history, and never overwrite an existing snapshot. A maintenance operation must deliberately opt into writing immutable fields; no automatic migration is included.
+5. Reconcile counts and sums against the reviewed manifest and retain the audit. Incomplete earnings remain labelled partial until the corresponding unpriced count is zero.
 
 ## Admin review
 
@@ -151,6 +208,12 @@ Ensure these indexes exist before using the API in a deployment where Mongoose a
 - `riderprofiles.status`: status query index.
 - `riderrefreshsessions.tokenHash`: unique index; `userId` index; `expiresAt` TTL index.
 - `riderratelimits.key`: unique index; `expiresAt` TTL index.
+- `deliveries.{completedBy, deliveredAt}`: compound partial index for `status: delivered`, supporting the summary's rider equality and monthly date range.
+- `deliveries.{events.actorId, events.status, events.at}`: compound multikey partial index for `status: delivered`, supporting the legacy completion-event branch without scanning all delivery history. All indexed event paths belong to the same events array. This fallback index can be reviewed for removal only after a separately approved complete historical backfill and removal of the fallback query. Existing assignment/status indexes remain unchanged.
+
+The summary performs one filtered server-side aggregation; it does not load delivery history into application memory or store/reset cumulative counters. Index declarations do not replace deployment index review when auto-indexing is disabled.
+
+For isolated automated coverage, use Node 22 and `npm run test:rider`. The runner disables test-process isolation so individual assertions execute in this environment. Monthly aggregation and compare-and-set tests use the test-only `mingo` evaluator and a substituted collection, exercising Mongoose casting/immutability without a production connection. They do not replace integration verification against a disposable MongoDB database.
 
 The project does not configure a shared external rate-limit service. Rider endpoint limits use atomic MongoDB counters, so they work across server instances sharing this MongoDB deployment. The expiry indexes are for cleanup; rate checks enforce bucket expiry themselves.
 

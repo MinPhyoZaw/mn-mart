@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:rider": "node --experimental-default-type=module --test tests/rider/rider-backend.test.js tests/rider/delivery.test.js"
+    "test:rider": "node --experimental-default-type=module --test --experimental-test-isolation=none tests/rider/rider-backend.test.js tests/rider/delivery.test.js tests/rider/summary.test.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -40,6 +40,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "mingo": "6.7.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
