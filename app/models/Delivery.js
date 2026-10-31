@@ -25,9 +25,23 @@ const deliverySchema = new mongoose.Schema({
   assignments: { type: [assignmentSchema], default: [] },
   events: { type: [eventSchema], default: [] },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  // Absent on legacy rows. Written once by the guarded completion update.
+  deliveredAt: { type: Date, immutable: true },
+  completedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", immutable: true },
+  earning: {
+    type: new mongoose.Schema({
+      amount: { type: Number, required: true, min: 0, validate: Number.isSafeInteger, immutable: true },
+      currency: { type: String, required: true, enum: ["MMK"], immutable: true },
+    }, { _id: false }),
+    immutable: true,
+    default: undefined,
+  },
 }, { timestamps: true });
 
 deliverySchema.index({ status: 1, updatedAt: -1 });
 deliverySchema.index({ assignedRiderId: 1, status: 1, updatedAt: -1 });
+// Monthly summary equality/range scans, including the read-only legacy fallback.
+deliverySchema.index({ completedBy: 1, deliveredAt: 1 }, { partialFilterExpression: { status: "delivered" } });
+deliverySchema.index({ "events.actorId": 1, "events.status": 1, "events.at": 1 }, { partialFilterExpression: { status: "delivered" } });
 
 export default mongoose.models.Delivery || mongoose.model("Delivery", deliverySchema);

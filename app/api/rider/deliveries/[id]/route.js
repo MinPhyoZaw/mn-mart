@@ -8,6 +8,7 @@ import { isEligibleShoppingOrder, matchesDeliveryVersion, riderDeliveryDetailPip
 import Delivery from "../../../../models/Delivery";
 import Order from "../../../../models/Order";
 import Shop from "../../../../models/Shop";
+import { deliveryTransitionUpdate } from "../../../../lib/riderEarnings.js";
 
 function timedResponse(createResponse, timings, setOutcome) {
   const startedAt = performance.now();
@@ -76,7 +77,8 @@ export async function PATCH(req, { params }) {
     const order = await Order.findById(current.orderId).select("serviceType orderStatus paymentStatus vendorStatus").lean();
     if (!isEligibleShoppingOrder(order)) return errorResponse(409, "ORDER_NOT_ELIGIBLE", "The linked order is no longer eligible. Contact an admin.");
     const now = new Date();
-    const updated = await Delivery.findOneAndUpdate({ _id: current._id, assignedRiderId: auth.user._id, version: body.version, status: current.status }, { $set: { status: nextStatus, updatedBy: auth.user._id }, $inc: { version: 1 }, $push: { events: { status: nextStatus, actorId: auth.user._id, actorRole: "rider", at: now } } }, { returnDocument: "after" }).lean();
+    const change = deliveryTransitionUpdate(current, auth.user._id, body.version, nextStatus, now);
+    const updated = await Delivery.findOneAndUpdate(change.filter, change.update, change.options).lean();
     if (!updated) return errorResponse(409, "VERSION_CONFLICT", "The delivery changed. Reload before updating.");
     return NextResponse.json({ success: true, data: { deliveryId: String(updated._id), status: updated.status, version: updated.version, updatedAt: updated.updatedAt } });
   } catch (error) {
