@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:orders": "node --experimental-default-type=module --test --experimental-test-isolation=none tests/orders/customer-orders.test.js tests/orders/orders-api.test.js",
     "test:rider": "node --experimental-default-type=module --test --experimental-test-isolation=none tests/rider/rider-backend.test.js tests/rider/delivery.test.js tests/rider/summary.test.js"
   },
   "dependencies": {

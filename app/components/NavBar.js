@@ -184,6 +184,9 @@ trailer
                 </>
               ) : (
                 <>
+                  {user.role === "customer" && (
+                    <Link href="/orders" onClick={closeMenu} className="rounded-lg px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-50">My Orders</Link>
+                  )}
                   {user.role === "admin" && (
                     <Link
   href="/admindashboard"
@@ -411,6 +414,10 @@ trailer
               </div>
             </button>
 
+            {user.role === "customer" && (
+              <Link href="/orders" onClick={closeMenu} className="flex w-full items-center rounded-xl px-4 py-3.5 text-sm font-semibold text-green-700 hover:bg-green-50">My Orders</Link>
+            )}
+
             {/* Notifications */}
             {["customer", "admin", "vendor"].includes(
               user.role
@@ -580,6 +587,10 @@ trailer
 
                 
               </div>
+
+              {user.role === "customer" && (
+                <Link href="/orders" onClick={() => setIsAccountOpen(false)} className="block rounded-xl bg-green-50 px-4 py-3 font-semibold text-green-800">My Orders</Link>
+              )}
 
               <PushNotificationOptIn />
 
