@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Bell, Menu, ShieldCheck, ShoppingCart, Trash2, User, X } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import MobileMenuDrawer from "./MobileMenuDrawer";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationsContext";
@@ -29,7 +30,7 @@ export default function Navbar() {
   const router = useRouter();
   const { totalItems, toggleCart } = useCart();
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMenu = useCallback(() => setIsMenuOpen(false), []);
 
   const markNotificationAsRead = async (noticeId) => {
     if (noticeId === "vendor-requests") {
@@ -328,6 +329,9 @@ trailer
     }}
     className="rounded-full p-2.5 text-gray-700 transition active:scale-95 hover:bg-gray-100"
     aria-label="Open menu"
+    aria-haspopup="dialog"
+    aria-expanded={isMenuOpen}
+    aria-controls="mobile-menu"
   >
     <Menu size={24} />
   </button>
@@ -337,215 +341,20 @@ trailer
 
         
       </nav>
-{/* Mobile menu drawer */}
-{isMenuOpen && (
-  <div className="md:hidden">
-    {/* Backdrop */}
-    <button
-      type="button"
-      aria-label="Close menu"
-      onClick={closeMenu}
-      className="fixed inset-0 z-[70] bg-black/35 backdrop-blur-[1px]"
-    />
-
-    {/* Right drawer */}
-    <aside className="fixed right-0 top-0 z-[80] flex h-dvh w-[88%] max-w-sm flex-col bg-white shadow-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-        <div>
-          <p className="text-lg font-bold text-gray-900">
-            Menu
-          </p>
-
-          {user && (
-            <p className="mt-0.5 max-w-[220px] truncate text-xs text-gray-500">
-              {user.name}
-            </p>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={closeMenu}
-          className="rounded-full bg-gray-100 p-2.5 text-gray-600 transition active:scale-95"
-          aria-label="Close menu"
-        >
-          <X size={21} />
-        </button>
-      </div>
-
-      {/* Scrollable menu */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {!user ? (
-          <div className="space-y-3">
-            <Link
-              href="/login"
-              onClick={closeMenu}
-              className="flex w-full items-center rounded-xl bg-gray-50 px-4 py-3.5 text-sm font-semibold text-gray-800"
-            >
-              Login
-            </Link>
-
-            <Link
-              href="/signup"
-              onClick={closeMenu}
-              className="flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-3.5 text-sm font-semibold text-white"
-            >
-              Create Account
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {/* Account */}
-            <button
-              type="button"
-              onClick={openAccountPane}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                <User size={20} />
-              </span>
-
-              <div className="min-w-0">
-                <p>My Account</p>
-                <p className="truncate text-xs font-normal text-gray-500">
-                  {user.email}
-                </p>
-              </div>
-            </button>
-
-            {user.role === "customer" && (
-              <Link href="/orders" onClick={closeMenu} className="flex w-full items-center rounded-xl px-4 py-3.5 text-sm font-semibold text-green-700 hover:bg-green-50">My Orders</Link>
-            )}
-
-            {/* Notifications */}
-            {["customer", "admin", "vendor"].includes(
-              user.role
-            ) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNotificationsOpen(
-                    (prev) => !prev
-                  );
-                }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                  <Bell size={20} />
-
-                  {notifications.length > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
-                      {notifications.reduce(
-                        (acc, n) =>
-                          acc + (n.count || 1),
-                        0
-                      )}
-                    </span>
-                  )}
-                </span>
-
-                Notifications
-              </button>
-            )}
-
-            {/* Mobile notification content */}
-            {isNotificationsOpen &&
-              ["customer", "admin", "vendor"].includes(
-                user.role
-              ) && (
-                <div className="mx-2 mb-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
-                  {notifications.length === 0 ? (
-                    <p className="text-xs text-gray-500">
-                      No notifications yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {notifications
-                        .slice(0, 4)
-                        .map((notice, idx) => (
-                          <label
-                            key={`${notice.orderId}-${idx}`}
-                            className="flex items-start gap-2 rounded-lg bg-white p-2.5 text-xs text-gray-700"
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-0.5 h-4 w-4 accent-green-600"
-                              onChange={() =>
-                                markNotificationAsRead(
-                                  notice._id
-                                )
-                              }
-                            />
-
-                            <span>
-                              {notice.text}
-
-                              {notice.thankYouMessage && (
-                                <span className="mt-1 block text-green-700">
-                                  {
-                                    notice.thankYouMessage
-                                  }
-                                </span>
-                              )}
-                            </span>
-                          </label>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-            {/* Dashboard */}
-            {user.role === "admin" && (
-              <Link
-                href="/admindashboard"
-                prefetch={false}
-                onClick={closeMenu}
-                className="flex w-full items-center rounded-xl px-4 py-3.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                Admin Dashboard
-              </Link>
-            )}
-
-            {user.role === "vendor" && (
-              <Link
-                href="/vendordashboard"
-                onClick={closeMenu}
-                className="flex w-full items-center rounded-xl px-4 py-3.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-              >
-                Vendor Dashboard
-              </Link>
-            )}
-
-            <div className="my-3 border-t border-gray-100" />
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50"
-            >
-              Logout
-            </button>
-          </div>
-        )}
-
-        <div className="mt-4 border-t border-gray-100 pt-4">
-          <Link
-            href="/privacy"
-            onClick={closeMenu}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold text-gray-800 transition hover:bg-emerald-50 hover:text-emerald-700"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-              <ShieldCheck size={20} />
-            </span>
-            Privacy Policy
-          </Link>
-        </div>
-      </div>
-    </aside>
-  </div>
-)}
+      <MobileMenuDrawer
+        open={isMenuOpen}
+        onClose={closeMenu}
+        user={user}
+        onAccount={openAccountPane}
+        notifications={notifications}
+        notificationsOpen={isNotificationsOpen}
+        onToggleNotifications={() => setIsNotificationsOpen((previous) => !previous)}
+        onReadNotification={(noticeId) => {
+          if (noticeId === "vendor-requests") closeMenu();
+          return markNotificationAsRead(noticeId);
+        }}
+        onLogout={handleLogout}
+      />
       {/* Search bar placed below navbar */}
       <SearchBar />
 
