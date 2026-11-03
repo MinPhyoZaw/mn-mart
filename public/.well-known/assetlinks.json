@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "store.mn_mart.app",
+      "sha256_cert_fingerprints": [
+        "BF:CC:78:D2:09:1C:A2:FD:BC:CA:7F:97:52:C8:3F:96:AA:06:8F:0C:BB:64:D1:8E:25:43:6D:AA:42:06:D8:C0"
+      ]
+    }
+  }
+]
