@@ -174,7 +174,7 @@ class _PagedListState extends State<PagedList> {
       final result = await widget.load(page);
       if (!mounted) return;
       setState(() {
-        rows = [...if (!refresh) ...rows, ...result.rows];
+        rows = [if (!refresh) ...rows, ...result.rows];
         next = page + 1;
         more = result.more;
       });
