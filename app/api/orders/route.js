@@ -6,6 +6,8 @@ import Delivery from "../../models/Delivery";
 import Shop from "../../models/Shop";
 import { customerOrderQuery } from "../../lib/delivery";
 
+import Item from "../../models/Item";
+
 export async function GET(req) {
   try {
     const auth = requireAuth(req, ["customer"]);
@@ -15,18 +17,27 @@ export async function GET(req) {
     const page = Math.max(1, Number.parseInt(params.get("page") || "1", 10) || 1);
     const limit = Math.min(50, Math.max(1, Number.parseInt(params.get("limit") || "20", 10) || 20));
     const ownerQuery = customerOrderQuery(auth.user.userId);
-    const [orders, total] = await Promise.all([Order.find(ownerQuery).select("_id orderId serviceType orderStatus vendorStatus paymentStatus totalAmount createdAt items shopId bookingDetails").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(), Order.countDocuments(ownerQuery)]);
+    const [orders, total] = await Promise.all([Order.find(ownerQuery).select("_id orderId hotelReference serviceType orderStatus vendorStatus paymentStatus totalAmount createdAt items shopId bookingDetails").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(), Order.countDocuments(ownerQuery)]);
     const deliveries = await Delivery.find({ orderId: { $in: orders.map((order) => order._id) } }).select("orderId status updatedAt events").lean();
     const deliveryMap = new Map(deliveries.map((delivery) => [String(delivery.orderId), delivery]));
     // Fetch only names for shops belonging to the already owner-scoped page.
-    const shops = await Shop.find({ _id: { $in: orders.map((order) => order.shopId).filter(Boolean) } }).select("name").lean();
+    const shops = await Shop.find({ _id: { $in: orders.map((order) => order.shopId).filter(Boolean) } }).select("name phone").lean();
     const shopNames = new Map(shops.map((shop) => [String(shop._id), shop.name]));
+    const hotelRoomIds = orders.filter((order) => order.serviceType === "hotel")
+      .flatMap((order) => (order.items || []).map((item) => item.itemId)).filter(Boolean);
+    const rooms = hotelRoomIds.length ? await Item.find({ _id: { $in: hotelRoomIds } }).select("roomType").lean() : [];
+    const roomTypes = new Map(rooms.map((room) => [String(room._id), room.roomType]));
+    const hotelPhones = new Map(shops.map((shop) => [String(shop._id), shop.phone]));
     const data = orders.map((order) => {
       const delivery = deliveryMap.get(String(order._id));
       const { shopId, ...fields } = order;
       return {
         ...fields,
         shopName: shopNames.get(String(shopId)) || null,
+        ...(order.serviceType === "hotel" ? {
+          hotelPhone: hotelPhones.get(String(shopId)) || null,
+          hotelRoomType: order.bookingDetails?.roomType || roomTypes.get(String(order.items?.[0]?.itemId)) || order.items?.[0]?.name || null,
+        } : {}),
         delivery: order.serviceType === "shopping" && delivery
           ? {
               status: delivery.status,

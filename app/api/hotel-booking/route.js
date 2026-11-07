@@ -9,6 +9,8 @@ import Order from "../../models/Order";
 import { hotelError, hotelStay } from "../../lib/hotelDates";
 import { lockHotelRoom, requireRoomAvailable } from "../../lib/hotelAvailability";
 
+import { nextHotelReference } from "../../lib/hotelReference";
+
 function matchingRetry(order, userId, roomItemId, shopId, stay) {
   if (
     String(order.customerId) !== String(userId) ||
@@ -94,10 +96,12 @@ export async function POST(req) {
           throw hotelError("Room price is unavailable.", 409);
         const totalAmount = Number((price * stay.nights).toFixed(2));
         const commissionAmount = Number((totalAmount * 0.015).toFixed(2));
+        const hotelReference = await nextHotelReference();
         [order] = await Order.create(
           [
             {
               orderId: `ORD-${randomUUID()}`,
+              hotelReference,
               idempotencyKey: bookingKey,
               vendorId: shop.vendorId,
               shopId,
@@ -116,7 +120,7 @@ export async function POST(req) {
                   lineTotal: totalAmount,
                 },
               ],
-              bookingDetails: { ...stay, guestCount, extraBedAmount, note: body.note || "" },
+              bookingDetails: { ...stay, roomType: room.roomType || room.name, guestCount, extraBedAmount, note: body.note || "" },
               receiptImage,
               paymentProvider,
               totalAmount,

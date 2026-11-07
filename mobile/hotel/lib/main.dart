@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'api.dart';
+import 'booking_receipt.dart';
 
 void main() => runApp(const HotelApp());
 
@@ -180,22 +181,7 @@ class _HomeState extends State<Home> {
               rethrow;
             }
           },
-          item: (order) {
-            final items = (order['items'] as List? ?? []).cast<Json>();
-            return Card(child: ListTile(
-              title: Text(field(order, 'shopName', 'Hotel')),
-              subtitle: Text([
-                if (items.isNotEmpty) items.map((item) => field(item, 'name')).join(', '),
-                field(order, 'orderId'),
-                if (order['bookingDetails'] is Json)
-                  'Stay: ${field(order['bookingDetails'] as Json, 'checkIn')} → ${field(order['bookingDetails'] as Json, 'checkOut')}',
-                'Total for stay: ${mmk(order['totalAmount'])}',
-                'Payment: ${field(order, 'paymentStatus', 'pending')}',
-                'Booking: ${field(order, 'orderStatus', 'pending')}',
-                'Hotel response: ${field(order, 'vendorStatus', 'new')}',
-              ].join('\n')),
-            ));
-          },
+          item: (order) => BookingReceipt(order: order),
         ),
       _ => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Text(api.user == null ? 'Use your MN-Mart customer account' : field(api.user!, 'email')),

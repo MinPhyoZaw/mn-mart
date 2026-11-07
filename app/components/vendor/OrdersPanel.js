@@ -26,7 +26,7 @@ export default function OrdersPanel({ orders = [], onAction, processingAction })
               <span className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getServiceTag(order.serviceType).color}`}>
                 {getServiceTag(order.serviceType).label}
               </span>
-              <p className="text-sm font-semibold">Order ID: {order.orderId}</p>
+              <p className="text-sm font-semibold">Order ID: {order.hotelReference || order.orderId}</p>
               {order.orderStatus === "pending" && (
                 <p className="mt-1 text-sm font-medium text-amber-700">Order pending state: wait for admin confirmation for payment.</p>
               )}
