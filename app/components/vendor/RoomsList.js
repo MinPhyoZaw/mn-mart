@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
+import RoomCalendar from "./RoomCalendar";
+
 const PAGE_SIZE = 24;
 
 export default function RoomsList({ shop, refreshToken = 0 }) {
@@ -11,7 +13,7 @@ export default function RoomsList({ shop, refreshToken = 0 }) {
   const [message, setMessage] = useState("");
 
   const [showAvailable, setShowAvailable] = useState(true);
-  const [showNotAvailable, setShowNotAvailable] = useState(false);
+  const [showNotAvailable, setShowNotAvailable] = useState(true);
 
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
@@ -65,7 +67,7 @@ export default function RoomsList({ shop, refreshToken = 0 }) {
   }, [shop?._id, refreshToken]);
 
   const filteredItems = items.filter((item) => {
-    if (item.isAvailable) {
+    if (item.isAvailable !== false) {
       return showAvailable;
     }
 
@@ -172,7 +174,7 @@ export default function RoomsList({ shop, refreshToken = 0 }) {
             }
           />
 
-          <span>Available</span>
+          <span>Accepting bookings</span>
         </label>
 
         <label className="flex items-center gap-2 text-sm">
@@ -184,7 +186,7 @@ export default function RoomsList({ shop, refreshToken = 0 }) {
             }
           />
 
-          <span>Not Available</span>
+          <span>Bookings paused</span>
         </label>
       </div>
 
@@ -232,17 +234,17 @@ export default function RoomsList({ shop, refreshToken = 0 }) {
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={Boolean(item.isAvailable)}
+                      checked={item.isAvailable !== false}
                       onChange={() =>
                         toggleAvailability(
                           item._id,
-                          item.isAvailable
+                          item.isAvailable !== false
                         )
                       }
                     />
 
                     <span className="text-sm">
-                      Available
+                      Accept bookings
                     </span>
                   </label>
 
@@ -252,6 +254,7 @@ export default function RoomsList({ shop, refreshToken = 0 }) {
                     ).toLocaleDateString()}
                   </span>
                 </div>
+                <RoomCalendar room={item} onUpdated={() => loadRooms(page)} />
               </div>
             ))}
           </div>

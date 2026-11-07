@@ -30,6 +30,11 @@ const itemSchema = new mongoose.Schema(
       min: 0,
     },
 
+    roomNumber: { type: String, trim: true, maxlength: 40 },
+    roomType: { type: String, trim: true, maxlength: 80 },
+    maxGuests: { type: Number, min: 1, max: 30 },
+    hotelCalendarVersion: { type: Number, default: 0, select: false },
+
     wholesaleTiers: {
       type: [
         {
@@ -178,6 +183,11 @@ itemSchema.index({
   type: 1,
   category: 1,
   createdAt: -1,
+});
+
+itemSchema.index({ shopId: 1, roomNumber: 1 }, {
+  unique: true,
+  partialFilterExpression: { type: "room", roomNumber: { $type: "string" } },
 });
 
 export default mongoose.models.Item ||

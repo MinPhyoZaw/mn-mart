@@ -22,6 +22,7 @@ function OrderCard({ order }) {
       <p className="font-bold text-green-800">{money(order.totalAmount)}</p>
     </div>
     <ul className="my-4 space-y-2 text-sm text-gray-700">{order.items?.map((item, index) => <li className="break-words" key={item._id || index}>{item.name} × {item.quantity}</li>)}</ul>
+    {order.serviceType === 'hotel' && <p className="mb-3 text-sm">Check-in {order.bookingDetails?.checkIn || 'Pending review'} · Check-out {order.bookingDetails?.checkOut || 'Pending review'}</p>}
     <div className="flex flex-wrap gap-2 text-sm">
       <p className="rounded-lg bg-green-50 px-3 py-2 text-green-900">{progress.label}</p>
       <p className="rounded-lg bg-gray-100 px-3 py-2 text-gray-800">Payment: {statusLabel(order.paymentStatus)}</p>

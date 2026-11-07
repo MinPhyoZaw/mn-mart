@@ -8,6 +8,8 @@ import ShopCategory from "../../../models/ShopCategory";
 import { requireVendorAuth } from "../../../lib/routeAuth";
 import mongoose from "mongoose";
 
+import { hotelRoomFields } from "../../../lib/hotelDates";
+
 export async function PATCH(req, { params }) {
   try {
     const auth = await requireVendorAuth(req);
@@ -118,11 +120,17 @@ export async function PUT(req, { params }) {
       }
     }
 
-    await Item.updateOne({ _id: id }, { $set: update });
+    if (item.type === "room" && ["roomNumber", "roomType", "maxGuests"].some((key) => body[key] !== undefined)) {
+      Object.assign(update, hotelRoomFields({ ...item, ...body }));
+    }
+    await Item.updateOne({ _id: id }, { $set: update }, { runValidators: true });
     const updated = await Item.findById(id).lean();
 
     return NextResponse.json({ success: true, data: updated }, { status: 200 });
   } catch (error) {
+    if (error?.status || error?.code === 11000 || error?.name === "ValidationError") {
+      return NextResponse.json({ success: false, message: error.code === 11000 ? "That room number already exists in this hotel." : error.message }, { status: error.status || (error.code === 11000 ? 409 : 400) });
+    }
     console.error("PUT /api/items/[id] error:", error);
     return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
   }
