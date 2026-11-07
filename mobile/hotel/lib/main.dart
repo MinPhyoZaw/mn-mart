@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'api.dart';
 import 'booking_receipt.dart';
+import 'hotel_home_header.dart';
 
 void main() => runApp(const HotelApp());
 
@@ -123,6 +124,27 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int tab = 0;
   int historyVersion = 0;
+  final hotelSearch = TextEditingController();
+  final searchFocus = FocusNode();
+  String hotelQuery = '';
+
+  @override
+  void dispose() {
+    hotelSearch.dispose();
+    searchFocus.dispose();
+    super.dispose();
+  }
+
+  void searchHotels() {
+    searchFocus.unfocus();
+    setState(() => hotelQuery = hotelSearch.text.trim());
+  }
+
+  void clearHotelSearch() {
+    hotelSearch.clear();
+    searchHotels();
+  }
+
   HotelApi get api => widget.api;
 
   Future<bool> signIn() async {
@@ -146,23 +168,35 @@ class _HomeState extends State<Home> {
     appBar: AppBar(title: const Text('Manaw Mart Hotel')),
     body: SafeArea(child: switch (tab) {
       0 => PagedList(
-        key: const ValueKey('hotels'),
-        intro: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('MYITKYINA  •  HOTEL BOOKINGS', style: TextStyle(letterSpacing: 1.5)),
-          SizedBox(height: 8),
-          Text('Find your next stay', style: TextStyle(fontSize: 31, fontWeight: FontWeight.bold)),
-        ]),
-        empty: 'No hotels are listed yet.',
+        key: ValueKey('hotels-$hotelQuery'),
+        intro: HotelHomeHeader(
+          controller: hotelSearch,
+          focusNode: searchFocus,
+          query: hotelQuery,
+          onSearch: searchHotels,
+          onClear: clearHotelSearch,
+          onBookings: () => setState(() => tab = 1),
+        ),
+        empty: hotelQuery.isEmpty ? 'No hotels are listed yet.'
+            : 'No hotels found. Try another name or area, or clear your search.',
         load: (page) async {
-          final result = await api.hotels(page);
+          final search = hotelQuery;
+          final result = await api.hotels(page, search: search);
           final hotels = (result['data'] as List).cast<Json>();
           if (page == 1 && hotels.isEmpty && result['meta']['total'] == 0) {
-            return (rows: sampleHotels, more: false);
+            final catalogueEmpty = search.isEmpty || (await api.hotels(1))['meta']['total'] == 0;
+            if (catalogueEmpty) {
+              return (rows: sampleHotels.where((hotel) =>
+                  field(hotel, 'name').toLowerCase().contains(search.toLowerCase()) ||
+                  field(hotel, 'description').toLowerCase().contains(search.toLowerCase())).toList(),
+                  more: false);
+            }
           }
           return (rows: hotels,
               more: page < (result['meta']['totalPages'] as num));
         },
-        item: (hotel) => Listing(data: hotel, action: 'View rooms', onTap: () => openHotel(hotel)),
+        item: (hotel) => Listing(data: hotel, action: 'View rooms',
+          details: field(hotel, 'address'), onTap: () => openHotel(hotel)),
       ),
       1 => api.user == null
         ? Center(child: FilledButton(onPressed: signIn, child: const Text('Sign in to view bookings')))
