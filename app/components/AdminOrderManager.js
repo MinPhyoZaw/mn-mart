@@ -255,7 +255,7 @@ export default function AdminOrderManager() {
                   </p>
 
                   <h3 className="mt-1 text-base font-semibold text-gray-900">
-                    {order.orderId}
+                    {order.hotelReference || order.orderId}
                   </h3>
                 </div>
 
@@ -486,7 +486,7 @@ export default function AdminOrderManager() {
                         type="button"
                         onClick={() => setActiveReceipt(order.receiptImage)}
                         className="group relative h-44 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
-                        aria-label={`Open receipt for order ${order.orderId}`}
+                        aria-label={`Open receipt for order ${order.hotelReference || order.orderId}`}
                       >
                         <Image
                           src={order.receiptImage}
@@ -573,7 +573,7 @@ export default function AdminOrderManager() {
                     </div>
 
                     <p className="text-sm leading-relaxed text-emerald-800">
-                      Order <strong>{order.orderId}</strong> has been approved
+                      Order <strong>{order.hotelReference || order.orderId}</strong> has been approved
                       and sent to vendor{" "}
                       <strong>
                         {order.vendorId?.vendorName || "-"}

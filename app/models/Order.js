@@ -8,6 +8,8 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    hotelReference: { type: String, unique: true, sparse: true },
+
     idempotencyKey: {
       type: String,
       unique: true,
@@ -60,6 +62,7 @@ const orderSchema = new mongoose.Schema(
     },
 
     bookingDetails: {
+      roomType: String,
       checkIn: String,
       checkOut: String,
       nights: Number,

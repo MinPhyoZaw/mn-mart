@@ -93,12 +93,14 @@ test(
     const Vendor = load(path.join(root, "models/Vendor.js")).default;
     const shopRoute = load(path.join(root, "api/shops/[id]/route.js"));
     const itemRoute = load(path.join(root, "api/items/route.js"));
+    const references = load(path.join(root, "api/hotel-bookings/references/route.js"));
+    const Counter = load(path.join(root, "models/HotelReferenceCounter.js")).default;
     const booking = load(path.join(root, "api/hotel-booking/route.js"));
     const calendar = load(path.join(root, "api/vendor/rooms/[id]/calendar/route.js"));
     const admin = load(path.join(root, "api/admin/orders/[id]/route.js"));
     const vendor = load(path.join(root, "api/vendor/orders/[id]/route.js"));
     const availability = load(path.join(root, "lib/hotelAvailability.js"));
-    await Promise.all([Item.init(), Order.init(), Shop.init(), Block.init()]);
+    await Promise.all([Item.init(), Order.init(), Shop.init(), Block.init(), Counter.init()]);
     const params = { params: Promise.resolve({ id: String(roomId) }) };
     async function reset() {
       await Promise.all([
@@ -140,6 +142,8 @@ test(
           assert.deepEqual(responses.map((response) => response.status).sort(), [201, 409]);
           assert.equal(await Order.countDocuments({}), 1);
           const order = await Order.findOne().lean();
+          assert.match(order.hotelReference, /^MH-\d{4,}$/);
+          assert.equal(order.bookingDetails.roomType, "Double");
           assert.equal(order.totalAmount, 80000);
           assert.equal(order.items[0].quantity, 2);
           assert.equal(order.bookingDetails.nights, 2);
@@ -338,6 +342,48 @@ test(
         );
         assert.equal((await itemRoute.POST(request(body))).status, 201);
         assert.equal((await itemRoute.POST(request(body))).status, 409);
+      });
+      await suite.test(
+        "legacy short references are assigned once and remain owner-scoped",
+        async () => {
+          await reset();
+          const submitted = await (await booking.POST(request(payload()))).json();
+          const original = submitted.data.orderId;
+          await Order.updateOne({ _id: submitted.data._id }, { $unset: { hotelReference: "" } });
+          const body = { orderIds: [submitted.data._id] };
+          const responses = await Promise.all([
+            references.POST(request(body)),
+            references.POST(request(body)),
+          ]);
+          assert.ok(responses.every((response) => response.status === 200));
+          const values = await Promise.all(responses.map((response) => response.json()));
+          assert.equal(values[0].data[0].hotelReference, values[1].data[0].hotelReference);
+          assert.match(values[0].data[0].hotelReference, /^MH-\d{4,}$/);
+          assert.equal((await Order.findById(submitted.data._id).lean()).orderId, original);
+          const other = await references.POST(
+            request(body, "POST", { "x-user": String(otherUserId) }),
+          );
+          assert.equal(other.status, 404);
+        },
+      );
+      await suite.test("different rooms receive unique short references concurrently", async () => {
+        await reset();
+        const second = await Item.create({
+          shopId,
+          name: "102",
+          type: "room",
+          price: 50000,
+          roomNumber: "102",
+          roomType: "Single",
+          maxGuests: 2,
+        });
+        const responses = await Promise.all([
+          booking.POST(request(payload())),
+          booking.POST(request(payload({ roomItemId: String(second._id) }))),
+        ]);
+        assert.ok(responses.every((response) => response.status === 201));
+        const values = await Promise.all(responses.map((response) => response.json()));
+        assert.notEqual(values[0].data.hotelReference, values[1].data.hotelReference);
       });
       await suite.test("anonymous submissions are rejected before booking", async () => {
         await reset();

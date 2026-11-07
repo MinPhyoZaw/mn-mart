@@ -50,3 +50,11 @@ Run `npm run test:hotel` for date validation tests. To run the database integrat
 - Check-in, check-out, and night count are stored as structured booking details. Each listing represents one physical room. The backend checks date availability again during submission and calculates the stay total from its nightly price.
 - Bookings displays hotel orders from the signed-in account and shows payment, order, and vendor status separately. Pull down to refresh. The session is held in memory and requires sign-in again after an app restart.
 - Validate with a test customer and a designated test payment/receipt before distributing this build. Confirm the dashboard displays the dates and status updates and that retrying the same request creates one order.
+
+## Booking receipts
+
+My Hotel Bookings shows the room type, short booking reference, stay dates and number of nights, nightly stay total, fixed 5,000 MMK deposit, remaining balance, booking status, and hotel phone. Payment is labelled Paid after verification. Pending deposits remain labelled Awaiting verification. A confirmed booking requires admin approval and hotel acceptance.
+
+Download receipt opens Android’s save dialog and saves a PNG image of the booking receipt. The image preserves the text and fonts shown in the app. Run `flutter pub get` after pulling this update to install `flutter_file_dialog`, then rebuild the app.
+
+Hotel references start at `MH-0001`. Older hotel orders receive a short reference when their owner loads them in the updated app. The original internal order ID is retained. References expand beyond four digits after 9,999 bookings to preserve uniqueness.

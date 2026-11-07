@@ -108,8 +108,22 @@ class HotelApi {
     return _request('/api/shops/${Uri.encodeComponent(shop)}?${Uri(queryParameters: query).query}');
   }
 
-  Future<Json> orders(int page) =>
-      _request('/api/orders?page=$page&limit=20', authenticated: true);
+  Future<Json> orders(int page) async {
+    final result = await _request('/api/orders?page=$page&limit=20', authenticated: true);
+    final rows = (result['data'] as List).cast<Json>();
+    final missing = rows.where((order) => order['serviceType'] == 'hotel' &&
+        (order['hotelReference'] == null || order['hotelReference'] == '')).toList();
+    if (missing.isNotEmpty) {
+      final references = await _request('/api/hotel-bookings/references',
+        authenticated: true, body: {'orderIds': missing.map((order) => order['_id']).toList()});
+      final byId = {for (final reference in (references['data'] as List).cast<Json>())
+        reference['_id']: reference['hotelReference']};
+      for (final order in missing) {
+        order['hotelReference'] = byId[order['_id']];
+      }
+    }
+    return result;
+  }
 
   Future<Json> book(Json body) =>
       _request('/api/hotel-booking', authenticated: true, body: body);

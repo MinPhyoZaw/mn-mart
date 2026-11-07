@@ -15,7 +15,7 @@ function OrderCard({ order }) {
   const timeline = orderTimeline(order);
   return <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0"><h2 className="break-all font-semibold text-gray-900">{order.orderId || order._id}</h2>
+      <div className="min-w-0"><h2 className="break-all font-semibold text-gray-900">{order.hotelReference || order.orderId || order._id}</h2>
         {order.shopName && <p className="mt-1 break-words text-gray-700">{order.shopName}</p>}
         <p className="mt-1 text-sm text-gray-500">{statusLabel(order.serviceType)}{date(order.createdAt) && ` · ${date(order.createdAt)} (Myanmar time)`}</p>
       </div>

@@ -6,7 +6,7 @@ import { customerOrderQuery } from '../../app/lib/delivery.js';
 
 // Run the real route with deterministic database/auth dependencies.
 const source = readFileSync(new URL('../../app/api/orders/route.js', import.meta.url), 'utf8');
-function route({ authorized = true, rows = [] } = {}) {
+function route({ authorized = true, rows = [], rooms = [] } = {}) {
   const calls = {};
   const query = (value) => ({ select(fields) { calls.fields ??= []; calls.fields.push(fields); return this; }, sort() { return this; }, skip(value) { calls.skip = value; return this; }, limit(value) { calls.limit = value; return this; }, async lean() { return value; } });
   const modules = {
@@ -15,9 +15,10 @@ function route({ authorized = true, rows = [] } = {}) {
     '../../lib/mongodb': { default: async () => { calls.connected = true; } },
     '../../lib/routeAuth': { requireAuth: (_req, roles) => { calls.roles = roles; return authorized ? { ok: true, user: { userId: 'customer-a' } } : { ok: false, response: { status: 401 } }; } },
     '../../lib/delivery': { customerOrderQuery },
+    '../../models/Item': { default: { find: (filter) => { calls.roomFilter = filter; return query(rooms); } } },
     '../../models/Order': { default: { find: (filter) => { calls.owner = filter; return query(rows); }, countDocuments: async (filter) => { calls.countOwner = filter; return rows.length; } } },
     '../../models/Delivery': { default: { find: (filter) => { calls.deliveries = filter; return query([]); } } },
-    '../../models/Shop': { default: { find: (filter) => { calls.shops = filter; return query([{ _id: 'shop-a', name: 'မြစ်ကြီးနားဆိုင်' }]); } } },
+    '../../models/Shop': { default: { find: (filter) => { calls.shops = filter; return query([{ _id: 'shop-a', name: 'မြစ်ကြီးနားဆိုင်', phone: '099999999' }]); } } },
   };
   const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
   const exports = {};
@@ -45,4 +46,18 @@ test('unauthenticated customer history returns before accessing the database', a
   assert.equal((await GET({ url: 'http://test/api/orders' })).status, 401);
   assert.equal(calls.connected, undefined);
   assert.equal(calls.owner, undefined);
+});
+
+test('hotel receipts expose the hotel phone and preserve the booked room type', async () => {
+  const { GET, calls } = route({ rows: [
+    { _id: 'order-a', shopId: 'shop-a', serviceType: 'hotel', hotelReference: 'MH-0001', items: [{ itemId: 'room-a', name: 'Room 101' }], bookingDetails: { roomType: 'Single Room' } },
+    { _id: 'order-b', shopId: 'shop-a', serviceType: 'hotel', items: [{ itemId: 'room-b', name: 'Room 102' }] },
+  ], rooms: [{ _id: 'room-a', roomType: 'Renamed Double' }, { _id: 'room-b', roomType: 'Twin Room' }] });
+  const response = await GET({ url: 'http://test/api/orders' });
+  assert.equal(response.status, 200);
+  assert.deepEqual(calls.roomFilter, { _id: { $in: ['room-a', 'room-b'] } });
+  assert.equal(response.body.data[0].hotelRoomType, 'Single Room');
+  assert.equal(response.body.data[1].hotelRoomType, 'Twin Room');
+  assert.equal(response.body.data[0].hotelPhone, '099999999');
+  assert.equal(response.body.data[0].hotelReference, 'MH-0001');
 });
