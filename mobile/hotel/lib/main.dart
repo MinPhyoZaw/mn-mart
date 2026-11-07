@@ -124,6 +124,16 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int tab = 0;
   int historyVersion = 0;
+  bool bookingsVisited = false;
+
+  void selectTab(int value) {
+    searchFocus.unfocus();
+    setState(() {
+      tab = value;
+      if (value == 1) bookingsVisited = true;
+    });
+  }
+
   final hotelSearch = TextEditingController();
   final searchFocus = FocusNode();
   String hotelQuery = '';
@@ -160,31 +170,32 @@ class _HomeState extends State<Home> {
     final submitted = await Navigator.of(context).push<bool>(MaterialPageRoute(
       builder: (_) => Rooms(api: api, hotel: hotel, signIn: signIn),
     ));
-    if (mounted && submitted == true) setState(() { tab = 1; historyVersion++; });
+    if (mounted && submitted == true) setState(() { tab = 1; bookingsVisited = true; historyVersion++; });
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Manaw Mart Hotel')),
-    body: SafeArea(child: switch (tab) {
-      0 => PagedList(
+    body: SafeArea(child: IndexedStack(index: tab, children: [
+      PagedList(
         key: ValueKey('hotels-$hotelQuery'),
+        active: tab == 0,
         intro: HotelHomeHeader(
           controller: hotelSearch,
           focusNode: searchFocus,
           query: hotelQuery,
           onSearch: searchHotels,
           onClear: clearHotelSearch,
-          onBookings: () => setState(() => tab = 1),
+          onBookings: () => selectTab(1),
         ),
         empty: hotelQuery.isEmpty ? 'No hotels are listed yet.'
             : 'No hotels found. Try another name or area, or clear your search.',
-        load: (page) async {
+        load: (page, refresh) async {
           final search = hotelQuery;
-          final result = await api.hotels(page, search: search);
+          final result = await api.hotels(page, search: search, refresh: refresh);
           final hotels = (result['data'] as List).cast<Json>();
           if (page == 1 && hotels.isEmpty && result['meta']['total'] == 0) {
-            final catalogueEmpty = search.isEmpty || (await api.hotels(1))['meta']['total'] == 0;
+            final catalogueEmpty = search.isEmpty || (await api.hotels(1, refresh: refresh))['meta']['total'] == 0;
             if (catalogueEmpty) {
               return (rows: sampleHotels.where((hotel) =>
                   field(hotel, 'name').toLowerCase().contains(search.toLowerCase()) ||
@@ -198,13 +209,15 @@ class _HomeState extends State<Home> {
         item: (hotel) => Listing(data: hotel, action: 'View rooms',
           details: field(hotel, 'address'), onTap: () => openHotel(hotel)),
       ),
-      1 => api.user == null
+      !bookingsVisited ? const SizedBox.shrink() : api.user == null
         ? Center(child: FilledButton(onPressed: signIn, child: const Text('Sign in to view bookings')))
         : PagedList(
-          key: ValueKey('bookings-$historyVersion'),
+          key: ValueKey('bookings-${api.user?['id']}'),
+          active: tab == 1,
+          refreshToken: historyVersion,
           intro: const Text('My hotel bookings', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
           empty: 'No hotel bookings yet.',
-          load: (page) async {
+          load: (page, refresh) async {
             try {
               final result = await api.orders(page);
               return (rows: (result['data'] as List).cast<Json>()
@@ -215,20 +228,23 @@ class _HomeState extends State<Home> {
               rethrow;
             }
           },
-          item: (order) => BookingReceipt(order: order),
+          item: (order) => BookingReceipt(key: ValueKey(order['_id']), order: order),
         ),
-      _ => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Text(api.user == null ? 'Use your MN-Mart customer account' : field(api.user!, 'email')),
         const SizedBox(height: 12),
         if (api.user == null)
           FilledButton(onPressed: signIn, child: const Text('Sign in'))
         else
-          OutlinedButton(onPressed: () => setState(api.signOut), child: const Text('Sign out')),
+          OutlinedButton(onPressed: () => setState(() {
+            api.signOut();
+            bookingsVisited = false;
+          }), child: const Text('Sign out')),
       ])),
-    }),
+    ])),
     bottomNavigationBar: NavigationBar(
       selectedIndex: tab,
-      onDestinationSelected: (value) => setState(() => tab = value),
+      onDestinationSelected: selectTab,
       destinations: const [
         NavigationDestination(icon: Icon(Icons.hotel_outlined), label: 'Explore'),
         NavigationDestination(icon: Icon(Icons.calendar_month_outlined), label: 'Bookings'),
@@ -242,26 +258,63 @@ typedef PageResult = ({List<Json> rows, bool more});
 
 class PagedList extends StatefulWidget {
   const PagedList({super.key, required this.intro, required this.empty,
-    required this.load, required this.item});
+    required this.load, required this.item, this.active = true, this.refreshToken = 0});
   final Widget intro;
   final String empty;
-  final Future<PageResult> Function(int page) load;
+  final Future<PageResult> Function(int page, bool refresh) load;
+  final bool active;
+  final int refreshToken;
   final Widget Function(Json row) item;
 
   @override
   State<PagedList> createState() => _PagedListState();
 }
 
-class _PagedListState extends State<PagedList> {
+class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
   List<Json> rows = [];
   int next = 1;
   bool more = true;
   bool loading = false;
   String? error;
+  DateTime? loadedAt;
+  bool hasLoaded = false;
+  bool refreshQueued = false;
+  bool failedRefresh = false;
+
+  bool get stale => loadedAt == null ||
+      DateTime.now().difference(loadedAt!) >= const Duration(seconds: 30);
+
+  @override
+  void didUpdateWidget(covariant PagedList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final refreshRequested = widget.refreshToken != oldWidget.refreshToken;
+    final returnedToPage = widget.active && !oldWidget.active && stale;
+    if (refreshRequested || returnedToPage) {
+      if (loading) {
+        refreshQueued = true;
+      } else {
+        fetch(refresh: true);
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.active && stale && !loading) {
+      fetch(refresh: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     fetch();
   }
 
@@ -269,18 +322,38 @@ class _PagedListState extends State<PagedList> {
     if (loading) return;
     setState(() { loading = true; error = null; });
     try {
-      final page = refresh ? 1 : next;
-      final result = await widget.load(page);
+      final lastLoadedPage = next - 1;
+      var page = refresh ? 1 : next;
+      var result = await widget.load(page, refresh);
+      final fetched = [...result.rows];
+      while (refresh && result.more && page < lastLoadedPage) {
+        page++;
+        result = await widget.load(page, true);
+        fetched.addAll(result.rows);
+      }
       if (!mounted) return;
       setState(() {
-        rows = [if (!refresh) ...rows, ...result.rows];
+        final seenIds = <Object?>{};
+        rows = [if (!refresh) ...rows, ...fetched].where((row) =>
+            row['_id'] == null || seenIds.add(row['_id'])).toList();
         next = page + 1;
         more = result.more;
+        loadedAt = DateTime.now();
+        hasLoaded = true;
       });
     } catch (e) {
-      if (mounted) setState(() => error = e is ApiError ? e.message : 'Unable to load data.');
+      if (mounted) setState(() {
+        failedRefresh = refresh;
+        error = e is ApiError ? e.message : 'Unable to load data.';
+      });
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+        if (refreshQueued) {
+          refreshQueued = false;
+          fetch(refresh: true);
+        }
+      }
     }
   }
 
@@ -295,9 +368,12 @@ class _PagedListState extends State<PagedList> {
         const SizedBox(height: 16),
         ...rows.map(widget.item),
         if (loading)
-          const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+          Padding(padding: const EdgeInsets.symmetric(vertical: 16),
+            child: hasLoaded ? const LinearProgressIndicator()
+              : const Center(child: CircularProgressIndicator()))
         else if (error != null)
-          Column(children: [Text(error!), TextButton(onPressed: fetch, child: const Text('Retry'))])
+          Column(children: [Text(error!), TextButton(
+            onPressed: () => fetch(refresh: failedRefresh), child: const Text('Retry'))])
         else if (more)
           OutlinedButton(onPressed: fetch, child: Text(rows.isEmpty ? 'Search next page' : 'Load more'))
         else if (rows.isEmpty)
@@ -402,11 +478,11 @@ class _RoomsState extends State<Rooms> {
           ],
         ]),
         empty: 'No rooms are listed for this hotel.',
-        load: (page) async {
+        load: (page, refresh) async {
           if (isSample) {
             return (rows: (hotel['sampleRooms'] as List).cast<Json>(), more: false);
           }
-          final result = await api.rooms(shop, page,
+          final result = await api.rooms(shop, page, refresh: refresh,
             checkIn: dates == null ? null : day(dates!.start),
             checkOut: dates == null ? null : day(dates!.end));
           final data = result['data'] as Json;

@@ -64,3 +64,11 @@ Hotel references start at `MH-0001`. Older hotel orders receive a short referenc
 The home screen searches hotel names and areas (hotel addresses). Submit with the keyboard search action or the arrow button. Results are paginated, and Clear returns to the full catalog. With an empty live catalog, the existing sample hotels remain searchable previews. A failed connection still shows a retry message.
 
 The hero uses the existing hotel image with a readable overlay and a Find your stay action. The booking reminder opens My Hotel Bookings. Marketing copy explains availability and receipt features. Discount campaigns need backend eligibility and pricing support before a promotional offer is displayed.
+
+## Navigation and refreshing
+
+Explore, Bookings, and Account retain their state while switching tabs. Bookings loads on first visit. A visited list refreshes in place when reopened after 30 seconds or when the app resumes with stale data. Pull-to-refresh forces a network refresh, and previously loaded pages are refreshed together. New bookings refresh the booking list in place. Sign-out removes the customer’s booking view.
+
+Only public hotel and undated room catalog responses are cached in memory for 30 seconds, with at most 24 entries. Dated room availability always requests the backend. Private booking responses are held by the current authenticated page and are never stored in the catalog cache. Responses from a previous signed-out session are discarded.
+
+Run `flutter test` for navigation, refresh, cache, and session-isolation regression checks, followed by `flutter analyze`.

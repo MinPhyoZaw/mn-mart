@@ -20,7 +20,14 @@ String bookingKey() {
   return List.generate(24, (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
 }
 
+class _CachedCatalogue {
+  const _CachedCatalogue(this.data, this.expiresAt);
+  final Json data;
+  final DateTime expiresAt;
+}
+
 class HotelApi {
+  HotelApi({http.Client? client}) : _client = client ?? http.Client();
   static final origin = Uri.parse('https://www.mn-mart.store');
   static const storageUrl = String.fromEnvironment('SUPABASE_URL',
       defaultValue: 'https://yypxmsjyzplvtnkmnvgp.supabase.co');
@@ -28,7 +35,8 @@ class HotelApi {
   static const receiptBucket = String.fromEnvironment('SUPABASE_RECEIPT_BUCKET',
       defaultValue: 'receipt-upload');
 
-  final _client = http.Client();
+  final http.Client _client;
+  final _catalogue = <String, _CachedCatalogue>{};
   String? _token;
   Json? user;
   bool get canUpload => storageKey.isNotEmpty;
@@ -38,8 +46,9 @@ class HotelApi {
     final request = http.Request(body == null ? 'GET' : 'POST', uri)
       ..followRedirects = false
       ..headers['Accept'] = 'application/json';
+    final sessionToken = _token;
     if (authenticated) {
-      final token = _token;
+      final token = sessionToken;
       if (token == null) throw const ApiError('Sign in to continue.', 401);
       request.headers['Cookie'] = 'token=$token';
     }
@@ -49,6 +58,9 @@ class HotelApi {
     }
 
     final response = await _send(request);
+    if (authenticated && sessionToken != _token) {
+      throw const ApiError('Your session changed. Please refresh.', 409);
+    }
     if (authenticated && response.statusCode == 401) signOut();
     final dynamic decoded;
     try {
@@ -98,20 +110,40 @@ class HotelApi {
     user = null;
   }
 
-  Future<Json> hotels(int page, {String search = ''}) {
+  Future<Json> _publicCatalogue(String path, {bool refresh = false}) async {
+    final now = DateTime.now();
+    _catalogue.removeWhere((_, entry) => !entry.expiresAt.isAfter(now));
+    final cached = _catalogue[path];
+    if (!refresh && cached != null) {
+      return jsonDecode(jsonEncode(cached.data)) as Json;
+    }
+    final result = await _request(path);
+    _catalogue[path] = _CachedCatalogue(
+      jsonDecode(jsonEncode(result)) as Json,
+      DateTime.now().add(const Duration(seconds: 30)),
+    );
+    while (_catalogue.length > 24) {
+      _catalogue.remove(_catalogue.keys.first);
+    }
+    return result;
+  }
+
+  Future<Json> hotels(int page, {String search = '', bool refresh = false}) {
     final query = Uri(queryParameters: {
       'category': 'hotel', 'page': '$page', 'limit': '20',
       if (search.isNotEmpty) 'q': search,
     }).query;
-    return _request('/api/shops?$query');
+    return _publicCatalogue('/api/shops?$query', refresh: refresh);
   }
 
-  Future<Json> rooms(String shop, int page, {String? checkIn, String? checkOut}) {
+  Future<Json> rooms(String shop, int page, {String? checkIn, String? checkOut, bool refresh = false}) {
     final query = <String, String>{'page': '$page', 'limit': '20'};
     if (checkIn != null && checkOut != null) {
       query.addAll({'checkIn': checkIn, 'checkOut': checkOut});
     }
-    return _request('/api/shops/${Uri.encodeComponent(shop)}?${Uri(queryParameters: query).query}');
+    final path = '/api/shops/${Uri.encodeComponent(shop)}?${Uri(queryParameters: query).query}';
+    if (checkIn != null || checkOut != null) return _request(path);
+    return _publicCatalogue(path, refresh: refresh);
   }
 
   Future<Json> orders(int page) async {
@@ -131,8 +163,11 @@ class HotelApi {
     return result;
   }
 
-  Future<Json> book(Json body) =>
-      _request('/api/hotel-booking', authenticated: true, body: body);
+  Future<Json> book(Json body) async {
+    final result = await _request('/api/hotel-booking', authenticated: true, body: body);
+    _catalogue.clear();
+    return result;
+  }
 
   Future<String> uploadReceipt(String shop, XFile file) async {
     if (!canUpload) throw const ApiError('Receipt upload is unavailable in this build.');
@@ -176,5 +211,8 @@ class HotelApi {
     return storage.resolve('/storage/v1/object/public/$path').toString();
   }
 
-  void dispose() => _client.close();
+  void dispose() {
+    _catalogue.clear();
+    _client.close();
+  }
 }
