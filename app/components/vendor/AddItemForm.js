@@ -24,6 +24,8 @@ const INITIAL_FORM = {
   shopCategoryId: "",
   tagName: "NewArrival",
   roomType: "",
+  roomNumber: "",
+  maxGuests: "2",
   amenities: {
     wifi: false,
     swimmingPool: false,
@@ -217,14 +219,71 @@ export default function AddItemForm({
   const dynamicFields = useMemo(() => {
     if (serviceType === "hotel")
       return (
-        <input
-          name="roomType"
-          placeholder="Room Type"
-          value={form.roomType}
-          onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2"
-          required
-        />
+        <>
+          <p className="text-sm text-gray-600">
+            Add one physical room per listing. The price is per night.
+          </p>
+          <label className="block text-sm">
+            Room number or name
+            <input
+              value={form.roomNumber}
+              onChange={(e) => setForm((p) => ({ ...p, roomNumber: e.target.value }))}
+              maxLength={40}
+              required
+              className="mt-1 w-full rounded-lg border p-2"
+              placeholder="Room 101"
+            />
+          </label>
+          <label className="block text-sm">
+            Room type
+            <input
+              value={form.roomType}
+              onChange={(e) => setForm((p) => ({ ...p, roomType: e.target.value }))}
+              maxLength={80}
+              required
+              className="mt-1 w-full rounded-lg border p-2"
+              placeholder="Standard Double"
+            />
+          </label>
+          <label className="block text-sm">
+            Maximum guests
+            <input
+              type="number"
+              value={form.maxGuests}
+              onChange={(e) => setForm((p) => ({ ...p, maxGuests: e.target.value }))}
+              min="1"
+              max="30"
+              required
+              className="mt-1 w-full rounded-lg border p-2"
+            />
+          </label>
+          <label className="block text-sm">
+            Description
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              maxLength={500}
+              className="mt-1 w-full rounded-lg border p-2"
+            />
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {AMENITIES.map((amenity) => (
+              <label key={amenity.key} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.amenities[amenity.key]}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      amenities: { ...p.amenities, [amenity.key]: e.target.checked },
+                    }))
+                  }
+                />
+                {amenity.label}
+              </label>
+            ))}
+          </div>
+        </>
       );
     if (serviceType === "spa")
       return (
@@ -595,13 +654,13 @@ export default function AddItemForm({
     setSubmitting(true);
     const enteredName = (form.name || "").trim();
     const defaultNameByServiceType = {
-      hotel: form.roomType,
+      hotel: form.roomNumber,
       spa: enteredName,
       shopping: enteredName,
       transportation: "Transportation Ticket",
     };
 
-    const description = serviceType === "shopping" ? form.description.trim() : undefined;
+    const description = ["shopping", "hotel"].includes(serviceType) ? form.description.trim() : undefined;
     const payload = {
       shopId: shop._id,
       name: defaultNameByServiceType[serviceType] || enteredName || "Item",
@@ -617,6 +676,12 @@ export default function AddItemForm({
       isAvailable: true,
     };
 
+    if (serviceType === "hotel") {
+      payload.roomNumber = form.roomNumber;
+      payload.roomType = form.roomType;
+      payload.maxGuests = Number(form.maxGuests);
+      payload.extra = { amenities: form.amenities };
+    }
     if (serviceType === "shopping") {
       const wholesaleTiers = (form.wholesaleTiers || [])
         .map((tier) => ({

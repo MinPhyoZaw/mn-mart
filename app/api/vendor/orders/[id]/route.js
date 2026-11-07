@@ -11,7 +11,7 @@ export async function PATCH(req, { params }) {
     const auth = await requireVendorAuth(req);
     if (!auth.ok) return auth.response;
 
-    const { id } = params;
+    const { id } = await params;
     const { action } = await req.json();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {

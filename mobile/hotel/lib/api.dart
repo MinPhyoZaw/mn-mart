@@ -100,8 +100,13 @@ class HotelApi {
 
   Future<Json> hotels(int page) => _request('/api/shops?category=hotel&page=$page&limit=20');
 
-  Future<Json> rooms(String shop, int page) =>
-      _request('/api/shops/${Uri.encodeComponent(shop)}?page=$page&limit=20');
+  Future<Json> rooms(String shop, int page, {String? checkIn, String? checkOut}) {
+    final query = <String, String>{'page': '$page', 'limit': '20'};
+    if (checkIn != null && checkOut != null) {
+      query.addAll({'checkIn': checkIn, 'checkOut': checkOut});
+    }
+    return _request('/api/shops/${Uri.encodeComponent(shop)}?${Uri(queryParameters: query).query}');
+  }
 
   Future<Json> orders(int page) =>
       _request('/api/orders?page=$page&limit=20', authenticated: true);

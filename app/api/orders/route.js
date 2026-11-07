@@ -15,7 +15,7 @@ export async function GET(req) {
     const page = Math.max(1, Number.parseInt(params.get("page") || "1", 10) || 1);
     const limit = Math.min(50, Math.max(1, Number.parseInt(params.get("limit") || "20", 10) || 20));
     const ownerQuery = customerOrderQuery(auth.user.userId);
-    const [orders, total] = await Promise.all([Order.find(ownerQuery).select("_id orderId serviceType orderStatus vendorStatus paymentStatus totalAmount createdAt items shopId").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(), Order.countDocuments(ownerQuery)]);
+    const [orders, total] = await Promise.all([Order.find(ownerQuery).select("_id orderId serviceType orderStatus vendorStatus paymentStatus totalAmount createdAt items shopId bookingDetails").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(), Order.countDocuments(ownerQuery)]);
     const deliveries = await Delivery.find({ orderId: { $in: orders.map((order) => order._id) } }).select("orderId status updatedAt events").lean();
     const deliveryMap = new Map(deliveries.map((delivery) => [String(delivery.orderId), delivery]));
     // Fetch only names for shops belonging to the already owner-scoped page.

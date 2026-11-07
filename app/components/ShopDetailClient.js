@@ -15,6 +15,8 @@ import {
   uploadImageToSupabaseStorage,
 } from "../lib/supabase";
 
+import { hotelStay, hotelToday } from "../lib/hotelDates";
+
 const AMENITY_META = {
   wifi: { label: "WiFi" },
   swimmingPool: { label: "Swimming Pool" },
@@ -36,6 +38,8 @@ export default function ShopDetailClient({
   pagination: initialPagination = null,
 }) {
   const [items, setItems] = useState(initialItems);
+  const [staySearch, setStaySearch] = useState({ checkIn: "", checkOut: "" });
+  const [appliedStay, setAppliedStay] = useState(null);
   const [pagination, setPagination] = useState(initialPagination);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [itemsLoading, setItemsLoading] = useState(false);
@@ -46,6 +50,8 @@ export default function ShopDetailClient({
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const [bookingForm, setBookingForm] = useState({
+    checkIn: "",
+    checkOut: "",
     customerName: "",
     customerPhone: "",
     extraBedAmount: "0",
@@ -74,17 +80,22 @@ export default function ShopDetailClient({
   const isSpa = shop?.category === "spa";
   const isShopping = shop?.category === "shopping";
 
-  const loadItemPage = async (categorySlug, page) => {
+  const loadItemPage = async (categorySlug, page, requestedStay = appliedStay) => {
     setItemsLoading(true);
     setItemsError("");
     try {
       const query = new URLSearchParams({ page: String(page), limit: "20" });
       if (categorySlug) query.set("category", categorySlug);
+      if (isHotel && requestedStay) {
+        query.set("checkIn", requestedStay.checkIn);
+        query.set("checkOut", requestedStay.checkOut);
+      }
       const res = await fetch(`/api/shops/${shop._id}?${query}`, { cache: "no-store" });
       const result = await res.json();
       if (!res.ok || !result.success) throw new Error(result?.message || "Unable to load products");
       setItems(result.data?.items || []);
       setPagination(result.data?.pagination || null);
+      if (isHotel) setAppliedStay(requestedStay);
     } catch (error) {
       setItemsError(error.message || "Unable to load products");
     } finally {
@@ -98,9 +109,7 @@ export default function ShopDetailClient({
     void loadItemPage(slug, 1);
   };
 
-  const visibleItems = isHotel
-    ? items.filter((item) => item.isAvailable !== false)
-    : items;
+  const visibleItems = items;
 
   const gridClasses = isSpa
     ? "mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
@@ -150,6 +159,15 @@ export default function ShopDetailClient({
   };
 
   const openBooking = (item) => {
+    if (isHotel) {
+      if (item.availability !== "available" || !appliedStay || itemsLoading) return;
+      setBookingForm((previous) => ({
+        ...previous,
+        checkIn: appliedStay.checkIn,
+        checkOut: appliedStay.checkOut,
+        extraBedAmount: "0",
+      }));
+    }
     setBookingMessage("");
 
     setBookingKey(crypto.randomUUID());
@@ -247,6 +265,8 @@ export default function ShopDetailClient({
       return;
     }
 
+    try { hotelStay(bookingForm.checkIn, bookingForm.checkOut); }
+    catch (error) { setBookingMessage(error.message); return; }
     setBookingSubmitting(true);
     setBookingMessage("");
 
@@ -476,6 +496,53 @@ export default function ShopDetailClient({
         ========================== */}
 
         <section>
+          {isHotel && (<form
+            className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl bg-white p-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              try {
+                hotelStay(staySearch.checkIn, staySearch.checkOut);
+              } catch (error) {
+                setItemsError(error.message);
+                return;
+              }
+              void loadItemPage("", 1, staySearch);
+            }}
+          >
+            <label className="text-sm">
+              Check-in
+              <input
+                className="mt-1 block rounded-lg border p-2"
+                type="date"
+                required
+                min={hotelToday()}
+                disabled={itemsLoading}
+                value={staySearch.checkIn}
+                onChange={(event) => setStaySearch({ ...staySearch, checkIn: event.target.value })}
+              />
+            </label>
+            <label className="text-sm">
+              Check-out
+              <input
+                className="mt-1 block rounded-lg border p-2"
+                type="date"
+                required
+                min={staySearch.checkIn || hotelToday()}
+                disabled={itemsLoading}
+                value={staySearch.checkOut}
+                onChange={(event) => setStaySearch({ ...staySearch, checkOut: event.target.value })}
+              />
+            </label>
+            <button disabled={itemsLoading} className="rounded-lg bg-green-700 px-4 py-2 text-white">
+              {itemsLoading ? "Checking…" : "Check availability"}
+            </button>
+            {appliedStay && (
+              <p className="w-full text-sm">
+                Showing availability for {appliedStay.checkIn} → {appliedStay.checkOut}. Requests reserve
+                dates while being reviewed.
+              </p>
+            )}
+          </form>)}
           {isShopping && categories.length > 0 ? (
             <nav aria-label="Product categories" className="mt-6 overflow-x-auto pb-1">
               <div className="flex min-w-max gap-2">
@@ -716,14 +783,19 @@ export default function ShopDetailClient({
                         ) : null}
                       </div>
 
+                      {isHotel && <div className="mt-3 text-sm">
+                        <p>{item.roomType}{item.maxGuests ? ` · Up to ${item.maxGuests} guests` : ''}</p>
+                        <p className="font-semibold">{item.availability === 'available' ? 'Available for your dates' : item.availability === 'unavailable' || item.isAvailable === false ? 'Unavailable' : 'Choose dates to check availability'}</p>
+                      </div>}
                       {/* BOOK BUTTON */}
 
                       <button
                         type="button"
+                        disabled={isHotel && (itemsLoading || item.availability !== "available")}
                         onClick={() =>
                           openBooking(item)
                         }
-                        className="mt-4 w-full rounded-lg bg-gray-950 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 active:scale-[0.99]"
+                        className="mt-4 w-full rounded-lg bg-gray-950 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-40 active:scale-[0.99]"
                       >
                         {isHotel
                           ? "Book Now"
@@ -848,6 +920,17 @@ export default function ShopDetailClient({
                   </p>
                 </div>
 
+                {isHotel && (
+                  <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm">
+                    <p>Check-in {bookingForm.checkIn} · Check-out {bookingForm.checkOut}</p>
+                    <p>
+                      Total for stay: {(Number(activeBookingItem.price) * hotelStay(
+                        bookingForm.checkIn, bookingForm.checkOut, { allowPast: true }
+                      ).nights).toLocaleString()} MMK
+                    </p>
+                    <p>Deposit: 5,000 MMK. Your request reserves these dates pending review.</p>
+                  </div>
+                )}
                 {/* AMENITIES */}
 
                 {!isSpa ? (
@@ -950,6 +1033,7 @@ export default function ShopDetailClient({
                         <input
                           type="number"
                           min="1"
+                          max={activeBookingItem.maxGuests || 30}
                           className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-amber-400"
                           value={
                             bookingForm.guestCount
@@ -973,6 +1057,7 @@ export default function ShopDetailClient({
                         <input
                           type="number"
                           min="0"
+                          disabled={!activeBookingItem.extra?.amenities?.extraBed}
                           className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-amber-400"
                           value={
                             bookingForm.extraBedAmount

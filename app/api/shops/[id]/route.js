@@ -8,6 +8,9 @@ import Vendor from "../../../models/Vendor";
 import ShopCategory from "../../../models/ShopCategory";
 import { requireAuth } from "../../../lib/routeAuth";
 
+import { hotelStay } from "../../../lib/hotelDates";
+import { roomAvailability } from "../../../lib/hotelAvailability";
+
 const DEFAULT_ITEM_LIMIT = 20;
 const MAX_ITEM_LIMIT = 50;
 
@@ -131,6 +134,9 @@ export async function GET(req, { params }) {
       "_id",
       "shopId",
       "shopCategoryId",
+      "roomNumber",
+      "roomType",
+      "maxGuests",
       "name",
       "price",
       "wholesaleTiers",
@@ -154,6 +160,15 @@ export async function GET(req, { params }) {
 
         Item.countDocuments(itemFilter),
       ]);
+
+    let visibleItems = items;
+    if (shop.category === "hotel") {
+      const checkIn = searchParams.get("checkIn");
+      const checkOut = searchParams.get("checkOut");
+      const stay = checkIn || checkOut ? hotelStay(checkIn, checkOut) : null;
+      visibleItems = await roomAvailability(items, stay);
+      if (shop.isActive === false) visibleItems = visibleItems.map((item) => ({ ...item, availability: "unavailable" }));
+    }
 
     const totalPages =
       totalItems === 0
@@ -181,7 +196,7 @@ export async function GET(req, { params }) {
            * existing callers using data.items
            * continue working.
            */
-          items,
+          items: visibleItems,
           categories,
 
           pagination: {
@@ -198,9 +213,10 @@ export async function GET(req, { params }) {
           },
         },
       },
-      { status: 200 }
+      { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    if (error?.status) return NextResponse.json({ success: false, message: error.message }, { status: error.status });
     console.error(
       "GET /api/shops/[id] error:",
       error

@@ -1,123 +1,179 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "../../lib/mongodb";
 import { requireAuth } from "../../lib/routeAuth";
-import Vendor from "../../models/Vendor";
 import Shop from "../../models/Shop";
-import Item from "../../models/Item";
+import Vendor from "../../models/Vendor";
 import Order from "../../models/Order";
+import { hotelError, hotelStay } from "../../lib/hotelDates";
+import { lockHotelRoom, requireRoomAvailable } from "../../lib/hotelAvailability";
 
-const COMMISSION_RATE = 1.5;
-const makeOrderId = () => `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-const isIdempotencyDuplicate = (error) =>
-  error?.code === 11000 && error?.keyPattern?.idempotencyKey;
+function matchingRetry(order, userId, roomItemId, shopId, stay) {
+  if (
+    String(order.customerId) !== String(userId) ||
+    order.serviceType !== "hotel" ||
+    String(order.shopId) !== String(shopId) ||
+    String(order.items?.[0]?.itemId) !== String(roomItemId) ||
+    order.bookingDetails?.checkIn !== stay.checkIn ||
+    order.bookingDetails?.checkOut !== stay.checkOut
+  ) {
+    throw hotelError("This booking key has already been used. Start a new booking.", 409);
+  }
+  return order;
+}
 
 export async function POST(req) {
-  let bookingKeyForError = null;
-
+  let retry = null;
   try {
     const auth = requireAuth(req, ["customer", "vendor", "admin"]);
     if (!auth.ok) return auth.response;
-
     const body = await req.json();
-    const {
-      roomItemId,
-      shopId,
-      customerName,
-      customerPhone,
-      guestCount,
-      extraBedAmount,
-      note,
-      receiptImage,
-      paymentProvider = "kbzpay_1",
-      bookingKey,
-    } = body;
-    bookingKeyForError = bookingKey;
-
-    if (!roomItemId || !shopId || !customerName || !customerPhone || !receiptImage) {
-      return NextResponse.json({ success: false, message: "Missing required booking fields." }, { status: 400 });
+    const { roomItemId, shopId, customerName, customerPhone, receiptImage, bookingKey } = body;
+    const stay = hotelStay(body.checkIn, body.checkOut, { allowPast: true });
+    const guestCount = Number(body.guestCount ?? 1);
+    const extraBedAmount = Number(body.extraBedAmount ?? 0);
+    const paymentProvider = body.paymentProvider || "kbzpay_2";
+    if (![roomItemId, shopId].every((id) => mongoose.Types.ObjectId.isValid(id)))
+      throw hotelError("Invalid room or hotel.");
+    if (
+      typeof customerName !== "string" ||
+      !customerName.trim() ||
+      customerName.length > 100 ||
+      typeof customerPhone !== "string" ||
+      !customerPhone.trim() ||
+      customerPhone.length > 30 ||
+      typeof receiptImage !== "string" ||
+      !receiptImage.startsWith("https://") ||
+      !Number.isInteger(guestCount) ||
+      guestCount < 1 ||
+      guestCount > 30 ||
+      !Number.isInteger(extraBedAmount) ||
+      extraBedAmount < 0 ||
+      extraBedAmount > 10 ||
+      (body.note !== undefined && (typeof body.note !== "string" || body.note.length > 1000)) ||
+      !["kbzpay", "wave", "kbzpay_1", "kbzpay_2", "mmqr_1", "mmqr_2"].includes(paymentProvider)
+    ) {
+      throw hotelError("Enter valid guest details and a payment receipt.");
     }
-
-    if (!mongoose.Types.ObjectId.isValid(roomItemId) || !mongoose.Types.ObjectId.isValid(shopId)) {
-      return NextResponse.json({ success: false, message: "Invalid booking reference." }, { status: 400 });
-    }
-
-    if (typeof bookingKey !== "string" || bookingKey.length < 16 || bookingKey.length > 200) {
-      return NextResponse.json({ success: false, message: "A valid booking key is required." }, { status: 400 });
-    }
-
+    if (typeof bookingKey !== "string" || bookingKey.length < 16 || bookingKey.length > 200)
+      throw hotelError("A valid booking key is required.");
     await connectDB();
-
-    const [shop, room] = await Promise.all([
-      Shop.findById(shopId).lean(),
-      Item.findById(roomItemId).lean(),
-    ]);
-
-    if (!shop || shop.category !== "hotel") {
-      return NextResponse.json({ success: false, message: "Hotel shop not found." }, { status: 404 });
-    }
-
-    if (!room || String(room.shopId) !== String(shopId) || room.type !== "room" || room.isAvailable === false) {
-      return NextResponse.json({ success: false, message: "Room not found." }, { status: 404 });
-    }
-
-    const vendor = await Vendor.findById(shop.vendorId).lean();
-    if (!vendor) {
-      return NextResponse.json({ success: false, message: "Vendor not found." }, { status: 404 });
-    }
-
-    const price = Number(room.price) || 0;
-    const totalAmount = price;
-    const commissionAmount = Number(((totalAmount * COMMISSION_RATE) / 100).toFixed(2));
-    const vendorEarning = Number((totalAmount - commissionAmount).toFixed(2));
-
+    retry = { bookingKey, userId: auth.user.userId, roomItemId, shopId, stay };
+    const session = await mongoose.startSession();
     let order;
     try {
-      order = await Order.create({
-      orderId: makeOrderId(),
-      idempotencyKey: bookingKey,
-      vendorId: shop.vendorId,
-      shopId: shop._id,
-      customerId: auth.user.userId,
-      customerName,
-      customerPhone,
-      customerAddress: "Hotel booking",
-      serviceType: "hotel",
-      items: [{
-        itemId: room._id,
-        name: room.name,
-        image: room.image || null,
-        price,
-        quantity: 1,
-        lineTotal: totalAmount,
-      }],
-      bookingDetails: {
-        guestCount: Number(guestCount) || 1,
-        extraBedAmount: Number(extraBedAmount) || 0,
-        note: note || "",
-      },
-      receiptImage,
-      paymentProvider,
-      totalAmount,
-      commissionRate: COMMISSION_RATE,
-      commissionAmount,
-      vendorEarning,
+      await session.withTransaction(async () => {
+        const existing = await Order.findOne({ idempotencyKey: bookingKey })
+          .session(session)
+          .lean();
+        if (existing) {
+          order = matchingRetry(existing, auth.user.userId, roomItemId, shopId, stay);
+          return;
+        }
+        hotelStay(stay.checkIn, stay.checkOut);
+        const shop = await Shop.findOne({
+          _id: shopId,
+          category: "hotel",
+          isActive: { $ne: false },
+        })
+          .session(session)
+          .lean();
+        if (!shop) throw hotelError("Hotel is unavailable.", 404);
+        if (!await Vendor.exists({ _id: shop.vendorId }).session(session)) {
+          throw hotelError("Hotel vendor is unavailable.", 404);
+        }
+        const room = await lockHotelRoom(roomItemId, shopId, session);
+        if (room.maxGuests && guestCount > room.maxGuests)
+          throw hotelError(`This room accommodates at most ${room.maxGuests} guests.`);
+        if (extraBedAmount && !room.extra?.amenities?.extraBed)
+          throw hotelError("Extra beds are not available for this room.");
+        await requireRoomAvailable(room, stay, session);
+        const price = Number(room.price);
+        if (!Number.isFinite(price) || price < 0)
+          throw hotelError("Room price is unavailable.", 409);
+        const totalAmount = Number((price * stay.nights).toFixed(2));
+        const commissionAmount = Number((totalAmount * 0.015).toFixed(2));
+        [order] = await Order.create(
+          [
+            {
+              orderId: `ORD-${randomUUID()}`,
+              idempotencyKey: bookingKey,
+              vendorId: shop.vendorId,
+              shopId,
+              customerId: auth.user.userId,
+              customerName: customerName.trim(),
+              customerPhone: customerPhone.trim(),
+              customerAddress: "Hotel booking",
+              serviceType: "hotel",
+              items: [
+                {
+                  itemId: room._id,
+                  name: room.name,
+                  image: room.image || null,
+                  price,
+                  quantity: stay.nights,
+                  lineTotal: totalAmount,
+                },
+              ],
+              bookingDetails: { ...stay, guestCount, extraBedAmount, note: body.note || "" },
+              receiptImage,
+              paymentProvider,
+              totalAmount,
+              commissionRate: 1.5,
+              commissionAmount,
+              vendorEarning: Number((totalAmount - commissionAmount).toFixed(2)),
+            },
+          ],
+          { session },
+        );
       });
-    } catch (error) {
-      if (!isIdempotencyDuplicate(error)) throw error;
-      order = await Order.findOne({ idempotencyKey: bookingKey }).lean();
-      if (!order) throw error;
+    } finally {
+      await session.endSession();
     }
-
-    return NextResponse.json({ success: true, message: "Hotel booking submitted.", data: order }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Hotel booking submitted. Dates reserved pending review.",
+        data: order,
+      },
+      { status: 201 },
+    );
   } catch (error) {
-    if (isIdempotencyDuplicate(error) && bookingKeyForError) {
-      const existingOrder = await Order.findOne({ idempotencyKey: bookingKeyForError }).lean();
-      if (existingOrder) {
-        return NextResponse.json({ success: true, message: "Hotel booking was already submitted.", data: existingOrder }, { status: 200 });
+    if (error?.code === 11000 && retry) {
+      try {
+        const existing = await Order.findOne({ idempotencyKey: retry.bookingKey }).lean();
+        if (existing) {
+          const order = matchingRetry(
+            existing,
+            retry.userId,
+            retry.roomItemId,
+            retry.shopId,
+            retry.stay,
+          );
+          return NextResponse.json({ success: true, data: order });
+        }
+      } catch (retryError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: retryError.status
+              ? retryError.message
+              : "Unable to verify booking. Retry the same request.",
+          },
+          { status: retryError.status || 500 },
+        );
       }
     }
-    console.error("POST /api/hotel-booking error:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    if (error?.status)
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: error.status },
+      );
+    console.error("POST /api/hotel-booking error:", error?.message);
+    return NextResponse.json(
+      { success: false, message: "Unable to submit booking. Retry the same request." },
+      { status: 500 },
+    );
   }
 }

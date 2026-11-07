@@ -8,6 +8,8 @@ import { requireVendorAuth } from "../../lib/routeAuth";
 import { isValidShoppingCategory } from "../../lib/shoppingCategories";
 import { normalizeDescription } from "../../lib/productDisplay";
 
+import { hotelRoomFields } from "../../lib/hotelDates";
+
 const REQUIRED_FIELDS = ["shopId", "name", "price", "type"];
 
 const TAG_NAME_ALIASES = {
@@ -83,7 +85,7 @@ export async function POST(req) {
 
     await connectDB();
 
-    const targetShop = await Shop.findById(body.shopId).select("_id vendorId").lean();
+    const targetShop = await Shop.findById(body.shopId).select("_id vendorId category").lean();
     if (!targetShop) {
       return NextResponse.json({ success: false, message: "Shop not found" }, { status: 404 });
     }
@@ -113,7 +115,15 @@ export async function POST(req) {
     const description = body.type === "product" ? normalizeDescription(body.description) : body.description;
     const wholesaleTiers = body.type === "product" ? normalizeWholesaleTiers(body.wholesaleTiers ?? body?.extra?.wholesaleTiers ?? []) : [];
 
+    let roomFields = {};
+    if (body.type === "room") {
+      if (targetShop.category !== "hotel") {
+        return NextResponse.json({ success: false, message: "Rooms belong to hotel shops." }, { status: 400 });
+      }
+      roomFields = hotelRoomFields(body);
+    }
     const createdItem = await Item.create({
+      ...roomFields,
       shopId: body.shopId,
       shopCategoryId,
       name: body.name,
@@ -135,6 +145,9 @@ export async function POST(req) {
   } catch (error) {
     console.error("POST /api/items error:", error);
 
+    if (error?.status || error?.code === 11000) {
+      return NextResponse.json({ success: false, message: error.code === 11000 ? "That room number already exists in this hotel." : error.message }, { status: error.status || 409 });
+    }
     if (error?.name === "ValidationError") {
       return NextResponse.json(
         { success: false, message: error.message },
@@ -352,6 +365,9 @@ export async function GET(req) {
             "shopId",
             "shopCategoryId",
             "name",
+            "roomNumber",
+            "roomType",
+            "maxGuests",
             "price",
             "wholesaleTiers",
             "description",

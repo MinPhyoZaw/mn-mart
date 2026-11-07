@@ -60,6 +60,9 @@ const orderSchema = new mongoose.Schema(
     },
 
     bookingDetails: {
+      checkIn: String,
+      checkOut: String,
+      nights: Number,
       guestCount: {
         type: Number,
         default: null,
@@ -340,6 +343,8 @@ orderSchema.index({
   vendorNotificationRead: 1,
   createdAt: -1,
 });
+
+orderSchema.index({ serviceType: 1, "items.itemId": 1, "bookingDetails.checkIn": 1, "bookingDetails.checkOut": 1 });
 
 export default mongoose.models.Order ||
   mongoose.model("Order", orderSchema);

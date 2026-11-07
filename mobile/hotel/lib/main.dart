@@ -23,7 +23,10 @@ const List<Json> sampleHotels = [
     'sampleRooms': [
       {
         '_id': 'sample-riverside-double',
-        'name': 'River View Double Room',
+        'name': 'Room 101 · River View Double',
+        'roomNumber': '101',
+        'roomType': 'River View Double',
+        'maxGuests': 2,
         'description': 'Sample room with a double bed for two guests.',
         'price': 50000,
         'isSample': true,
@@ -33,7 +36,10 @@ const List<Json> sampleHotels = [
       },
       {
         '_id': 'sample-riverside-family',
-        'name': 'Family Room',
+        'name': 'Room 102 · Family',
+        'roomNumber': '102',
+        'roomType': 'Family',
+        'maxGuests': 4,
         'description': 'Sample family room for up to four guests.',
         'price': 85000,
         'isSample': true,
@@ -51,7 +57,10 @@ const List<Json> sampleHotels = [
     'sampleRooms': [
       {
         '_id': 'sample-garden-twin',
-        'name': 'Garden Twin Room',
+        'name': 'Room 201 · Garden Twin',
+        'roomNumber': '201',
+        'roomType': 'Garden Twin',
+        'maxGuests': 2,
         'description': 'Sample room with two single beds for two guests.',
         'price': 45000,
         'isSample': true,
@@ -61,7 +70,10 @@ const List<Json> sampleHotels = [
       },
       {
         '_id': 'sample-garden-suite',
-        'name': 'Garden Suite',
+        'name': 'Room 202 · Garden Suite',
+        'roomNumber': '202',
+        'roomType': 'Garden Suite',
+        'maxGuests': 2,
         'description': 'Sample suite with a sitting area for two guests.',
         'price': 95000,
         'isSample': true,
@@ -175,6 +187,9 @@ class _HomeState extends State<Home> {
               subtitle: Text([
                 if (items.isNotEmpty) items.map((item) => field(item, 'name')).join(', '),
                 field(order, 'orderId'),
+                if (order['bookingDetails'] is Json)
+                  'Stay: ${field(order['bookingDetails'] as Json, 'checkIn')} → ${field(order['bookingDetails'] as Json, 'checkOut')}',
+                'Total for stay: ${mmk(order['totalAmount'])}',
                 'Payment: ${field(order, 'paymentStatus', 'pending')}',
                 'Booking: ${field(order, 'orderStatus', 'pending')}',
                 'Hotel response: ${field(order, 'vendorStatus', 'new')}',
@@ -316,11 +331,35 @@ class Listing extends StatelessWidget {
   }
 }
 
-class Rooms extends StatelessWidget {
+class Rooms extends StatefulWidget {
   const Rooms({super.key, required this.api, required this.hotel, required this.signIn});
   final HotelApi api;
   final Json hotel;
   final Future<bool> Function() signIn;
+
+  @override
+  State<Rooms> createState() => _RoomsState();
+}
+
+class _RoomsState extends State<Rooms> {
+  DateTimeRange? dates;
+  HotelApi get api => widget.api;
+  Json get hotel => widget.hotel;
+  Future<bool> Function() get signIn => widget.signIn;
+  String day(DateTime date) => date.toIso8601String().split('T').first;
+
+  Future<void> chooseDates() async {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 6, minutes: 30));
+    final today = DateTime(now.year, now.month, now.day);
+    final selected = await showDateRangePicker(context: context, firstDate: today,
+      lastDate: today.add(const Duration(days: 365)), initialDateRange: dates);
+    if (!mounted || selected == null) return;
+    if (!selected.end.isAfter(selected.start)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Check-out must be after check-in.')));
+      return;
+    }
+    setState(() => dates = selected);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -329,8 +368,14 @@ class Rooms extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(field(hotel, 'name'))),
       body: PagedList(
+        key: ValueKey('${dates?.start}-${dates?.end}'),
         intro: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Rooms', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+          if (!isSample) OutlinedButton.icon(
+            onPressed: chooseDates, icon: const Icon(Icons.date_range),
+            label: Text(dates == null ? 'Choose dates to check availability'
+              : '${day(dates!.start)} → ${day(dates!.end)}'),
+          ),
           if (isSample) ...[
             const SizedBox(height: 8),
             const Text('This fictional hotel is for previewing the app. Prices are examples.'),
@@ -341,11 +386,13 @@ class Rooms extends StatelessWidget {
           if (isSample) {
             return (rows: (hotel['sampleRooms'] as List).cast<Json>(), more: false);
           }
-          final result = await api.rooms(shop, page);
+          final result = await api.rooms(shop, page,
+            checkIn: dates == null ? null : day(dates!.start),
+            checkOut: dates == null ? null : day(dates!.end));
           final data = result['data'] as Json;
           final active = data['shop']['isActive'] != false;
           return (rows: active ? (data['items'] as List).cast<Json>()
-              .where((room) => room['type'] == 'room' && room['isAvailable'] != false).toList() : <Json>[],
+              .where((room) => room['type'] == 'room').toList() : <Json>[],
               more: active && data['pagination']['hasNextPage'] == true);
         },
         item: (room) {
@@ -353,17 +400,24 @@ class Rooms extends StatelessWidget {
           final amenities = extra is Json ? extra['amenities'] : null;
           final labels = const {'wifi': 'Wi-Fi', 'aircon': 'Air conditioning', 'tv': 'TV',
             'breakfast': 'Breakfast', 'swimmingPool': 'Pool', 'extraBed': 'Extra bed'};
+          final available = !isSample && dates != null && room['availability'] == 'available';
+          final status = room['availability'] == 'unavailable' || room['isAvailable'] == false
+              ? (dates == null ? 'Bookings paused' : 'Unavailable for these dates')
+              : 'Choose dates to check availability';
           return Listing(data: room,
-            action: isSample ? 'Sample room · Booking unavailable' : 'Request booking',
+            action: isSample ? 'Sample room · Booking unavailable' : available ? 'Request booking' : status,
             details: [
-              mmk(room['price']),
+              '${mmk(room['price'])} / night',
+              if (room['roomType'] != null) field(room, 'roomType'),
+              if (room['maxGuests'] != null) 'Up to ${room['maxGuests']} guests',
+              if (available) 'Available for your dates',
               if (amenities is Json)
                 labels.entries.where((e) => amenities[e.key] == true).map((e) => e.value).join(' · '),
             ].where((line) => line.isNotEmpty).join('\n'),
-            onTap: isSample ? null : () async {
+            onTap: !available ? null : () async {
               if (!await signIn() || !context.mounted) return;
               final booked = await Navigator.of(context).push<bool>(MaterialPageRoute(
-                builder: (_) => BookingForm(api: api, hotel: hotel, room: room, signIn: signIn),
+                builder: (_) => BookingForm(api: api, hotel: hotel, room: room, signIn: signIn, initialDates: dates),
               ));
               if (booked == true && context.mounted) Navigator.of(context).pop(true);
             },
@@ -431,7 +485,8 @@ class _SignInState extends State<SignIn> {
 
 class BookingForm extends StatefulWidget {
   const BookingForm({super.key, required this.api, required this.hotel, required this.room,
-    required this.signIn});
+    required this.signIn, required this.initialDates});
+  final DateTimeRange? initialDates;
   final HotelApi api;
   final Json hotel;
   final Json room;
@@ -448,7 +503,7 @@ class _BookingFormState extends State<BookingForm> {
   final note = TextEditingController();
   final key = bookingKey();
   late final name = TextEditingController(text: field(widget.api.user ?? {}, 'name'));
-  DateTimeRange? dates;
+  late final DateTimeRange? dates = widget.initialDates;
   XFile? receipt;
   String? receiptUrl;
   String? error;
@@ -461,17 +516,6 @@ class _BookingFormState extends State<BookingForm> {
       controller.dispose();
     }
     super.dispose();
-  }
-
-  Future<void> pickDates() async {
-    final now = DateTime.now().toUtc().add(const Duration(hours: 6, minutes: 30));
-    final today = DateTime(now.year, now.month, now.day);
-    final selected = await showDateRangePicker(
-      context: context, firstDate: today, currentDate: today,
-      lastDate: DateTime(today.year + 1, today.month, today.day),
-      initialDateRange: dates,
-    );
-    if (selected != null && mounted) setState(() => dates = selected);
   }
 
   Future<void> pickReceipt() async {
@@ -510,8 +554,9 @@ class _BookingFormState extends State<BookingForm> {
         'customerPhone': phone.text.trim(),
         'guestCount': int.parse(guests.text.trim()),
         'extraBedAmount': int.parse(beds.text.trim()),
-        'note': 'Requested check-in: ${dateText(stay.start)}\n'
-            'Requested check-out: ${dateText(stay.end)}\n${note.text.trim()}'.trimRight(),
+        'checkIn': dateText(stay.start),
+        'checkOut': dateText(stay.end),
+        'note': note.text.trim(),
         'receiptImage': receiptUrl,
         'paymentProvider': 'kbzpay_2',
         'bookingKey': key,
@@ -529,11 +574,11 @@ class _BookingFormState extends State<BookingForm> {
 
   Widget input(TextEditingController controller, String label, {
     TextInputType keyboard = TextInputType.text, String? Function(String?)? validate,
-    int? maxLength,
+    int? maxLength, bool enabled = true,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: TextFormField(
-      controller: controller, keyboardType: keyboard, enabled: !busy && !attempted,
+      controller: controller, keyboardType: keyboard, enabled: enabled && !busy && !attempted,
       decoration: InputDecoration(labelText: label),
       validator: validate, maxLength: maxLength,
     ),
@@ -551,6 +596,12 @@ class _BookingFormState extends State<BookingForm> {
   Widget build(BuildContext context) {
     final stay = dates;
     final ready = widget.api.canUpload;
+    final nights = stay == null ? 0 : DateTime.utc(stay.end.year, stay.end.month, stay.end.day)
+        .difference(DateTime.utc(stay.start.year, stay.start.month, stay.start.day)).inDays;
+    final total = (num.tryParse(field(widget.room, 'price')) ?? 0) * nights;
+    final extra = widget.room['extra'];
+    final amenities = extra is Json ? extra['amenities'] : null;
+    final extraBedsAllowed = amenities is Json && amenities['extraBed'] == true;
     return PopScope(
       canPop: !busy,
       child: Scaffold(
@@ -561,9 +612,10 @@ class _BookingFormState extends State<BookingForm> {
             Text(field(widget.room, 'name'), style: Theme.of(context).textTheme.headlineSmall),
             Text(field(widget.hotel, 'name')),
             const SizedBox(height: 8),
-            const Text('The hotel will review your requested dates and confirm availability.'),
+            const Text('Your request reserves the room for these dates pending review.'),
+            if (nights > 0) Text('$nights nights · Total ${mmk(total)}'),
             OutlinedButton.icon(
-              onPressed: busy || attempted ? null : pickDates,
+              onPressed: busy || attempted ? null : () => Navigator.of(context).pop(),
               icon: const Icon(Icons.date_range),
               label: Text(stay == null ? 'Select check-in and check-out'
                 : '${dateText(stay.start)} to ${dateText(stay.end)}'),
@@ -574,7 +626,8 @@ class _BookingFormState extends State<BookingForm> {
               validate: requiredField, maxLength: 30),
             input(guests, 'Guests', keyboard: TextInputType.number,
               validate: (value) => count(value, 1), maxLength: 3),
-            input(beds, 'Extra beds', keyboard: TextInputType.number,
+            input(beds, extraBedsAllowed ? 'Extra beds' : 'Extra beds unavailable',
+              enabled: extraBedsAllowed, keyboard: TextInputType.number,
               validate: (value) => count(value, 0), maxLength: 3),
             input(note, 'Note (optional)', maxLength: 300),
             if (ready) ...[

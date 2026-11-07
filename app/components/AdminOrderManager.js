@@ -342,6 +342,13 @@ export default function AdminOrderManager() {
                     <OrderItems items={order.items} />
                   )}
 
+                  {order.serviceType === "hotel" && (
+                    <div className="rounded-xl bg-purple-50 p-4 text-sm">
+                      <p>Check-in: {order.bookingDetails?.checkIn || "Dates need review"}</p>
+                      <p>Check-out: {order.bookingDetails?.checkOut || "Dates need review"}</p>
+                      <p>Guests: {order.bookingDetails?.guestCount || 1}</p>
+                    </div>
+                  )}
                   {/* SPA */}
                   {order.serviceType === "spa" && (
                     <div className="rounded-xl border border-violet-100 bg-violet-50/60 p-4">

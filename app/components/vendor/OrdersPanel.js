@@ -38,6 +38,15 @@ export default function OrdersPanel({ orders = [], onAction, processingAction })
               )}
               <p className="text-sm">Customer: {order.customerName}</p>
               <p className="text-sm">Phone: {order.customerPhone}</p>
+              {order.serviceType === "hotel" ? (
+                <div className="my-2 rounded-lg bg-purple-50 p-3 text-sm">
+                  <p>Check-in: {order.bookingDetails?.checkIn || "Dates need review"}</p>
+                  <p>Check-out: {order.bookingDetails?.checkOut || "Dates need review"}</p>
+                  <p>Guests: {order.bookingDetails?.guestCount || 1}</p>
+                  <p>Total for stay: {Number(order.totalAmount || 0).toLocaleString()} MMK</p>
+                  <p className="whitespace-pre-wrap">{order.bookingDetails?.note}</p>
+                </div>
+              ) : null}
               {order.serviceType !== "spa" ? <p className="text-sm">Delivery info: {order.customerAddress}</p> : null}
               {order.serviceType === "spa" ? (
                 <>
