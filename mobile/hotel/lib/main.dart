@@ -13,6 +13,66 @@ String mmk(Object? value) {
   return '${digits.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} MMK';
 }
 
+
+const List<Json> sampleHotels = [
+  {
+    '_id': 'sample-riverside',
+    'name': 'Manaw Riverside Hotel',
+    'description': 'Sample hotel · A peaceful riverside stay in Myitkyina.',
+    'isSample': true,
+    'sampleRooms': [
+      {
+        '_id': 'sample-riverside-double',
+        'name': 'River View Double Room',
+        'description': 'Sample room with a double bed for two guests.',
+        'price': 50000,
+        'isSample': true,
+        'extra': {
+          'amenities': {'wifi': true, 'aircon': true, 'breakfast': true},
+        },
+      },
+      {
+        '_id': 'sample-riverside-family',
+        'name': 'Family Room',
+        'description': 'Sample family room for up to four guests.',
+        'price': 85000,
+        'isSample': true,
+        'extra': {
+          'amenities': {'wifi': true, 'aircon': true, 'tv': true, 'extraBed': true},
+        },
+      },
+    ],
+  },
+  {
+    '_id': 'sample-hill-garden',
+    'name': 'Kachin Hill Garden Hotel',
+    'description': 'Sample hotel · A relaxed garden stay in Myitkyina.',
+    'isSample': true,
+    'sampleRooms': [
+      {
+        '_id': 'sample-garden-twin',
+        'name': 'Garden Twin Room',
+        'description': 'Sample room with two single beds for two guests.',
+        'price': 45000,
+        'isSample': true,
+        'extra': {
+          'amenities': {'wifi': true, 'aircon': true, 'tv': true},
+        },
+      },
+      {
+        '_id': 'sample-garden-suite',
+        'name': 'Garden Suite',
+        'description': 'Sample suite with a sitting area for two guests.',
+        'price': 95000,
+        'isSample': true,
+        'extra': {
+          'amenities': {'wifi': true, 'aircon': true, 'breakfast': true, 'extraBed': true},
+        },
+      },
+    ],
+  },
+];
+
 class HotelApp extends StatefulWidget {
   const HotelApp({super.key});
   @override
@@ -82,7 +142,11 @@ class _HomeState extends State<Home> {
         empty: 'No hotels are listed yet.',
         load: (page) async {
           final result = await api.hotels(page);
-          return (rows: (result['data'] as List).cast<Json>(),
+          final hotels = (result['data'] as List).cast<Json>();
+          if (page == 1 && hotels.isEmpty && result['meta']['total'] == 0) {
+            return (rows: sampleHotels, more: false);
+          }
+          return (rows: hotels,
               more: page < (result['meta']['totalPages'] as num));
         },
         item: (hotel) => Listing(data: hotel, action: 'View rooms', onTap: () => openHotel(hotel)),
@@ -233,6 +297,13 @@ class Listing extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (data['isSample'] == true) ...[
+              const Chip(
+                avatar: Icon(Icons.visibility_outlined, size: 18),
+                label: Text('Sample · Preview only'),
+              ),
+              const SizedBox(height: 4),
+            ],
             Text(field(data, 'name'), style: Theme.of(context).textTheme.titleLarge),
             if (field(data, 'description').isNotEmpty) Text(field(data, 'description')),
             if (details.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(details)),
@@ -254,12 +325,22 @@ class Rooms extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shop = field(hotel, '_id');
+    final isSample = hotel['isSample'] == true;
     return Scaffold(
       appBar: AppBar(title: Text(field(hotel, 'name'))),
       body: PagedList(
-        intro: const Text('Rooms', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+        intro: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Rooms', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+          if (isSample) ...[
+            const SizedBox(height: 8),
+            const Text('This fictional hotel is for previewing the app. Prices are examples.'),
+          ],
+        ]),
         empty: 'No rooms are listed for this hotel.',
         load: (page) async {
+          if (isSample) {
+            return (rows: (hotel['sampleRooms'] as List).cast<Json>(), more: false);
+          }
           final result = await api.rooms(shop, page);
           final data = result['data'] as Json;
           final active = data['shop']['isActive'] != false;
@@ -272,13 +353,14 @@ class Rooms extends StatelessWidget {
           final amenities = extra is Json ? extra['amenities'] : null;
           final labels = const {'wifi': 'Wi-Fi', 'aircon': 'Air conditioning', 'tv': 'TV',
             'breakfast': 'Breakfast', 'swimmingPool': 'Pool', 'extraBed': 'Extra bed'};
-          return Listing(data: room, action: 'Request booking',
+          return Listing(data: room,
+            action: isSample ? 'Sample room · Booking unavailable' : 'Request booking',
             details: [
               mmk(room['price']),
               if (amenities is Json)
                 labels.entries.where((e) => amenities[e.key] == true).map((e) => e.value).join(' · '),
             ].where((line) => line.isNotEmpty).join('\n'),
-            onTap: () async {
+            onTap: isSample ? null : () async {
               if (!await signIn() || !context.mounted) return;
               final booked = await Navigator.of(context).push<bool>(MaterialPageRoute(
                 builder: (_) => BookingForm(api: api, hotel: hotel, room: room, signIn: signIn),
@@ -404,6 +486,7 @@ class _BookingFormState extends State<BookingForm> {
   String dateText(DateTime date) => date.toIso8601String().split('T').first;
 
   Future<void> submit() async {
+    if (widget.hotel['isSample'] == true || widget.room['isSample'] == true) return;
     if (busy || !form.currentState!.validate()) return;
     final stay = dates;
     final image = receipt;
