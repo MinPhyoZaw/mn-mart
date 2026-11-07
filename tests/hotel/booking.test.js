@@ -91,7 +91,8 @@ test(
     const Shop = load(path.join(root, "models/Shop.js")).default;
     const Block = load(path.join(root, "models/HotelBlock.js")).default;
     const Vendor = load(path.join(root, "models/Vendor.js")).default;
-    const shopRoute = load(path.join(root, "api/shops/[id]/route.js"));
+    const shopSearchRoute = load(path.join(root, "api/shops/route.js"));
+  const shopRoute = load(path.join(root, "api/shops/[id]/route.js"));
     const itemRoute = load(path.join(root, "api/items/route.js"));
     const references = load(path.join(root, "api/hotel-bookings/references/route.js"));
     const Counter = load(path.join(root, "models/HotelReferenceCounter.js")).default;
@@ -385,7 +386,38 @@ test(
         const values = await Promise.all(responses.map((response) => response.json()));
         assert.notEqual(values[0].data.hotelReference, values[1].data.hotelReference);
       });
-      await suite.test("anonymous submissions are rejected before booking", async () => {
+      await suite.test("hotel search matches name or area while preserving category and pagination", async () => {
+      await reset();
+      await Shop.collection.insertMany([
+        { vendorId, name: "River Garden", address: "Downtown", category: "hotel" },
+        { vendorId, name: "City Inn", address: "Garden Road", category: "hotel" },
+        { vendorId, name: "Garden Shop", address: "Garden Road", category: "shopping" },
+      ]);
+      const response = await shopSearchRoute.GET(new Request("http://localhost/api/shops?category=hotel&q=GARDEN&page=1&limit=1"));
+      const result = await response.json();
+      assert.equal(response.status, 200);
+      assert.equal(result.meta.total, 2);
+      assert.equal(result.meta.totalPages, 2);
+      assert.equal(result.data.length, 1);
+      assert.equal(result.data[0].category, "hotel");
+      const second = await (await shopSearchRoute.GET(new Request("http://localhost/api/shops?category=hotel&q=garden&page=2&limit=1"))).json();
+      assert.equal(second.data.length, 1);
+      assert.notEqual(result.data[0]._id, second.data[0]._id);
+    });
+    await suite.test("hotel search treats regex characters literally and bounds input", async () => {
+      await reset();
+      await Shop.collection.insertOne({ vendorId, name: "Literal .* Lodge", category: "hotel" });
+      const response = await shopSearchRoute.GET(new Request("http://localhost/api/shops?category=hotel&q=" + encodeURIComponent(".*")));
+      const result = await response.json();
+      assert.equal(result.meta.total, 1);
+      assert.equal(result.data[0].name, "Literal .* Lodge");
+      const noResults = await (await shopSearchRoute.GET(new Request("http://localhost/api/shops?category=hotel&q=no-match"))).json();
+      assert.equal(noResults.meta.total, 0);
+      assert.deepEqual(noResults.data, []);
+      const tooLong = await shopSearchRoute.GET(new Request("http://localhost/api/shops?q=" + "a".repeat(81)));
+      assert.equal(tooLong.status, 400);
+    });
+    await suite.test("anonymous submissions are rejected before booking", async () => {
         await reset();
         assert.equal(
           (await booking.POST(request(payload(), "POST", { "x-deny": "true" }))).status,

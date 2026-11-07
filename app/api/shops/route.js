@@ -34,10 +34,13 @@ function toNumber(value, fallback) {
 
 export async function GET(req) {
   try {
-    await connectDB();
-
     const { searchParams } = new URL(req.url);
     const category = normalizeCategory(searchParams.get("category"));
+    const search = (searchParams.get("q") || "").trim();
+    if (search.length > 80) {
+      return NextResponse.json({ success: false, message: "Search must be 80 characters or fewer." }, { status: 400 });
+    }
+    await connectDB();
 
     const page = Math.max(1, toNumber(searchParams.get("page"), 1));
     const limit = Math.min(50, Math.max(1, toNumber(searchParams.get("limit"), 20)));
@@ -51,7 +54,14 @@ export async function GET(req) {
           ],
         }
       : {};
-    const projection = "name description image category";
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.$and = [{ $or: [
+        { name: { $regex: escaped, $options: "i" } },
+        { address: { $regex: escaped, $options: "i" } },
+      ] }];
+    }
+    const projection = "name description image category address";
 
     const [shops, total] = await Promise.all([
       Shop.find(query).select(projection).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),

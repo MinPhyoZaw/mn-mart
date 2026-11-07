@@ -58,3 +58,9 @@ My Hotel Bookings shows the room type, short booking reference, stay dates and n
 Download receipt opens Android’s save dialog and saves a PNG image of the booking receipt. The image preserves the text and fonts shown in the app. Run `flutter pub get` after pulling this update to install `flutter_file_dialog`, then rebuild the app.
 
 Hotel references start at `MH-0001`. Older hotel orders receive a short reference when their owner loads them in the updated app. The original internal order ID is retained. References expand beyond four digits after 9,999 bookings to preserve uniqueness.
+
+## Home discovery
+
+The home screen searches hotel names and areas (hotel addresses). Submit with the keyboard search action or the arrow button. Results are paginated, and Clear returns to the full catalog. With an empty live catalog, the existing sample hotels remain searchable previews. A failed connection still shows a retry message.
+
+The hero uses the existing hotel image with a readable overlay and a Find your stay action. The booking reminder opens My Hotel Bookings. Marketing copy explains availability and receipt features. Discount campaigns need backend eligibility and pricing support before a promotional offer is displayed.

@@ -98,7 +98,13 @@ class HotelApi {
     user = null;
   }
 
-  Future<Json> hotels(int page) => _request('/api/shops?category=hotel&page=$page&limit=20');
+  Future<Json> hotels(int page, {String search = ''}) {
+    final query = Uri(queryParameters: {
+      'category': 'hotel', 'page': '$page', 'limit': '20',
+      if (search.isNotEmpty) 'q': search,
+    }).query;
+    return _request('/api/shops?$query');
+  }
 
   Future<Json> rooms(String shop, int page, {String? checkIn, String? checkOut}) {
     final query = <String, String>{'page': '$page', 'limit': '20'};
