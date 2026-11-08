@@ -236,7 +236,15 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Manaw Mart Hotel')),
+    appBar: AppBar(
+      toolbarHeight: 64,
+      title: Image.asset(
+        'assets/images/mn-mart-logo.png',
+        width: 56,
+        height: 56,
+        semanticLabel: 'MN-Mart',
+      ),
+    ),
     body: SafeArea(child: IndexedStack(index: tab, children: [
       PagedList(
         key: ValueKey('hotels-$hotelQuery'),
