@@ -442,25 +442,39 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final overlapHandle = widget.overlapHandle;
     final children = [
-        widget.intro,
-        const SizedBox(height: 16),
-        ...rows.map(widget.item),
-        if (loading)
-          Padding(padding: const EdgeInsets.symmetric(vertical: 16),
-            child: hasLoaded ? const LinearProgressIndicator()
-              : const Center(child: CircularProgressIndicator()))
-        else if (error != null)
-          Column(children: [Text(error!), TextButton(
-            onPressed: () => fetch(refresh: failedRefresh), child: const Text('Retry'))])
-        else if (more)
-          OutlinedButton(onPressed: fetch, child: Text(rows.isEmpty ? 'Search next page' : 'Load more'))
-        else if (rows.isEmpty)
-          Center(child: Text(widget.empty)),
-      ];
+      widget.intro,
+      const SizedBox(height: 16),
+      ...rows.map(widget.item),
+      if (loading)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: hasLoaded
+              ? const LinearProgressIndicator()
+              : const Center(child: CircularProgressIndicator()),
+        )
+      else if (error != null)
+        Column(
+          children: [
+            Text(error!),
+            TextButton(
+              onPressed: () => fetch(refresh: failedRefresh),
+              child: const Text('Retry'),
+            ),
+          ],
+        )
+      else if (more)
+        OutlinedButton(
+          onPressed: fetch,
+          child: Text(rows.isEmpty ? 'Search next page' : 'Load more'),
+        )
+      else if (rows.isEmpty)
+        Center(child: Text(widget.empty)),
+    ];
     return RefreshIndicator(
       onRefresh: () => fetch(refresh: true),
-      child: widget.overlapHandle == null
+      child: overlapHandle == null
           ? ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: widget.contentPadding,
@@ -469,17 +483,18 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
           : CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                SliverOverlapInjector(handle: widget.overlapHandle!),
+                SliverOverlapInjector(handle: overlapHandle),
                 ...widget.sliversBeforeContent,
                 SliverPadding(
                   padding: widget.contentPadding,
-                  sliver: SliverList(delegate: SliverChildListDelegate(children)),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate(children),
+                  ),
                 ),
               ],
             ),
     );
   }
-
 }
 
 class Listing extends StatelessWidget {
@@ -553,13 +568,21 @@ class _RoomsState extends State<Rooms> {
   String day(DateTime date) => date.toIso8601String().split('T').first;
 
   Future<void> chooseDates() async {
-    final now = DateTime.now().toUtc().add(const Duration(hours: 6, minutes: 30));
+    final now = DateTime.now().toUtc().add(
+      const Duration(hours: 6, minutes: 30),
+    );
     final today = DateTime(now.year, now.month, now.day);
-    final selected = await showDateRangePicker(context: context, firstDate: today,
-      lastDate: today.add(const Duration(days: 365)), initialDateRange: dates);
+    final selected = await showDateRangePicker(
+      context: context,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+      initialDateRange: dates,
+    );
     if (!mounted || selected == null) return;
     if (!selected.end.isAfter(selected.start)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Check-out must be after check-in.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Check-out must be after check-in.')),
+      );
       return;
     }
     setState(() => dates = selected);
@@ -569,87 +592,149 @@ class _RoomsState extends State<Rooms> {
   Widget build(BuildContext context) {
     final shop = field(hotel, '_id');
     final isSample = hotel['isSample'] == true;
-    final scaler = MediaQuery.textScalerOf(context);
-    final cellWidth = (MediaQuery.sizeOf(context).width - 34) / 2 - 50;
-    double textHeight(String text, double size) {
-      final painter = TextPainter(text: TextSpan(text: text, style: TextStyle(fontSize: size)),
-        textDirection: Directionality.of(context), textScaler: scaler)..layout(maxWidth: cellWidth);
-      return painter.height;
-    }
-    final dateLabel = dates == null ? 'Select date'
-        : MaterialLocalizations.of(context).formatShortDate(dates!.start);
-    final endLabel = dates == null ? 'Select date'
-        : MaterialLocalizations.of(context).formatShortDate(dates!.end);
-    final firstHeight = textHeight(dateLabel, 14);
-    final secondHeight = textHeight(endLabel, 14);
-    final dateHeight = 42 + textHeight('Check-out', 12)
-        + (firstHeight > secondHeight ? firstHeight : secondHeight)
-        + (dates == null ? 0 : 6 + scaler.scale(12) * 1.5);
+    final selectedDates = dates;
     return Scaffold(
       body: NestedScrollView(
-        // Dates change the pinned panel height and replace the availability list.
-        // Reset both coordinated positions together, rather than only the rooms.
-        key: ValueKey('hotel-$shop-${dates?.start}-${dates?.end}'),
+        // Keep both coordinated scroll positions in the same date generation.
+        // Disposed room lists cannot apply results for an older stay.
+        key: ValueKey(
+          'hotel-$shop-${selectedDates?.start}-${selectedDates?.end}',
+        ),
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverOverlapAbsorber(
             handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             sliver: HotelPhotoHeader(hotel: hotel),
           ),
         ],
-        body: Builder(builder: (context) => SafeArea(top: false, child: PagedList(
-          overlapHandle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-          // Hotel information and dates share the rooms viewport. Only the
-          // app bar crosses viewport boundaries and needs overlap absorption.
-          sliversBeforeContent: [
-            SliverToBoxAdapter(child: HotelDetailsHeader(hotel: hotel)),
-            SliverPersistentHeader(pinned: true, delegate: StayDateDelegate(
-              height: dateHeight,
-              child: StayDatePanel(dates: dates, onTap: chooseDates),
-            )),
-          ],
-          key: ValueKey('${dates?.start}-${dates?.end}'),
-          intro: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Rooms', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-            if (isSample) const Padding(padding: EdgeInsets.only(top: 8),
-              child: Text('Sample hotel · Preview only. Booking is unavailable.')),
-          ]),
-          empty: 'No rooms are listed for this hotel.',
-          load: (page, refresh) async {
-            if (isSample) {
-              return (rows: (hotel['sampleRooms'] as List).cast<Json>(), more: false);
-            }
-            final result = await api.rooms(shop, page, refresh: refresh,
-              checkIn: dates == null ? null : day(dates!.start),
-              checkOut: dates == null ? null : day(dates!.end));
-            final data = result['data'] as Json;
-            final active = data['shop']['isActive'] != false;
-            return (rows: active ? (data['items'] as List).cast<Json>()
-                .where((room) => room['type'] == 'room').toList() : <Json>[],
-                more: active && data['pagination']['hasNextPage'] == true);
-          },
-          item: (room) {
-            final available = !isSample && dates != null && room['availability'] == 'available' && room['isAvailable'] != false;
-            final unavailable = dates != null && room['availability'] == 'unavailable';
-            final paused = room['isAvailable'] == false;
-            return HotelRoomCard(
-              room: room, price: mmk(room['price']),
-              action: isSample ? 'Preview only' : dates == null ? 'Select dates'
-                  : available ? 'Request booking' : unavailable ? 'Unavailable' : paused ? 'Bookings paused' : 'Select dates',
-              status: isSample ? '' : dates == null ? 'Select dates to check availability'
-                  : available ? 'Available for your dates'
-                  : unavailable ? 'Unavailable for these dates'
-                  : paused ? 'Bookings paused' : 'Availability has not been confirmed. Try other dates.',
-              onTap: isSample ? null : dates == null || (!available && !unavailable && !paused)
-                  ? chooseDates : !available ? null : () async {
-                  if (!await signIn() || !context.mounted) return;
-                  final booked = await Navigator.of(context).push<bool>(MaterialPageRoute(
-                    builder: (_) => BookingForm(api: api, hotel: hotel, room: room, signIn: signIn, initialDates: dates),
-                  ));
-                  if (booked == true && context.mounted) Navigator.of(context).pop(true);
+        body: Builder(
+          builder: (context) => SafeArea(
+            top: false,
+            child: PagedList(
+              overlapHandle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                context,
+              ),
+              // Hotel information and dates share the rooms viewport. Only the
+              // app bar crosses viewport boundaries and needs overlap absorption.
+              sliversBeforeContent: [
+                SliverToBoxAdapter(child: HotelDetailsHeader(hotel: hotel)),
+                PinnedHeaderSliver(
+                  child: StayDatePanel(
+                    dates: selectedDates,
+                    onTap: chooseDates,
+                  ),
+                ),
+              ],
+              key: ValueKey('${selectedDates?.start}-${selectedDates?.end}'),
+              intro: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Rooms',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
+                  if (isSample)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Sample hotel · Preview only. Booking is unavailable.',
+                      ),
+                    ),
+                ],
+              ),
+              empty: 'No rooms are listed for this hotel.',
+              load: (page, refresh) async {
+                if (isSample) {
+                  return (
+                    rows: (hotel['sampleRooms'] as List).cast<Json>(),
+                    more: false,
+                  );
+                }
+                final result = await api.rooms(
+                  shop,
+                  page,
+                  refresh: refresh,
+                  checkIn: selectedDates == null
+                      ? null
+                      : day(selectedDates.start),
+                  checkOut: selectedDates == null
+                      ? null
+                      : day(selectedDates.end),
+                );
+                final data = result['data'] as Json;
+                final active = data['shop']['isActive'] != false;
+                return (
+                  rows: active
+                      ? (data['items'] as List)
+                            .cast<Json>()
+                            .where((room) => room['type'] == 'room')
+                            .toList()
+                      : <Json>[],
+                  more: active && data['pagination']['hasNextPage'] == true,
+                );
               },
-            );
-          },
-        ))),
+              item: (room) {
+                final available =
+                    !isSample &&
+                    selectedDates != null &&
+                    room['availability'] == 'available' &&
+                    room['isAvailable'] != false;
+                final unavailable =
+                    selectedDates != null &&
+                    room['availability'] == 'unavailable';
+                final paused = room['isAvailable'] == false;
+                return HotelRoomCard(
+                  room: room,
+                  price: mmk(room['price']),
+                  action: isSample
+                      ? 'Preview only'
+                      : selectedDates == null
+                      ? 'Select dates'
+                      : available
+                      ? 'Request booking'
+                      : unavailable
+                      ? 'Unavailable'
+                      : paused
+                      ? 'Bookings paused'
+                      : 'Select dates',
+                  status: isSample
+                      ? ''
+                      : selectedDates == null
+                      ? 'Select dates to check availability'
+                      : available
+                      ? 'Available for your dates'
+                      : unavailable
+                      ? 'Unavailable for these dates'
+                      : paused
+                      ? 'Bookings paused'
+                      : 'Availability has not been confirmed. Try other dates.',
+                  onTap: isSample
+                      ? null
+                      : selectedDates == null ||
+                            (!available && !unavailable && !paused)
+                      ? chooseDates
+                      : !available
+                      ? null
+                      : () async {
+                          if (!await signIn() || !context.mounted) return;
+                          final booked = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => BookingForm(
+                                api: api,
+                                hotel: hotel,
+                                room: room,
+                                signIn: signIn,
+                                initialDates: selectedDates,
+                              ),
+                            ),
+                          );
+                          if (booked == true && context.mounted)
+                            Navigator.of(context).pop(true);
+                        },
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
