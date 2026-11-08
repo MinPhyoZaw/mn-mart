@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'api.dart';
 import 'booking_receipt.dart';
 import 'hotel_home_header.dart';
+import 'splash_screen.dart';
 
 void main() => runApp(const HotelApp());
 
@@ -97,6 +98,7 @@ class HotelApp extends StatefulWidget {
 
 class _HotelAppState extends State<HotelApp> {
   final api = HotelApi();
+  bool splashFinished = false;
 
   @override
   void dispose() {
@@ -112,7 +114,13 @@ class _HotelAppState extends State<HotelApp> {
       scaffoldBackgroundColor: const Color(0xfff7f6f1),
       inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
     ),
-    home: Home(api: api),
+    home: splashFinished
+        ? Home(api: api)
+        : HotelSplashScreen(
+            onFinished: () {
+              if (mounted) setState(() => splashFinished = true);
+            },
+          ),
   );
 }
 
