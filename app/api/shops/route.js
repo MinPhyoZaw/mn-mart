@@ -61,7 +61,7 @@ export async function GET(req) {
         { address: { $regex: escaped, $options: "i" } },
       ] }];
     }
-    const projection = "name description image category address";
+    const projection = "name description image category address phone";
 
     const [shops, total] = await Promise.all([
       Shop.find(query).select(projection).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
