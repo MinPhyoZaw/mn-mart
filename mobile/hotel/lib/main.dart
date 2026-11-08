@@ -552,11 +552,12 @@ class _RoomsState extends State<Rooms> {
     return Scaffold(
       body: SafeArea(
         top: false,
-        child: PagedList(
+        child: Column(children: [
+          HotelDetailsHeader(hotel: hotel),
+          Expanded(child: PagedList(
           contentPadding: EdgeInsets.zero,
           key: ValueKey('${dates?.start}-${dates?.end}'),
           intro: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            HotelDetailsHeader(hotel: hotel),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -618,7 +619,8 @@ class _RoomsState extends State<Rooms> {
               ),
             );
           },
-        ),
+          )),
+        ]),
       ),
     );
   }
