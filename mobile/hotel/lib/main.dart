@@ -7,6 +7,7 @@ import 'api.dart';
 import 'booking_receipt.dart';
 import 'hotel_home_header.dart';
 import 'hotel_details_header.dart';
+import 'hotel_room_widgets.dart';
 import 'splash_screen.dart';
 
 void main() => runApp(const HotelApp());
@@ -549,30 +550,38 @@ class _RoomsState extends State<Rooms> {
   Widget build(BuildContext context) {
     final shop = field(hotel, '_id');
     final isSample = hotel['isSample'] == true;
+    final scaler = MediaQuery.textScalerOf(context);
+    final cellWidth = (MediaQuery.sizeOf(context).width - 34) / 2 - 50;
+    double textHeight(String text, double size) {
+      final painter = TextPainter(text: TextSpan(text: text, style: TextStyle(fontSize: size)),
+        textDirection: Directionality.of(context), textScaler: scaler)..layout(maxWidth: cellWidth);
+      return painter.height;
+    }
+    final dateLabel = dates == null ? 'Select date'
+        : MaterialLocalizations.of(context).formatShortDate(dates!.start);
+    final endLabel = dates == null ? 'Select date'
+        : MaterialLocalizations.of(context).formatShortDate(dates!.end);
+    final firstHeight = textHeight(dateLabel, 14);
+    final secondHeight = textHeight(endLabel, 14);
+    final dateHeight = 42 + textHeight('Check-out', 12)
+        + (firstHeight > secondHeight ? firstHeight : secondHeight)
+        + (dates == null ? 0 : 6 + scaler.scale(12) * 1.5);
     return Scaffold(
-      body: SafeArea(
-        top: false,
-        child: Column(children: [
-          HotelDetailsHeader(hotel: hotel),
-          Expanded(child: PagedList(
-          contentPadding: EdgeInsets.zero,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          HotelPhotoHeader(hotel: hotel),
+          SliverToBoxAdapter(child: HotelDetailsHeader(hotel: hotel)),
+          SliverPersistentHeader(pinned: true, delegate: StayDateDelegate(
+            height: dateHeight,
+            child: StayDatePanel(dates: dates, onTap: chooseDates),
+          )),
+        ],
+        body: SafeArea(top: false, child: PagedList(
           key: ValueKey('${dates?.start}-${dates?.end}'),
-          intro: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Rooms', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                if (!isSample) OutlinedButton.icon(
-                  onPressed: chooseDates, icon: const Icon(Icons.date_range),
-                  label: Text(dates == null ? 'Choose dates to check availability'
-                    : '${day(dates!.start)} → ${day(dates!.end)}'),
-                ),
-                if (isSample) ...[
-                  const SizedBox(height: 8),
-                  const Text('This fictional hotel is for previewing the app. Prices are examples.'),
-                ],
-              ]),
-            ),
+          intro: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Rooms', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+            if (isSample) const Padding(padding: EdgeInsets.only(top: 8),
+              child: Text('Sample hotel · Preview only. Booking is unavailable.')),
           ]),
           empty: 'No rooms are listed for this hotel.',
           load: (page, refresh) async {
@@ -589,38 +598,28 @@ class _RoomsState extends State<Rooms> {
                 more: active && data['pagination']['hasNextPage'] == true);
           },
           item: (room) {
-            final extra = room['extra'];
-            final amenities = extra is Json ? extra['amenities'] : null;
-            final labels = const {'wifi': 'Wi-Fi', 'aircon': 'Air conditioning', 'tv': 'TV',
-              'breakfast': 'Breakfast', 'swimmingPool': 'Pool', 'extraBed': 'Extra bed'};
-            final available = !isSample && dates != null && room['availability'] == 'available';
-            final status = room['availability'] == 'unavailable' || room['isAvailable'] == false
-                ? (dates == null ? 'Bookings paused' : 'Unavailable for these dates')
-                : 'Choose dates to check availability';
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Listing(data: room,
-                action: isSample ? 'Sample room · Booking unavailable' : available ? 'Request booking' : status,
-                details: [
-                  '${mmk(room['price'])} / night',
-                  if (room['roomType'] != null) field(room, 'roomType'),
-                  if (room['maxGuests'] != null) 'Up to ${room['maxGuests']} guests',
-                  if (available) 'Available for your dates',
-                  if (amenities is Json)
-                    labels.entries.where((e) => amenities[e.key] == true).map((e) => e.value).join(' · '),
-                ].where((line) => line.isNotEmpty).join('\n'),
-                onTap: !available ? null : () async {
+            final available = !isSample && dates != null && room['availability'] == 'available' && room['isAvailable'] != false;
+            final unavailable = dates != null && room['availability'] == 'unavailable';
+            final paused = room['isAvailable'] == false;
+            return HotelRoomCard(
+              room: room, price: mmk(room['price']),
+              action: isSample ? 'Preview only' : dates == null ? 'Select dates'
+                  : available ? 'Request booking' : unavailable ? 'Unavailable' : paused ? 'Bookings paused' : 'Select dates',
+              status: isSample ? '' : dates == null ? 'Select dates to check availability'
+                  : available ? 'Available for your dates'
+                  : unavailable ? 'Unavailable for these dates'
+                  : paused ? 'Bookings paused' : 'Availability has not been confirmed. Try other dates.',
+              onTap: isSample ? null : dates == null || (!available && !unavailable && !paused)
+                  ? chooseDates : !available ? null : () async {
                   if (!await signIn() || !context.mounted) return;
                   final booked = await Navigator.of(context).push<bool>(MaterialPageRoute(
                     builder: (_) => BookingForm(api: api, hotel: hotel, room: room, signIn: signIn, initialDates: dates),
                   ));
                   if (booked == true && context.mounted) Navigator.of(context).pop(true);
-                },
-              ),
+              },
             );
           },
-          )),
-        ]),
+        )),
       ),
     );
   }
