@@ -15,8 +15,12 @@ void main() {
     final api = HotelApi();
     addTearDown(api.dispose);
     await tester.pumpWidget(MaterialApp(home: Rooms(
-      api: api, hotel: sampleHotels.first, signIn: () async => true)));
+      api: api, hotel: {...sampleHotels.first,
+        'address': 'Test Street, Myitkyina', 'phone': '09123456789'},
+      signIn: () async => true)));
     await tester.pumpAndSettle();
+    expect(find.text('Test Street, Myitkyina').hitTestable(), findsOneWidget);
+    expect(find.text('Call now').hitTestable(), findsOneWidget);
     final appBar = find.byType(FlexibleSpaceBar);
     final initialHeight = tester.getSize(appBar).height;
     await tester.drag(find.descendant(of: find.byType(PagedList), matching: find.byType(CustomScrollView)), const Offset(0, -450));
@@ -46,7 +50,9 @@ void main() {
     final api = HotelApi();
     addTearDown(api.dispose);
     await tester.pumpWidget(MaterialApp(home: Rooms(
-      api: api, hotel: sampleHotels.first, signIn: () async => true)));
+      api: api, hotel: {...sampleHotels.first,
+        'address': 'Test Street, Myitkyina', 'phone': '09123456789'},
+      signIn: () async => true)));
     await tester.pumpAndSettle();
     final roomsScroll = find.descendant(of: find.byType(PagedList),
       matching: find.byType(CustomScrollView));
@@ -63,6 +69,8 @@ void main() {
     expect(state.outerController.offset, 0);
     expect(state.innerController.offset, 0);
     expect(find.text('2 nights'), findsOneWidget);
+    expect(find.text('Test Street, Myitkyina').hitTestable(), findsOneWidget);
+    expect(find.text('Call now').hitTestable(), findsOneWidget);
     await tester.drag(roomsScroll, const Offset(0, -400));
     await tester.pumpAndSettle();
     await tester.drag(roomsScroll, const Offset(0, 1000));
