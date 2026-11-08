@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -125,6 +127,52 @@ class _HomeState extends State<Home> {
   int tab = 0;
   int historyVersion = 0;
   bool bookingsVisited = false;
+  bool restoringSession = true;
+  bool signingOut = false;
+  String? sessionMessage;
+  late final Future<void> sessionRestoration;
+
+  @override
+  void initState() {
+    super.initState();
+    sessionRestoration = restoreSavedSession();
+  }
+
+  Future<void> restoreSavedSession() async {
+    try {
+      await api.restoreSession();
+    } on ApiError catch (error) {
+      sessionMessage = error.message;
+    } finally {
+      if (mounted) setState(() => restoringSession = false);
+    }
+    if (mounted && api.user != null) unawaited(validateSavedSession());
+  }
+
+  Future<void> validateSavedSession() async {
+    try {
+      await api.validateSession();
+    } finally {
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> signOut() async {
+    if (signingOut) return;
+    setState(() => signingOut = true);
+    String? message;
+    try {
+      await api.signOut();
+    } on ApiError catch (error) {
+      message = error.message;
+    } finally {
+      if (mounted) setState(() {
+        signingOut = false;
+        bookingsVisited = false;
+        sessionMessage = message;
+      });
+    }
+  }
 
   void selectTab(int value) {
     searchFocus.unfocus();
@@ -158,11 +206,16 @@ class _HomeState extends State<Home> {
   HotelApi get api => widget.api;
 
   Future<bool> signIn() async {
+    await sessionRestoration;
+    if (!mounted) return false;
     if (api.user != null) return true;
     final signedIn = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => SignIn(api: api)),
     );
-    if (mounted && signedIn == true) setState(() => historyVersion++);
+    if (mounted && signedIn == true) setState(() {
+      historyVersion++;
+      sessionMessage = null;
+    });
     return mounted && signedIn == true;
   }
 
@@ -209,7 +262,8 @@ class _HomeState extends State<Home> {
         item: (hotel) => Listing(data: hotel, action: 'View rooms',
           details: field(hotel, 'address'), onTap: () => openHotel(hotel)),
       ),
-      !bookingsVisited ? const SizedBox.shrink() : api.user == null
+      !bookingsVisited ? const SizedBox.shrink() : restoringSession
+        ? const Center(child: Text('Restoring your session…')) : api.user == null
         ? Center(child: FilledButton(onPressed: signIn, child: const Text('Sign in to view bookings')))
         : PagedList(
           key: ValueKey('bookings-${api.user?['id']}'),
@@ -231,15 +285,21 @@ class _HomeState extends State<Home> {
           item: (order) => BookingReceipt(key: ValueKey(order['_id']), order: order),
         ),
       Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text(api.user == null ? 'Use your MN-Mart customer account' : field(api.user!, 'email')),
-        const SizedBox(height: 12),
-        if (api.user == null)
-          FilledButton(onPressed: signIn, child: const Text('Sign in'))
-        else
-          OutlinedButton(onPressed: () => setState(() {
-            api.signOut();
-            bookingsVisited = false;
-          }), child: const Text('Sign out')),
+        if (restoringSession)
+          const Text('Restoring your session…')
+        else ...[
+          Text(api.user == null ? 'Use your MN-Mart customer account' : field(api.user!, 'email')),
+          const SizedBox(height: 12),
+          if (sessionMessage != null) ...[
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text(sessionMessage!)),
+            TextButton(onPressed: signingOut ? null : signOut, child: const Text('Clear saved login')),
+          ],
+          if (api.user == null)
+            FilledButton(onPressed: signingOut ? null : signIn, child: const Text('Sign in'))
+          else
+            OutlinedButton(onPressed: signingOut ? null : signOut,
+              child: Text(signingOut ? 'Signing out…' : 'Sign out')),
+        ],
       ])),
     ])),
     bottomNavigationBar: NavigationBar(

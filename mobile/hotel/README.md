@@ -15,7 +15,7 @@ $flutter = "C:\Users\ASUS\development-flutter\flutter\bin\flutter.bat"
 & $flutter run -d 5TV449IFKZYPSWFE
 ```
 
-Run the setup script once per checkout to generate the native Android project. You can browse the live catalog and sign in with the command above.
+Run the setup script to generate the native Android project, or to update its secure login storage settings when the Android folder already exists. You can browse the live catalog and sign in with the command above.
 
 For receipt uploads, create `hotel-local.json` in this folder with the public Supabase anon or publishable key from the MN-Mart deployment. Use the production Supabase URL and receipt bucket if they differ from the defaults. Keep privileged keys out of the app.
 
@@ -48,7 +48,7 @@ Run `npm run test:hotel` for date validation tests. To run the database integrat
 - Choose a room and enter requested stay dates, contact details, guest count, and any extras.
 - Pay the existing 5,000 MMK KBZPay deposit and attach the receipt. The app uses the same payment QR and receipt storage as MN-Mart web.
 - Check-in, check-out, and night count are stored as structured booking details. Each listing represents one physical room. The backend checks date availability again during submission and calculates the stay total from its nightly price.
-- Bookings displays hotel orders from the signed-in account and shows payment, order, and vendor status separately. Pull down to refresh. The session is held in memory and requires sign-in again after an app restart.
+- Bookings displays hotel orders from the signed-in account and shows payment, order, and vendor status separately. Pull down to refresh. Login is remembered securely across app restarts until sign-out or the backend’s existing seven-day token expiry.
 - Validate with a test customer and a designated test payment/receipt before distributing this build. Confirm the dashboard displays the dates and status updates and that retrying the same request creates one order.
 
 ## Booking receipts
@@ -72,3 +72,22 @@ Explore, Bookings, and Account retain their state while switching tabs. Bookings
 Only public hotel and undated room catalog responses are cached in memory for 30 seconds, with at most 24 entries. Dated room availability always requests the backend. Private booking responses are held by the current authenticated page and are never stored in the catalog cache. Responses from a previous signed-out session are discarded.
 
 Run `flutter test` for navigation, refresh, cache, and session-isolation regression checks, followed by `flutter analyze`.
+
+## Remembered login
+
+The hotel app saves the login token and minimal account details in Android secure storage. On reopening, it restores a still-valid session locally and checks the account in the background. Temporary connection errors retain the saved session. Expired or rejected sessions and accounts that are no longer customers are cleared. Passwords are never stored.
+
+After installing this update, sign in once so the app can save your session. The existing backend token lasts seven days from sign-in. Explicit sign-out clears the stored session.
+
+For an existing checkout, run these PowerShell commands from `mobile/hotel` before rebuilding. The setup script now updates an existing Android project, including disabling automatic backup to avoid restoring encrypted login data without its device key.
+
+```powershell
+$flutter = "C:\Users\ASUS\development-flutter\flutter\bin\flutter.bat"
+.\setup-android.ps1 -Flutter $flutter
+& $flutter pub get
+& $flutter test
+& $flutter analyze
+& $flutter run -d 5TV449IFKZYPSWFE --dart-define-from-file=hotel-local.json
+```
+
+The session regression tests cover restart restoration, expiry, malformed saved records, sign-out, offline validation, server rejection, changed roles, and cancelled login/restoration races.
