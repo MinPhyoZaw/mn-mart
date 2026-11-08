@@ -38,6 +38,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('selecting dates resets both nested positions before scrolling again', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final api = HotelApi();
+    addTearDown(api.dispose);
+    await tester.pumpWidget(MaterialApp(home: Rooms(
+      api: api, hotel: sampleHotels.first, signIn: () async => true)));
+    await tester.pumpAndSettle();
+    final roomsScroll = find.descendant(of: find.byType(PagedList),
+      matching: find.byType(CustomScrollView));
+    await tester.drag(roomsScroll, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Check-in'));
+    await tester.pumpAndSettle();
+    final now = DateTime.now();
+    Navigator.of(tester.element(find.byType(DateRangePickerDialog))).pop(
+      DateTimeRange(start: DateTime(now.year, now.month, now.day + 1),
+        end: DateTime(now.year, now.month, now.day + 3)));
+    await tester.pumpAndSettle();
+    final state = tester.state<NestedScrollViewState>(find.byType(NestedScrollView));
+    expect(state.outerController.offset, 0);
+    expect(state.innerController.offset, 0);
+    expect(find.text('2 nights'), findsOneWidget);
+    await tester.drag(roomsScroll, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    await tester.drag(roomsScroll, const Offset(0, 1000));
+    await tester.pumpAndSettle();
+    expect(tester.getBottomLeft(find.byType(HotelDetailsHeader)).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.byType(StayDatePanel)).dy));
+    expect(tester.getBottomLeft(find.byType(StayDatePanel)).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.text('Rooms')).dy));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('room date action is enabled before availability is checked', (tester) async {
     var selected = false;
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(

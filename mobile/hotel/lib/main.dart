@@ -584,6 +584,9 @@ class _RoomsState extends State<Rooms> {
         + (dates == null ? 0 : 6 + scaler.scale(12) * 1.5);
     return Scaffold(
       body: NestedScrollView(
+        // Dates change the pinned panel height and replace the availability list.
+        // Reset both coordinated positions together, rather than only the rooms.
+        key: ValueKey('hotel-$shop-${dates?.start}-${dates?.end}'),
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverOverlapAbsorber(
             handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
