@@ -17,11 +17,9 @@ class HotelHomeHeader extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text('MYITKYINA STAYS', style: TextStyle(fontSize: 11,
-        fontWeight: FontWeight.w700, letterSpacing: 1.8, color: Color(0xff205846))),
-      const SizedBox(height: 8),
-      const Text('Where will you stay?',
-        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
+      const Text('Your Trusted All In One Hotel Booking System In Myitkyina',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+          fontWeight: FontWeight.w600, height: 1.4, color: Color(0xff205846))),
       const SizedBox(height: 16),
       TextField(
         controller: controller,

@@ -18,3 +18,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/mn-mart-logo.png
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito.ttf
+          weight: 600
