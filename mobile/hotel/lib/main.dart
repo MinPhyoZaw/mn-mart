@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'api.dart';
 import 'booking_receipt.dart';
 import 'hotel_home_header.dart';
+import 'hotel_details_header.dart';
 import 'splash_screen.dart';
 
 void main() => runApp(const HotelApp());
@@ -275,7 +276,8 @@ class _HomeState extends State<Home> {
           return (rows: hotels,
               more: page < (result['meta']['totalPages'] as num));
         },
-        item: (hotel) => Listing(data: hotel, action: 'View rooms',
+        item: (hotel) => Listing(data: hotel, action: 'See details',
+          actionIcon: Icons.visibility_outlined, alignActionRight: true,
           details: field(hotel, 'address'), onTap: () => openHotel(hotel)),
       ),
       !bookingsVisited ? const SizedBox.shrink() : restoringSession
@@ -334,8 +336,10 @@ typedef PageResult = ({List<Json> rows, bool more});
 
 class PagedList extends StatefulWidget {
   const PagedList({super.key, required this.intro, required this.empty,
-    required this.load, required this.item, this.active = true, this.refreshToken = 0});
+    required this.load, required this.item, this.active = true, this.refreshToken = 0,
+    this.contentPadding = const EdgeInsets.all(16)});
   final Widget intro;
+  final EdgeInsetsGeometry contentPadding;
   final String empty;
   final Future<PageResult> Function(int page, bool refresh) load;
   final bool active;
@@ -438,7 +442,7 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
     onRefresh: () => fetch(refresh: true),
     child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: widget.contentPadding,
       children: [
         widget.intro,
         const SizedBox(height: 16),
@@ -461,9 +465,11 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
 
 class Listing extends StatelessWidget {
   const Listing({super.key, required this.data, required this.action, required this.onTap,
-    this.details = ''});
+    this.details = '', this.actionIcon, this.alignActionRight = false});
   final Json data;
   final String action;
+  final IconData? actionIcon;
+  final bool alignActionRight;
   final String details;
   final VoidCallback? onTap;
 
@@ -495,7 +501,13 @@ class Listing extends StatelessWidget {
             if (field(data, 'description').isNotEmpty) Text(field(data, 'description')),
             if (details.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(details)),
             const SizedBox(height: 8),
-            FilledButton.tonal(onPressed: onTap, child: Text(action)),
+            Align(
+              alignment: alignActionRight ? Alignment.centerRight : Alignment.centerLeft,
+              child: actionIcon == null
+                  ? FilledButton.tonal(onPressed: onTap, child: Text(action))
+                  : FilledButton.tonalIcon(onPressed: onTap,
+                      icon: Icon(actionIcon, size: 18), label: Text(action)),
+            ),
           ]),
         ),
       ]),
@@ -538,63 +550,75 @@ class _RoomsState extends State<Rooms> {
     final shop = field(hotel, '_id');
     final isSample = hotel['isSample'] == true;
     return Scaffold(
-      appBar: AppBar(title: Text(field(hotel, 'name'))),
-      body: PagedList(
-        key: ValueKey('${dates?.start}-${dates?.end}'),
-        intro: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Rooms', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-          if (!isSample) OutlinedButton.icon(
-            onPressed: chooseDates, icon: const Icon(Icons.date_range),
-            label: Text(dates == null ? 'Choose dates to check availability'
-              : '${day(dates!.start)} → ${day(dates!.end)}'),
-          ),
-          if (isSample) ...[
-            const SizedBox(height: 8),
-            const Text('This fictional hotel is for previewing the app. Prices are examples.'),
-          ],
-        ]),
-        empty: 'No rooms are listed for this hotel.',
-        load: (page, refresh) async {
-          if (isSample) {
-            return (rows: (hotel['sampleRooms'] as List).cast<Json>(), more: false);
-          }
-          final result = await api.rooms(shop, page, refresh: refresh,
-            checkIn: dates == null ? null : day(dates!.start),
-            checkOut: dates == null ? null : day(dates!.end));
-          final data = result['data'] as Json;
-          final active = data['shop']['isActive'] != false;
-          return (rows: active ? (data['items'] as List).cast<Json>()
-              .where((room) => room['type'] == 'room').toList() : <Json>[],
-              more: active && data['pagination']['hasNextPage'] == true);
-        },
-        item: (room) {
-          final extra = room['extra'];
-          final amenities = extra is Json ? extra['amenities'] : null;
-          final labels = const {'wifi': 'Wi-Fi', 'aircon': 'Air conditioning', 'tv': 'TV',
-            'breakfast': 'Breakfast', 'swimmingPool': 'Pool', 'extraBed': 'Extra bed'};
-          final available = !isSample && dates != null && room['availability'] == 'available';
-          final status = room['availability'] == 'unavailable' || room['isAvailable'] == false
-              ? (dates == null ? 'Bookings paused' : 'Unavailable for these dates')
-              : 'Choose dates to check availability';
-          return Listing(data: room,
-            action: isSample ? 'Sample room · Booking unavailable' : available ? 'Request booking' : status,
-            details: [
-              '${mmk(room['price'])} / night',
-              if (room['roomType'] != null) field(room, 'roomType'),
-              if (room['maxGuests'] != null) 'Up to ${room['maxGuests']} guests',
-              if (available) 'Available for your dates',
-              if (amenities is Json)
-                labels.entries.where((e) => amenities[e.key] == true).map((e) => e.value).join(' · '),
-            ].where((line) => line.isNotEmpty).join('\n'),
-            onTap: !available ? null : () async {
-              if (!await signIn() || !context.mounted) return;
-              final booked = await Navigator.of(context).push<bool>(MaterialPageRoute(
-                builder: (_) => BookingForm(api: api, hotel: hotel, room: room, signIn: signIn, initialDates: dates),
-              ));
-              if (booked == true && context.mounted) Navigator.of(context).pop(true);
-            },
-          );
-        },
+      body: SafeArea(
+        top: false,
+        child: PagedList(
+          contentPadding: EdgeInsets.zero,
+          key: ValueKey('${dates?.start}-${dates?.end}'),
+          intro: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            HotelDetailsHeader(hotel: hotel),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Rooms', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                if (!isSample) OutlinedButton.icon(
+                  onPressed: chooseDates, icon: const Icon(Icons.date_range),
+                  label: Text(dates == null ? 'Choose dates to check availability'
+                    : '${day(dates!.start)} → ${day(dates!.end)}'),
+                ),
+                if (isSample) ...[
+                  const SizedBox(height: 8),
+                  const Text('This fictional hotel is for previewing the app. Prices are examples.'),
+                ],
+              ]),
+            ),
+          ]),
+          empty: 'No rooms are listed for this hotel.',
+          load: (page, refresh) async {
+            if (isSample) {
+              return (rows: (hotel['sampleRooms'] as List).cast<Json>(), more: false);
+            }
+            final result = await api.rooms(shop, page, refresh: refresh,
+              checkIn: dates == null ? null : day(dates!.start),
+              checkOut: dates == null ? null : day(dates!.end));
+            final data = result['data'] as Json;
+            final active = data['shop']['isActive'] != false;
+            return (rows: active ? (data['items'] as List).cast<Json>()
+                .where((room) => room['type'] == 'room').toList() : <Json>[],
+                more: active && data['pagination']['hasNextPage'] == true);
+          },
+          item: (room) {
+            final extra = room['extra'];
+            final amenities = extra is Json ? extra['amenities'] : null;
+            final labels = const {'wifi': 'Wi-Fi', 'aircon': 'Air conditioning', 'tv': 'TV',
+              'breakfast': 'Breakfast', 'swimmingPool': 'Pool', 'extraBed': 'Extra bed'};
+            final available = !isSample && dates != null && room['availability'] == 'available';
+            final status = room['availability'] == 'unavailable' || room['isAvailable'] == false
+                ? (dates == null ? 'Bookings paused' : 'Unavailable for these dates')
+                : 'Choose dates to check availability';
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Listing(data: room,
+                action: isSample ? 'Sample room · Booking unavailable' : available ? 'Request booking' : status,
+                details: [
+                  '${mmk(room['price'])} / night',
+                  if (room['roomType'] != null) field(room, 'roomType'),
+                  if (room['maxGuests'] != null) 'Up to ${room['maxGuests']} guests',
+                  if (available) 'Available for your dates',
+                  if (amenities is Json)
+                    labels.entries.where((e) => amenities[e.key] == true).map((e) => e.value).join(' · '),
+                ].where((line) => line.isNotEmpty).join('\n'),
+                onTap: !available ? null : () async {
+                  if (!await signIn() || !context.mounted) return;
+                  final booked = await Navigator.of(context).push<bool>(MaterialPageRoute(
+                    builder: (_) => BookingForm(api: api, hotel: hotel, room: room, signIn: signIn, initialDates: dates),
+                  ));
+                  if (booked == true && context.mounted) Navigator.of(context).pop(true);
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
