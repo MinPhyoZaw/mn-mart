@@ -11,56 +11,45 @@ class HotelSplashScreen extends StatefulWidget {
   final VoidCallback onFinished;
   static const title = 'Manaw Mart Hotel Booking';
   static const background = Color(0xffD62828);
-  static const typingDuration = Duration(milliseconds: 1840);
-  static const titleHoldDuration = Duration(milliseconds: 500);
+  static const typingDuration = Duration(milliseconds: 3220);
+  static const titleHoldDuration = Duration(milliseconds: 1400);
 
   @override
   State<HotelSplashScreen> createState() => _HotelSplashScreenState();
 }
 
-class _HotelSplashScreenState extends State<HotelSplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _typing;
+class _HotelSplashScreenState extends State<HotelSplashScreen> {
+  Timer? _typingTimer;
+  int _visibleCharacters = 0;
   Timer? _finishTimer;
-  bool _started = false;
 
   @override
   void initState() {
     super.initState();
-    _typing = AnimationController(
-      vsync: this,
-      duration: HotelSplashScreen.typingDuration,
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _finishTimer ??= Timer(HotelSplashScreen.titleHoldDuration, () {
-            if (mounted) widget.onFinished();
-          });
-        }
-      });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _typing.value = 1;
-    } else {
-      _typing.forward();
-    }
+    // Reveal letters on a real clock. Android's animation-duration setting
+    // must not fast-forward the title and immediately leave this screen.
+    _typingTimer = Timer.periodic(const Duration(milliseconds: 140), (timer) {
+      if (!mounted) return;
+      setState(() => _visibleCharacters++);
+      if (_visibleCharacters == HotelSplashScreen.title.length) {
+        timer.cancel();
+        _finishTimer = Timer(HotelSplashScreen.titleHoldDuration, () {
+          if (mounted) widget.onFinished();
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _finishTimer?.cancel();
-    _typing.dispose();
+    _typingTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final logoSize = math.min(MediaQuery.sizeOf(context).width * .44, 180.0);
+    final logoSize = math.min(MediaQuery.sizeOf(context).width * .30, 116.0);
     const titleStyle = TextStyle(
       color: Colors.white,
       fontSize: 28,
@@ -106,31 +95,24 @@ class _HotelSplashScreenState extends State<HotelSplashScreen>
                           label: HotelSplashScreen.title,
                           header: true,
                           child: ExcludeSemantics(
-                            child: AnimatedBuilder(
-                              animation: _typing,
-                              builder: (context, child) {
-                                final count = (_typing.value *
-                                        HotelSplashScreen.title.length)
-                                    .floor();
-                                return Stack(
-                                  alignment: Alignment.topCenter,
-                                  children: [
-                                    // Reserve the final title's space while typing.
-                                    const Opacity(
-                                      opacity: 0,
-                                      child: Text(HotelSplashScreen.title,
-                                          style: titleStyle,
-                                          textAlign: TextAlign.center),
-                                    ),
-                                    Text(
-                                      HotelSplashScreen.title.substring(0, count),
-                                      key: const ValueKey('splash-typed-title'),
+                            child: Stack(
+                              alignment: Alignment.topCenter,
+                              children: [
+                                // Reserve the final title's space while typing.
+                                const Opacity(
+                                  opacity: 0,
+                                  child: Text(HotelSplashScreen.title,
                                       style: titleStyle,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                );
-                              },
+                                      textAlign: TextAlign.center),
+                                ),
+                                Text(
+                                  HotelSplashScreen.title.substring(
+                                    0, _visibleCharacters),
+                                  key: const ValueKey('splash-typed-title'),
+                                  style: titleStyle,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -154,9 +136,9 @@ class _WovenTexturePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final thread = Paint()
-      ..color = const Color(0x0DFFFFFF)
+      ..color = const Color(0x30FFFFFF)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = .7;
+      ..strokeWidth = 1.2;
     for (double y = -32; y < size.height + 32; y += 64) {
       for (double x = -32; x < size.width + 32; x += 64) {
         final diamond = Path()

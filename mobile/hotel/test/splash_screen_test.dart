@@ -14,11 +14,11 @@ void main() {
     ));
     await tester.pump();
     expect(visibleTitle(tester), isEmpty);
-    await tester.pump(const Duration(milliseconds: 920));
+    await tester.pump(const Duration(milliseconds: 1610));
     expect(visibleTitle(tester), isNotEmpty);
     expect(visibleTitle(tester), isNot(HotelSplashScreen.title));
     expect(completed, 0);
-    await tester.pump(const Duration(milliseconds: 920));
+    await tester.pump(const Duration(milliseconds: 1610));
     expect(visibleTitle(tester), HotelSplashScreen.title);
     expect(completed, 0);
     await tester.pump(HotelSplashScreen.titleHoldDuration);
@@ -41,7 +41,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('reduced motion shows the full title immediately', (tester) async {
+  testWidgets('system animation settings do not skip typing or shorten the splash', (tester) async {
     var completed = 0;
     await tester.pumpWidget(MaterialApp(
       home: MediaQuery(
@@ -49,6 +49,8 @@ void main() {
         child: HotelSplashScreen(onFinished: () => completed++),
       ),
     ));
+    expect(visibleTitle(tester), isEmpty);
+    await tester.pump(HotelSplashScreen.typingDuration);
     expect(visibleTitle(tester), HotelSplashScreen.title);
     expect(completed, 0);
     await tester.pump(HotelSplashScreen.titleHoldDuration);
