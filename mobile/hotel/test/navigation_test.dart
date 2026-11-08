@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../lib/api.dart';
 import '../lib/main.dart';
@@ -36,6 +37,8 @@ class FakeHotelApi extends HotelApi {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   testWidgets('visited tabs keep their data and sign-out removes customer receipts', (tester) async {
     final api = FakeHotelApi();
     addTearDown(api.dispose);

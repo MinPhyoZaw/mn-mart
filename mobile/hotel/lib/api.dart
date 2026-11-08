@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
@@ -27,7 +28,12 @@ class _CachedCatalogue {
 }
 
 class HotelApi {
-  HotelApi({http.Client? client}) : _client = client ?? http.Client();
+  HotelApi({http.Client? client, FlutterSecureStorage? secureStorage})
+      : _client = client ?? http.Client(),
+        _secureStorage = secureStorage ?? const FlutterSecureStorage(
+          aOptions: AndroidOptions(encryptedSharedPreferences: true),
+        );
+  static const sessionStorageKey = 'mn_mart_hotel_session_v1';
   static final origin = Uri.parse('https://www.mn-mart.store');
   static const storageUrl = String.fromEnvironment('SUPABASE_URL',
       defaultValue: 'https://yypxmsjyzplvtnkmnvgp.supabase.co');
@@ -36,12 +42,18 @@ class HotelApi {
       defaultValue: 'receipt-upload');
 
   final http.Client _client;
+  final FlutterSecureStorage _secureStorage;
+  Future<void> _storageWrites = Future.value();
+  Future<void>? _restoreJob;
+  int _sessionVersion = 0;
+  bool _disposed = false;
   final _catalogue = <String, _CachedCatalogue>{};
   String? _token;
   Json? user;
   bool get canUpload => storageKey.isNotEmpty;
 
   Future<Json> _request(String path, {Json? body, bool authenticated = false}) async {
+    final requestVersion = _sessionVersion;
     final uri = origin.resolve(path);
     final request = http.Request(body == null ? 'GET' : 'POST', uri)
       ..followRedirects = false
@@ -58,10 +70,10 @@ class HotelApi {
     }
 
     final response = await _send(request);
-    if (authenticated && sessionToken != _token) {
+    if (authenticated && (sessionToken != _token || requestVersion != _sessionVersion)) {
       throw const ApiError('Your session changed. Please refresh.', 409);
     }
-    if (authenticated && response.statusCode == 401) signOut();
+    if (authenticated && response.statusCode == 401) await signOut();
     final dynamic decoded;
     try {
       decoded = jsonDecode(response.body);
@@ -78,14 +90,33 @@ class HotelApi {
       );
     }
     if (path == '/api/auth/login') {
-      final account = decoded['user'];
+      if (_disposed || requestVersion != _sessionVersion) {
+        throw const ApiError('Sign-in was cancelled. Please try again.', 409);
+      }
+      final account = _customerAccount(decoded['user']);
       final cookie = RegExp(r'(?:^|,\s*)token=([A-Za-z0-9_.-]+)(?:;|$)')
           .firstMatch(response.headers['set-cookie'] ?? '')?.group(1);
-      if (account is! Json || account['role'] != 'customer' || cookie == null) {
+      if (account == null || cookie == null) {
         throw const ApiError('Sign in with an MN-Mart customer account.');
       }
       _token = cookie;
       user = account;
+      final version = ++_sessionVersion;
+      try {
+        await _storeSession(jsonEncode({'token': cookie, 'user': account}));
+      } catch (_) {
+        if (version == _sessionVersion) {
+          try {
+            await signOut();
+          } catch (_) {
+            // Report the original save failure below.
+          }
+        }
+        throw const ApiError('Unable to save your login securely. Please try again.');
+      }
+      if (_disposed || version != _sessionVersion) {
+        throw const ApiError('Sign-in was cancelled. Please try again.', 409);
+      }
     }
     return decoded;
   }
@@ -101,13 +132,105 @@ class HotelApi {
     }
   }
 
+  Json? _customerAccount(dynamic account) {
+    if (account is! Json || account['role'] != 'customer') return null;
+    final id = account['id'] ?? account['_id'];
+    if (id is! String || id.isEmpty) return null;
+    return {
+      'id': id, 'role': 'customer',
+      'name': account['name'] is String ? account['name'] : '',
+      'email': account['email'] is String ? account['email'] : '',
+    };
+  }
+
+  DateTime? _tokenExpiry(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final payload = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+      if (payload is! Json || payload['exp'] is! num) return null;
+      return DateTime.fromMillisecondsSinceEpoch((payload['exp'] as num).toInt() * 1000, isUtc: true);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _storeSession(String? value) {
+    final operation = _storageWrites.then((_) => value == null
+      ? _secureStorage.delete(key: sessionStorageKey)
+      : _secureStorage.write(key: sessionStorageKey, value: value));
+    // Keep later writes and sign-out deletions ordered even after a failed write.
+    _storageWrites = operation.catchError((Object _) {});
+    return operation;
+  }
+
+  Future<void> restoreSession() => _restoreJob ??= _restoreSession();
+
+  Future<void> _restoreSession() async {
+    if (_disposed || user != null) return;
+    final version = _sessionVersion;
+    try {
+      await _storageWrites;
+      final saved = await _secureStorage.read(key: sessionStorageKey);
+      if (_disposed || version != _sessionVersion || saved == null) return;
+      dynamic record;
+      try {
+        record = jsonDecode(saved);
+      } catch (_) {
+        record = null;
+      }
+      final token = record is Json ? record['token'] : null;
+      final account = record is Json ? _customerAccount(record['user']) : null;
+      final expires = token is String ? _tokenExpiry(token) : null;
+      if (account == null || token is! String || expires == null ||
+          !expires.isAfter(DateTime.now().toUtc())) {
+        await signOut();
+        return;
+      }
+      _token = token;
+      user = account;
+      _sessionVersion++;
+    } catch (_) {
+      throw const ApiError('Your saved login could not be restored. Please sign in again.');
+    }
+  }
+
+  Future<void> validateSession() async {
+    if (_token == null || _disposed) return;
+    final version = _sessionVersion;
+    try {
+      final result = await _request('/api/auth/me', authenticated: true);
+      if (_disposed || version != _sessionVersion) return;
+      final account = _customerAccount(result['user']);
+      if (account == null) {
+        await signOut();
+      } else {
+        user = account;
+      }
+    } on ApiError {
+      // Unauthorized requests clear the session in _request. Network/server errors
+      // retain the saved login so an offline startup does not force another sign-in.
+    }
+  }
+
   Future<void> signIn(String email, String password) async {
+    try {
+      await restoreSession();
+    } on ApiError {
+      // Explicit sign-in can replace a saved session that could not be read.
+    }
     await _request('/api/auth/login', body: {'email': email, 'password': password});
   }
 
-  void signOut() {
+  Future<void> signOut() async {
+    _sessionVersion++;
     _token = null;
     user = null;
+    try {
+      await _storeSession(null);
+    } catch (_) {
+      throw const ApiError('Could not clear the saved login. Please try signing out again.', 401);
+    }
   }
 
   Future<Json> _publicCatalogue(String path, {bool refresh = false}) async {
@@ -212,6 +335,8 @@ class HotelApi {
   }
 
   void dispose() {
+    _disposed = true;
+    _sessionVersion++;
     _catalogue.clear();
     _client.close();
   }

@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import '../lib/api.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   test('catalogue cache reuses responses, isolates mutations and supports forced refresh', () async {
     var calls = 0;
     final api = HotelApi(client: MockClient((request) async {
@@ -56,7 +59,7 @@ void main() {
     final request = api.orders(1);
     final result = expectLater(request, throwsA(isA<ApiError>().having(
       (error) => error.status, 'status', 409)));
-    api.signOut();
+    await api.signOut();
     pending.complete(http.Response(jsonEncode({'success': true, 'data': []}), 200));
     await result;
     expect(api.user, isNull);
