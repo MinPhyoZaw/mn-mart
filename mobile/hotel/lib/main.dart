@@ -338,10 +338,11 @@ typedef PageResult = ({List<Json> rows, bool more});
 class PagedList extends StatefulWidget {
   const PagedList({super.key, required this.intro, required this.empty,
     required this.load, required this.item, this.active = true, this.refreshToken = 0,
-    this.contentPadding = const EdgeInsets.all(16), this.overlapHandle});
+    this.contentPadding = const EdgeInsets.all(16), this.overlapHandle, this.dateOverlapHandle});
   final Widget intro;
   final EdgeInsetsGeometry contentPadding;
   final SliverOverlapAbsorberHandle? overlapHandle;
+  final SliverOverlapAbsorberHandle? dateOverlapHandle;
   final String empty;
   final Future<PageResult> Function(int page, bool refresh) load;
   final bool active;
@@ -469,6 +470,8 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverOverlapInjector(handle: widget.overlapHandle!),
+                if (widget.dateOverlapHandle != null)
+                  SliverOverlapInjector(handle: widget.dateOverlapHandle!),
                 SliverPadding(
                   padding: widget.contentPadding,
                   sliver: SliverList(delegate: SliverChildListDelegate(children)),
@@ -543,7 +546,14 @@ class Rooms extends StatefulWidget {
 }
 
 class _RoomsState extends State<Rooms> {
+  final dateOverlapHandle = SliverOverlapAbsorberHandle();
   DateTimeRange? dates;
+
+  @override
+  void dispose() {
+    dateOverlapHandle.dispose();
+    super.dispose();
+  }
   HotelApi get api => widget.api;
   Json get hotel => widget.hotel;
   Future<bool> Function() get signIn => widget.signIn;
@@ -588,20 +598,24 @@ class _RoomsState extends State<Rooms> {
         // Reset both coordinated positions together, rather than only the rooms.
         key: ValueKey('hotel-$shop-${dates?.start}-${dates?.end}'),
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          // Each pinned sliver reports its own obstruction. Absorbing the
+          // combined group can report more obstruction than it paints.
           SliverOverlapAbsorber(
             handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-            sliver: SliverMainAxisGroup(slivers: [
-          HotelPhotoHeader(hotel: hotel),
+            sliver: HotelPhotoHeader(hotel: hotel),
+          ),
           SliverToBoxAdapter(child: HotelDetailsHeader(hotel: hotel)),
-          SliverPersistentHeader(pinned: true, delegate: StayDateDelegate(
-            height: dateHeight,
-            child: StayDatePanel(dates: dates, onTap: chooseDates),
-          )),
-            ]),
+          SliverOverlapAbsorber(
+            handle: dateOverlapHandle,
+            sliver: SliverPersistentHeader(pinned: true, delegate: StayDateDelegate(
+              height: dateHeight,
+              child: StayDatePanel(dates: dates, onTap: chooseDates),
+            )),
           ),
         ],
         body: Builder(builder: (context) => SafeArea(top: false, child: PagedList(
           overlapHandle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+          dateOverlapHandle: dateOverlapHandle,
           key: ValueKey('${dates?.start}-${dates?.end}'),
           intro: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Rooms', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
