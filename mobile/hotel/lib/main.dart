@@ -338,9 +338,10 @@ typedef PageResult = ({List<Json> rows, bool more});
 class PagedList extends StatefulWidget {
   const PagedList({super.key, required this.intro, required this.empty,
     required this.load, required this.item, this.active = true, this.refreshToken = 0,
-    this.contentPadding = const EdgeInsets.all(16)});
+    this.contentPadding = const EdgeInsets.all(16), this.overlapHandle});
   final Widget intro;
   final EdgeInsetsGeometry contentPadding;
+  final SliverOverlapAbsorberHandle? overlapHandle;
   final String empty;
   final Future<PageResult> Function(int page, bool refresh) load;
   final bool active;
@@ -439,12 +440,8 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => RefreshIndicator(
-    onRefresh: () => fetch(refresh: true),
-    child: ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: widget.contentPadding,
-      children: [
+  Widget build(BuildContext context) {
+    final children = [
         widget.intro,
         const SizedBox(height: 16),
         ...rows.map(widget.item),
@@ -459,9 +456,28 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
           OutlinedButton(onPressed: fetch, child: Text(rows.isEmpty ? 'Search next page' : 'Load more'))
         else if (rows.isEmpty)
           Center(child: Text(widget.empty)),
-      ],
-    ),
-  );
+      ];
+    return RefreshIndicator(
+      onRefresh: () => fetch(refresh: true),
+      child: widget.overlapHandle == null
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: widget.contentPadding,
+              children: children,
+            )
+          : CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverOverlapInjector(handle: widget.overlapHandle!),
+                SliverPadding(
+                  padding: widget.contentPadding,
+                  sliver: SliverList(delegate: SliverChildListDelegate(children)),
+                ),
+              ],
+            ),
+    );
+  }
+
 }
 
 class Listing extends StatelessWidget {
@@ -569,14 +585,20 @@ class _RoomsState extends State<Rooms> {
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverOverlapAbsorber(
+            handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+            sliver: SliverMainAxisGroup(slivers: [
           HotelPhotoHeader(hotel: hotel),
           SliverToBoxAdapter(child: HotelDetailsHeader(hotel: hotel)),
           SliverPersistentHeader(pinned: true, delegate: StayDateDelegate(
             height: dateHeight,
             child: StayDatePanel(dates: dates, onTap: chooseDates),
           )),
+            ]),
+          ),
         ],
-        body: SafeArea(top: false, child: PagedList(
+        body: Builder(builder: (context) => SafeArea(top: false, child: PagedList(
+          overlapHandle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
           key: ValueKey('${dates?.start}-${dates?.end}'),
           intro: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Rooms', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
@@ -619,7 +641,7 @@ class _RoomsState extends State<Rooms> {
               },
             );
           },
-        )),
+        ))),
       ),
     );
   }

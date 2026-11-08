@@ -33,7 +33,9 @@ class HotelDetailsHeader extends StatelessWidget {
     final phone = hotel['phone']?.toString().trim() ?? '';
     final canCall = RegExp(r'^\+?[0-9][0-9 ()-]{5,19}$').hasMatch(phone);
 
-    return Column(
+    return Material(
+      color: const Color(0xfff7f6f1),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
@@ -68,6 +70,7 @@ class HotelDetailsHeader extends StatelessWidget {
           ]),
         ),
       ],
+      ),
     );
   }
 }

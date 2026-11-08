@@ -19,12 +19,19 @@ void main() {
     await tester.pumpAndSettle();
     final appBar = find.byType(FlexibleSpaceBar);
     final initialHeight = tester.getSize(appBar).height;
-    await tester.drag(find.byType(ListView), const Offset(0, -450));
+    await tester.drag(find.descendant(of: find.byType(PagedList), matching: find.byType(CustomScrollView)), const Offset(0, -450));
     await tester.pumpAndSettle();
     expect(tester.getSize(appBar).height, lessThan(initialHeight));
     expect(find.text('Check-in').hitTestable(), findsOneWidget);
     expect(find.text('Check-out').hitTestable(), findsOneWidget);
     expect(find.text('Manaw Riverside Hotel').hitTestable(), findsOneWidget);
+    await tester.drag(find.descendant(of: find.byType(PagedList), matching: find.byType(CustomScrollView)), const Offset(0, 900));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(appBar).height, closeTo(initialHeight, 1));
+    expect(tester.getBottomLeft(find.byType(HotelDetailsHeader)).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.byType(StayDatePanel)).dy));
+    expect(tester.getBottomLeft(find.byType(StayDatePanel)).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.text('Rooms')).dy));
     await tester.tap(find.text('Check-in'));
     await tester.pumpAndSettle();
     expect(find.byType(DateRangePickerDialog), findsOneWidget);
