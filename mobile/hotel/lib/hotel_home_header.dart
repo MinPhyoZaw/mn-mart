@@ -1,26 +1,36 @@
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'hotel_room_widgets.dart';
+
+const _evergreen = Color(0xff164638);
 
 class HotelHomeHeader extends StatelessWidget {
-  const HotelHomeHeader({super.key, required this.controller, required this.focusNode,
-    required this.query, required this.onSearch, required this.onClear, required this.onBookings});
+  const HotelHomeHeader({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.query,
+    required this.onSearch,
+    required this.onClear,
+  });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final String query;
   final VoidCallback onSearch;
   final VoidCallback onClear;
-  final VoidCallback onBookings;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text('Your Trusted All In One Hotel Booking System In Myitkyina',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-          fontWeight: FontWeight.w600, height: 1.4, color: Color(0xff205846))),
-      const SizedBox(height: 16),
+      const Text(
+        'Find a stay in Myitkyina',
+        style: TextStyle(fontSize: 27, height: 1.15,
+          fontWeight: FontWeight.w800, color: _evergreen),
+      ),
+      const SizedBox(height: 14),
       TextField(
         controller: controller,
         focusNode: focusNode,
@@ -28,90 +38,150 @@ class HotelHomeHeader extends StatelessWidget {
         maxLength: 80,
         onSubmitted: (_) => onSearch(),
         decoration: InputDecoration(
-          hintText: 'Hotel name or area',
-          labelText: 'Find a hotel',
+          labelText: 'Search by hotel name',
           counterText: '',
           filled: true,
           fillColor: Colors.white,
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: IconButton(tooltip: 'Search hotels', onPressed: onSearch,
-            icon: const Icon(Icons.arrow_forward)),
+          prefixIcon: const Icon(Icons.search, color: _evergreen),
+          suffixIcon: IconButton(
+            tooltip: 'Search hotels',
+            onPressed: onSearch,
+            icon: const Icon(Icons.arrow_forward, color: _evergreen),
+          ),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
+      const SizedBox(height: 16),
+      const _ExploreBanner(),
       const SizedBox(height: 18),
-      if (query.isEmpty) ...[
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(children: [
-            Positioned.fill(child: Image.network(
-              HotelApi.origin.resolve('/images/mn-hotel.jpg').toString(),
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-              errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xff205846)),
-            )),
-            Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [const Color(0xff103c30).withAlpha(245),
-                const Color(0xff103c30).withAlpha(180)]),
-            ))),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('MAKE ROOM FOR YOUR NEXT TRIP', style: TextStyle(
-                  color: Color(0xffe3dbc2), fontSize: 10, letterSpacing: 1.3,
-                  fontWeight: FontWeight.w700)),
-                const SizedBox(height: 10),
-                const Text('A stay to look\nforward to.', style: TextStyle(
-                  color: Colors.white, fontSize: 27, fontWeight: FontWeight.w700, height: 1.1)),
-                const SizedBox(height: 10),
-                const Text('Explore hotels in Myitkyina. Choose your dates and find an available room.',
-                  style: TextStyle(color: Color(0xffe3eee8), height: 1.5)),
-                const SizedBox(height: 14),
-                FilledButton.icon(
-                  onPressed: () => focusNode.requestFocus(),
-                  style: FilledButton.styleFrom(backgroundColor: const Color(0xfff3dfae),
-                    foregroundColor: const Color(0xff173e30)),
-                  icon: const Icon(Icons.search, size: 18),
-                  label: const Text('Find your stay'),
-                ),
-              ]),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 14),
-        const Wrap(spacing: 8, runSpacing: 8, children: [
-          Chip(avatar: Icon(Icons.date_range, size: 16), label: Text('Check room availability')),
-          Chip(avatar: Icon(Icons.receipt_long_outlined, size: 16), label: Text('Keep your booking receipt')),
-        ]),
-        const SizedBox(height: 10),
-        Material(
-          color: const Color(0xffeaf0e8),
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            onTap: onBookings,
-            borderRadius: BorderRadius.circular(16),
-            child: const Padding(
-              padding: EdgeInsets.all(14),
-              child: Row(children: [
-                Icon(Icons.bookmark_outline, color: Color(0xff205846)),
-                SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Already booked?', style: TextStyle(fontWeight: FontWeight.w700)),
-                  Text('View your stay details, status and receipt.', style: TextStyle(fontSize: 12)),
-                ])),
-                Icon(Icons.chevron_right),
-              ]),
-            ),
+      Row(
+        children: [
+          const Expanded(
+            child: Text('Hotels in Myitkyina',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           ),
-        ),
-        const SizedBox(height: 22),
-      ],
-      Row(children: [
-        Expanded(child: Text(query.isEmpty ? 'Explore hotels' : 'Results for “$query”',
-          style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700))),
-        if (query.isNotEmpty) TextButton.icon(onPressed: onClear,
-          icon: const Icon(Icons.close, size: 16), label: const Text('Clear')),
-      ]),
+          if (query.isNotEmpty)
+            TextButton(onPressed: onClear, child: const Text('Clear search')),
+        ],
+      ),
+      if (query.isNotEmpty)
+        Text('Results for “$query”', style: Theme.of(context).textTheme.bodySmall),
     ],
   );
+}
+
+class _ExploreBanner extends StatelessWidget {
+  const _ExploreBanner();
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(16),
+    child: ColoredBox(
+      color: const Color(0xfff3dfbd),
+      child: LayoutBuilder(
+        builder: (context, constraints) => Stack(
+          children: [
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: constraints.maxWidth * .38,
+              child: HotelPhoto(image: '/images/mn-hotel.jpg'),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  flex: 62,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 108),
+                    child: const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('A weekend in Myitkyina',
+                            style: TextStyle(fontSize: 17, height: 1.15,
+                              fontWeight: FontWeight.w800, color: _evergreen)),
+                          SizedBox(height: 5),
+                          Text('Discover local hotels',
+                            style: TextStyle(fontSize: 13, color: _evergreen)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(flex: 38),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class ExploreHotelCard extends StatelessWidget {
+  const ExploreHotelCard({super.key, required this.hotel, required this.onTap});
+
+  final Json hotel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final address = hotel['address']?.toString().trim() ?? '';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      color: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xffe1e6df)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 2.35,
+              child: HotelPhoto(image: hotel['image']?.toString() ?? ''),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(hotel['name']?.toString() ?? '',
+                          style: const TextStyle(fontSize: 19,
+                            fontWeight: FontWeight.w800)),
+                        if (address.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.location_on_outlined,
+                                size: 17, color: _evergreen),
+                              const SizedBox(width: 5),
+                              Expanded(child: Text(address)),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right, color: _evergreen),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

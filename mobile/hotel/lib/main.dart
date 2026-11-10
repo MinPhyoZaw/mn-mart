@@ -239,8 +239,25 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      toolbarHeight: 64,
-      title: Image.asset(
+      toolbarHeight: tab == 0 ? 60 : 64,
+      backgroundColor: tab == 0 ? const Color(0xfff7f6f1) : null,
+      title: tab == 0 ? Row(
+        children: [
+          Image.asset(
+            'assets/images/mn-mart-logo.png',
+            width: 44,
+            height: 44,
+            semanticLabel: 'MN Mart',
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text('MN Mart Hotels',
+              maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800,
+                color: Color(0xff164638))),
+          ),
+        ],
+      ) : Image.asset(
         'assets/images/mn-mart-logo.png',
         width: 56,
         height: 56,
@@ -257,7 +274,6 @@ class _HomeState extends State<Home> {
           query: hotelQuery,
           onSearch: searchHotels,
           onClear: clearHotelSearch,
-          onBookings: () => selectTab(1),
         ),
         empty: hotelQuery.isEmpty ? 'No hotels are listed yet.'
             : 'No hotels found. Try another name or area, or clear your search.',
@@ -265,21 +281,13 @@ class _HomeState extends State<Home> {
           final search = hotelQuery;
           final result = await api.hotels(page, search: search, refresh: refresh);
           final hotels = (result['data'] as List).cast<Json>();
-          if (page == 1 && hotels.isEmpty && result['meta']['total'] == 0) {
-            final catalogueEmpty = search.isEmpty || (await api.hotels(1, refresh: refresh))['meta']['total'] == 0;
-            if (catalogueEmpty) {
-              return (rows: sampleHotels.where((hotel) =>
-                  field(hotel, 'name').toLowerCase().contains(search.toLowerCase()) ||
-                  field(hotel, 'description').toLowerCase().contains(search.toLowerCase())).toList(),
-                  more: false);
-            }
-          }
           return (rows: hotels,
               more: page < (result['meta']['totalPages'] as num));
         },
-        item: (hotel) => Listing(data: hotel, action: 'See details',
-          actionIcon: Icons.visibility_outlined, alignActionRight: true,
-          details: field(hotel, 'address'), onTap: () => openHotel(hotel)),
+        item: (hotel) => ExploreHotelCard(
+          hotel: hotel,
+          onTap: () => openHotel(hotel),
+        ),
       ),
       !bookingsVisited ? const SizedBox.shrink() : restoringSession
         ? const Center(child: Text('Restoring your session…')) : api.user == null
@@ -493,58 +501,6 @@ class _PagedListState extends State<PagedList> with WidgetsBindingObserver {
                 ),
               ],
             ),
-    );
-  }
-}
-
-class Listing extends StatelessWidget {
-  const Listing({super.key, required this.data, required this.action, required this.onTap,
-    this.details = '', this.actionIcon, this.alignActionRight = false});
-  final Json data;
-  final String action;
-  final IconData? actionIcon;
-  final bool alignActionRight;
-  final String details;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = HotelApi.origin.resolve(field(data, 'image'));
-    final placeholder = ColoredBox(
-      color: Theme.of(context).colorScheme.secondaryContainer,
-      child: const Center(child: Icon(Icons.hotel_outlined, size: 42)),
-    );
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(bottom: 14),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        SizedBox(height: 150, child: field(data, 'image').isEmpty || url.scheme != 'https'
-          ? placeholder
-          : Image.network(url.toString(), fit: BoxFit.cover, errorBuilder: (_, _, _) => placeholder)),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (data['isSample'] == true) ...[
-              const Chip(
-                avatar: Icon(Icons.visibility_outlined, size: 18),
-                label: Text('Sample · Preview only'),
-              ),
-              const SizedBox(height: 4),
-            ],
-            Text(field(data, 'name'), style: Theme.of(context).textTheme.titleLarge),
-            if (field(data, 'description').isNotEmpty) Text(field(data, 'description')),
-            if (details.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(details)),
-            const SizedBox(height: 8),
-            Align(
-              alignment: alignActionRight ? Alignment.centerRight : Alignment.centerLeft,
-              child: actionIcon == null
-                  ? FilledButton.tonal(onPressed: onTap, child: Text(action))
-                  : FilledButton.tonalIcon(onPressed: onTap,
-                      icon: Icon(actionIcon, size: 18), label: Text(action)),
-            ),
-          ]),
-        ),
-      ]),
     );
   }
 }
