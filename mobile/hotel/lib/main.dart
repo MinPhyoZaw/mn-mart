@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'api.dart';
 import 'booking_receipt.dart';
 import 'hotel_home_header.dart';
+import 'hotel_account.dart';
 import 'hotel_details_header.dart';
 import 'hotel_room_widgets.dart';
 import 'splash_screen.dart';
@@ -241,7 +242,7 @@ class _HomeState extends State<Home> {
     appBar: AppBar(
       toolbarHeight: tab == 0 ? 60 : 64,
       backgroundColor: tab == 0 ? const Color(0xfff7f6f1) : null,
-      title: tab == 0 ? Row(
+      title: tab != 1 ? Row(
         children: [
           Image.asset(
             'assets/images/mn-mart-logo.png',
@@ -311,21 +312,19 @@ class _HomeState extends State<Home> {
           },
           item: (order) => BookingReceipt(key: ValueKey(order['_id']), order: order),
         ),
-      Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      if ((restoringSession, api.user) case (false, final Json account))
+        HotelAccount(user: account, signingOut: signingOut, onSignOut: signOut)
+      else Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         if (restoringSession)
           const Text('Restoring your session…')
         else ...[
-          Text(api.user == null ? 'Use your MN-Mart customer account' : field(api.user!, 'email')),
+          const Text('Use your MN-Mart customer account'),
           const SizedBox(height: 12),
           if (sessionMessage != null) ...[
             Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text(sessionMessage!)),
             TextButton(onPressed: signingOut ? null : signOut, child: const Text('Clear saved login')),
           ],
-          if (api.user == null)
-            FilledButton(onPressed: signingOut ? null : signIn, child: const Text('Sign in'))
-          else
-            OutlinedButton(onPressed: signingOut ? null : signOut,
-              child: Text(signingOut ? 'Signing out…' : 'Sign out')),
+          FilledButton(onPressed: signingOut ? null : signIn, child: const Text('Sign in')),
         ],
       ])),
     ])),
