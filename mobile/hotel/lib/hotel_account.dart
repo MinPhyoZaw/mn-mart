@@ -1,6 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -143,7 +144,7 @@ class HotelAccount extends StatelessWidget {
             leading: const Icon(Icons.support_agent, color: _green),
             title: const Text('Contact support'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _open(context, '/privacy#contact'),
+            onTap: () => _showSupportContacts(context),
           ),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined, color: _green),
@@ -196,5 +197,115 @@ class _AccountGroup extends StatelessWidget {
         ).toList()),
       ),
     ],
+  );
+}
+
+
+const _officePhone = '09793927883';
+const _internationalPhone = '+959793927883';
+
+void _showSupportContacts(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: const Color(0xfffffaf2),
+    showDragHandle: true,
+    useSafeArea: true,
+    isScrollControlled: true,
+    builder: (context) => SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        child: _AccountGroup(title: 'Contact support', rows: [
+          _SupportContact(
+            label: 'Viber',
+            value: _officePhone,
+            icon: Icons.phone_in_talk_outlined,
+            color: const Color(0xff6650a4),
+            destination: Uri(
+              scheme: 'viber',
+              host: 'chat',
+              queryParameters: {'number': _internationalPhone},
+            ),
+          ),
+          _SupportContact(
+            label: 'Office phone',
+            value: _officePhone,
+            icon: Icons.call_outlined,
+            color: _green,
+            destination: Uri(scheme: 'tel', path: _internationalPhone),
+          ),
+          _SupportContact(
+            label: 'Gmail',
+            value: 'mnmart694@gmail.com',
+            icon: Icons.mail_outline,
+            color: const Color(0xffb63b32),
+            destination: Uri(scheme: 'mailto', path: 'mnmart694@gmail.com'),
+          ),
+          _SupportContact(
+            label: 'TikTok',
+            value: '@m.n.mart',
+            icon: Icons.tiktok,
+            color: const Color(0xff202124),
+            destination: Uri.https('www.tiktok.com', '/@m.n.mart'),
+          ),
+        ]),
+      ),
+    ),
+  );
+}
+
+class _SupportContact extends StatelessWidget {
+  const _SupportContact({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.destination,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final Uri destination;
+
+  void _message(BuildContext context, String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _launch(BuildContext context) async {
+    try {
+      if (await launchUrl(destination, mode: LaunchMode.externalApplication)) {
+        return;
+      }
+    } catch (_) {
+      // The contact remains available to copy if the device cannot open it.
+    }
+    _message(context, 'Could not open $label. You can copy the contact details.');
+  }
+
+  Future<void> _copy(BuildContext context) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: value));
+      _message(context, '$label contact copied.');
+    } catch (_) {
+      _message(context, 'Could not copy the $label contact.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: Icon(icon, color: color),
+    title: Text(label),
+    subtitle: Text(value),
+    onTap: () => _launch(context),
+    trailing: IconButton(
+      tooltip: 'Copy $label contact',
+      icon: const Icon(Icons.copy_outlined),
+      onPressed: () => _copy(context),
+    ),
   );
 }
