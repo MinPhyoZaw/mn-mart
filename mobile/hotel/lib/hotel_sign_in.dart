@@ -104,17 +104,18 @@ class _SignInState extends State<SignIn> {
     final theme = Theme.of(context);
     return PopScope(
       canPop: !busy,
-      child: Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/images/login-background.jpg',
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-            ),
-            const ColoredBox(color: Color(0x550d2521)),
-            SafeArea(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/login-background.jpg',
+            fit: BoxFit.cover,
+            excludeFromSemantics: true,
+          ),
+          const ColoredBox(color: Color(0x220d2521)),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SafeArea(
               child: Column(
                 children: [
                   if (widget.onSignedIn == null)
@@ -131,11 +132,11 @@ class _SignInState extends State<SignIn> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(24),
                             child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                               child: Container(
                                 padding: const EdgeInsets.all(22),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xe6fffbf3),
+                                  color: const Color(0x9cfffaf2),
                                   borderRadius: BorderRadius.circular(24),
                                   border: Border.all(color: Colors.white70),
                                 ),
@@ -249,8 +250,8 @@ class _SignInState extends State<SignIn> {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
