@@ -142,6 +142,7 @@ export async function GET(req, { params }) {
       "wholesaleTiers",
       "description",
       "image",
+      "images",
       "type",
       "category",
       "tagName",

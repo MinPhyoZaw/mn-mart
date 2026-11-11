@@ -60,8 +60,9 @@ class HotelPhotoHeader extends StatelessWidget {
 }
 
 class HotelPhoto extends StatelessWidget {
-  const HotelPhoto({super.key, required this.image});
+  const HotelPhoto({super.key, required this.image, this.fit = BoxFit.cover});
   final String image;
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +78,7 @@ class HotelPhoto extends StatelessWidget {
     if (resolved.scheme != 'https') return fallback;
     return Image.network(
       resolved.toString(),
-      fit: BoxFit.cover,
+      fit: fit,
       excludeFromSemantics: true,
       errorBuilder: (_, _, _) => fallback,
       loadingBuilder: (_, child, progress) =>
@@ -230,10 +231,7 @@ class HotelRoomCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: HotelPhoto(image: room['image']?.toString() ?? ''),
-          ),
+          _RoomGalleryCover(room: room),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -309,4 +307,134 @@ class HotelRoomCard extends StatelessWidget {
       ),
     );
   }
+}
+
+
+class _RoomGalleryCover extends StatelessWidget {
+  const _RoomGalleryCover({required this.room});
+
+  final Json room;
+
+  @override
+  Widget build(BuildContext context) {
+    final cover = room['image']?.toString().trim() ?? '';
+    final gallery = room['images'];
+    final photos = <String>{
+      if (cover.isNotEmpty) cover,
+      if (gallery is List)
+        ...gallery.whereType<String>().map((url) => url.trim())
+            .where((url) => url.isNotEmpty),
+    }.take(8).toList();
+
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          HotelPhoto(image: photos.isEmpty ? '' : photos.first),
+          if (photos.isNotEmpty)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => _RoomGallery(photos: photos)),
+                ),
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: Container(
+                    margin: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'View photos · ${photos.length}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoomGallery extends StatefulWidget {
+  const _RoomGallery({required this.photos});
+
+  final List<String> photos;
+
+  @override
+  State<_RoomGallery> createState() => _RoomGalleryState();
+}
+
+class _RoomGalleryState extends State<_RoomGallery> {
+  final _pages = PageController();
+  int _index = 0;
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  void _show(int index) {
+    _pages.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      title: Text('${_index + 1} / ${widget.photos.length}'),
+    ),
+    body: SafeArea(
+      child: Column(
+        children: [
+          Expanded(
+            child: PageView.builder(
+              controller: _pages,
+              itemCount: widget.photos.length,
+              onPageChanged: (index) => setState(() => _index = index),
+              itemBuilder: (context, index) => InteractiveViewer(
+                panEnabled: false,
+                child: SizedBox.expand(
+                  child: HotelPhoto(image: widget.photos[index], fit: BoxFit.contain),
+                ),
+              ),
+            ),
+          ),
+          if (widget.photos.length > 1)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                IconButton(
+                  tooltip: 'Previous photo',
+                  color: Colors.white,
+                  disabledColor: Colors.white38,
+                  onPressed: _index > 0 ? () => _show(_index - 1) : null,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                IconButton(
+                  tooltip: 'Next photo',
+                  color: Colors.white,
+                  disabledColor: Colors.white38,
+                  onPressed: _index + 1 < widget.photos.length ? () => _show(_index + 1) : null,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+        ],
+      ),
+    ),
+  );
 }
