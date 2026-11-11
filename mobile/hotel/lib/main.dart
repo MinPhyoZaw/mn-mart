@@ -342,7 +342,18 @@ class _HomeState extends State<Home> {
           item: (order) => BookingOrderCard(key: ValueKey(order['_id']), order: order),
         ),
       if ((restoringSession, api.user) case (false, final Json account))
-        HotelAccount(user: account, signingOut: signingOut, onSignOut: signOut)
+        HotelAccount(
+          user: account,
+          signingOut: signingOut,
+          onSignOut: signOut,
+          onSavePhoto: (image) async {
+            try {
+              await api.updateProfilePhoto(image);
+            } finally {
+              if (mounted) setState(() {});
+            }
+          },
+        )
       else Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         if (restoringSession)
           const Text('Restoring your session…')

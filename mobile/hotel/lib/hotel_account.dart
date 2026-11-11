@@ -1,7 +1,10 @@
-import 'dart:ui' show ImageFilter;
+import 'dart:convert';
+import 'dart:ui' show ImageFilter, instantiateImageCodec;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -14,11 +17,13 @@ class HotelAccount extends StatelessWidget {
     required this.user,
     required this.signingOut,
     required this.onSignOut,
+    required this.onSavePhoto,
   });
 
   final Json user;
   final bool signingOut;
   final VoidCallback onSignOut;
+  final Future<void> Function(String) onSavePhoto;
 
   Future<void> _open(BuildContext context, String path) async {
     try {
@@ -74,36 +79,22 @@ class HotelAccount extends StatelessWidget {
                     side: const BorderSide(color: Colors.white, width: 1.5),
                   ),
                   child: InkWell(
-                    onTap: () => showDialog<void>(
+                    onTap: signingOut ? null : () => showDialog<void>(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Profile'),
-                        content: SingleChildScrollView(
-                          child: Text([
-                            if (name.isNotEmpty) name,
-                            if (email.isNotEmpty) email,
-                            'Profile editing is unavailable in the hotel app.',
-                          ].join('\n\n')),
-                        ),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(context),
-                            child: Text(MaterialLocalizations.of(context).closeButtonLabel)),
-                        ],
+                      builder: (_) => _ProfilePhotoDialog(
+                        name: displayName,
+                        email: email,
+                        initials: initials,
+                        currentPhoto: user['profileImage'] as String?,
+                        onSave: onSavePhoto,
                       ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Row(children: [
-                        CircleAvatar(
-                          radius: 25,
-                          backgroundColor: _green,
-                          foregroundColor: Colors.white,
-                          child: initials.isEmpty
-                              ? const Icon(Icons.person_outline)
-                              : Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: FittedBox(child: Text(initials)),
-                                ),
+                        _ProfileAvatar(
+                          initials: initials,
+                          photo: user['profileImage'] as String?,
                         ),
                         const SizedBox(width: 12),
                         Expanded(child: Column(
@@ -306,6 +297,174 @@ class _SupportContact extends StatelessWidget {
       tooltip: 'Copy $label contact',
       icon: const Icon(Icons.copy_outlined),
       onPressed: () => _copy(context),
+    ),
+  );
+}
+
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.initials, this.photo, this.radius = 25});
+
+  final String initials;
+  final String? photo;
+  final double radius;
+
+  ImageProvider<Object>? get image {
+    final uri = Uri.tryParse(photo ?? '');
+    if (uri == null) return null;
+    if (uri.scheme == 'https' && uri.host.isNotEmpty) {
+      return NetworkImage(uri.toString());
+    }
+    if (uri.scheme == 'data') {
+      try {
+        final data = uri.data;
+        if (data != null && data.mimeType.startsWith('image/')) {
+          return MemoryImage(data.contentAsBytes());
+        }
+      } on FormatException {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = image;
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: _green,
+      foregroundColor: Colors.white,
+      foregroundImage: provider,
+      onForegroundImageError: provider == null ? null : (_, _) {},
+      child: initials.isEmpty
+          ? const Icon(Icons.person_outline)
+          : Padding(
+              padding: const EdgeInsets.all(8),
+              child: FittedBox(child: Text(initials)),
+            ),
+    );
+  }
+}
+
+class _ProfilePhotoDialog extends StatefulWidget {
+  const _ProfilePhotoDialog({
+    required this.name,
+    required this.email,
+    required this.initials,
+    required this.currentPhoto,
+    required this.onSave,
+  });
+
+  final String name;
+  final String email;
+  final String initials;
+  final String? currentPhoto;
+  final Future<void> Function(String) onSave;
+
+  @override
+  State<_ProfilePhotoDialog> createState() => _ProfilePhotoDialogState();
+}
+
+class _ProfilePhotoDialogState extends State<_ProfilePhotoDialog> {
+  String? selectedPhoto;
+  String? error;
+  bool busy = false;
+
+  Future<void> choosePhoto() async {
+    setState(() { busy = true; error = null; });
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (file == null || !mounted) return;
+      if (await file.length() > 1024 * 1024) {
+        throw const ApiError('Choose a photo under 1 MB.');
+      }
+      final bytes = await file.readAsBytes();
+      final jpeg = bytes.length >= 3 && bytes[0] == 255 &&
+          bytes[1] == 216 && bytes[2] == 255;
+      const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+      final png = listEquals(bytes.take(pngSignature.length).toList(), pngSignature);
+      if (!jpeg && !png) throw const ApiError('Choose a JPG or PNG photo.');
+      final codec = await instantiateImageCodec(bytes, targetWidth: 128);
+      try {
+        final frame = await codec.getNextFrame();
+        frame.image.dispose();
+      } finally {
+        codec.dispose();
+      }
+      if (mounted) {
+        setState(() => selectedPhoto =
+            'data:image/${jpeg ? 'jpeg' : 'png'};base64,${base64Encode(bytes)}');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e is ApiError ? e.message : 'Could not open your photo.');
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> save() async {
+    final photo = selectedPhoto;
+    if (busy || photo == null) return;
+    setState(() { busy = true; error = null; });
+    try {
+      await widget.onSave(photo);
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e is ApiError ? e.message : 'Could not save your photo.');
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: !busy,
+    child: AlertDialog(
+      title: const Text('Edit profile'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ProfileAvatar(
+              initials: widget.initials,
+              photo: selectedPhoto ?? widget.currentPhoto,
+              radius: 42,
+            ),
+            const SizedBox(height: 12),
+            Text(widget.name, textAlign: TextAlign.center),
+            if (widget.email.isNotEmpty && widget.email != widget.name)
+              Text(widget.email, textAlign: TextAlign.center),
+            TextButton.icon(
+              onPressed: busy ? null : choosePhoto,
+              icon: const Icon(Icons.photo_library_outlined),
+              label: const Text('Change photo'),
+            ),
+            if (error case final message?)
+              Text(message, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            if (busy) const LinearProgressIndicator(),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: busy ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: busy || selectedPhoto == null ? null : save,
+          child: const Text('Save photo'),
+        ),
+      ],
     ),
   );
 }
