@@ -1,5 +1,6 @@
 // models/Shop.js
 import mongoose from "mongoose";
+import { HOTEL_AMENITY_KEYS } from "../lib/hotelAmenities";
 
 const shopSchema = new mongoose.Schema({
 
@@ -35,6 +36,11 @@ const shopSchema = new mongoose.Schema({
   description: {
     type: String,
     default: null
+  },
+
+  hotelAmenities: {
+    type: [{ type: String, enum: HOTEL_AMENITY_KEYS }],
+    default: undefined,
   },
 
   kbzPayNumber: {

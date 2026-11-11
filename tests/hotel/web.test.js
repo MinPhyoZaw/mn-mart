@@ -60,3 +60,31 @@ test('hotel creation form collects a physical room identity and capacity', () =>
   assert.match(html, /Maximum guests/);
   assert.match(html, /one physical room per listing/);
 });
+
+test('hotel listing shows only hotel-wide amenities and caps the chips at four', () => {
+  const ShopCard = load('app/components/shops/ShopCard.js').default;
+  const shop = { _id: 'hotel', name: 'Hotel', category: 'hotel' };
+  const renderCard = (hotelAmenities) => renderToStaticMarkup(React.createElement(ShopCard, {
+    shop: { ...shop, hotelAmenities }, ctaLabel: 'See Hotel Rooms',
+  }));
+
+  assert.doesNotMatch(renderCard(), /Hotel amenities/);
+  assert.doesNotMatch(renderCard([]), /Hotel amenities/);
+  const html = renderCard(['wifi', 'aircon', 'breakfast', 'parking', 'pool']);
+  assert.match(html, /Hotel amenities/);
+  assert.match(html, /Wi-Fi/);
+  assert.match(html, /Parking/);
+  assert.match(html, /\+1/);
+  assert.doesNotMatch(html, />Pool</);
+});
+
+test('hotel details keep hotel and room amenities separate', () => {
+  const html = renderToStaticMarkup(React.createElement(ShopDetail, {
+    shop: { _id: 'hotel', name: 'Hotel', category: 'hotel', hotelAmenities: ['pool'] },
+    items: [{ ...room, extra: { amenities: { aircon: true, breakfast: false } } }],
+  }));
+
+  assert.match(html, /aria-label="Hotel amenities"[^>]*><li[^>]*>Pool<\/li><\/ul>/);
+  assert.match(html, /aria-label="Room amenities"[^>]*><li[^>]*>Air-con<\/li><\/ul>/);
+  assert.doesNotMatch(html, /Breakfast/);
+});

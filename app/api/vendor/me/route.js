@@ -4,6 +4,8 @@ import Vendor from "../../../models/Vendor";
 import Shop from "../../../models/Shop";
 import { requireVendorAuth } from "../../../lib/routeAuth";
 
+import { HOTEL_AMENITY_KEYS } from "../../../lib/hotelAmenities";
+
 const MAX_SHOP_NAME_LENGTH = 100;
 
 export async function GET(req) {
@@ -52,6 +54,30 @@ export async function PATCH(req) {
     }
 
     const fields = Object.keys(body);
+    if (fields.length === 1 && fields[0] === "hotelAmenities") {
+      const amenities = body.hotelAmenities;
+      if (
+        !Array.isArray(amenities) ||
+        amenities.length > HOTEL_AMENITY_KEYS.length ||
+        amenities.some((key) => !HOTEL_AMENITY_KEYS.includes(key))
+      ) {
+        return NextResponse.json({ success: false, message: "Invalid hotel amenities" }, { status: 400 });
+      }
+
+      await connectDB();
+      const shop = await Shop.findOneAndUpdate(
+        { vendorId: auth.vendor._id, category: "hotel" },
+        { $set: { hotelAmenities: HOTEL_AMENITY_KEYS.filter((key) => amenities.includes(key)) } },
+        { new: true, runValidators: true },
+      ).lean();
+
+      if (!shop) {
+        return NextResponse.json({ success: false, message: "Vendor hotel not found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ success: true, data: { shop } });
+    }
+
     if (fields.length !== 1 || fields[0] !== "name") {
       return NextResponse.json(
         { success: false, message: "Only the shop name can be updated" },

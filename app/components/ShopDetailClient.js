@@ -15,12 +15,14 @@ import {
   uploadImageToSupabaseStorage,
 } from "../lib/supabase";
 
+import { HOTEL_AMENITIES, HOTEL_AMENITY_KEYS } from "../lib/hotelAmenities";
 import { hotelStay, hotelToday } from "../lib/hotelDates";
 
 const AMENITY_META = {
-  wifi: { label: "WiFi" },
+  wifi: { label: "Wi-Fi" },
+  tv: { label: "TV" },
   swimmingPool: { label: "Swimming Pool" },
-  aircon: { label: "Aircon" },
+  aircon: { label: "Air-con" },
   breakfast: { label: "Breakfast" },
   extraBed: { label: "Extra Bed" },
 };
@@ -488,6 +490,15 @@ export default function ShopDetailClient({
                 </p>
               </div>
             ) : null}
+            {isHotel && (
+              <AmenityChips
+                label="Hotel amenities"
+                amenities={HOTEL_AMENITY_KEYS
+                  .filter((key) => shop.hotelAmenities?.includes(key))
+                  .map((key) => ({ label: HOTEL_AMENITIES[key] }))}
+                centered
+              />
+            )}
           </div>
         </section>
 
@@ -757,31 +768,33 @@ export default function ShopDetailClient({
                         </p>
                       ) : null}
 
-                      {/* AMENITIES */}
+                      {isHotel ? (
+                        <AmenityChips label="Room amenities" amenities={getAmenityList(item)} />
+                      ) : (
+                        <div className="mt-3 flex min-h-5 items-center gap-3 text-gray-500">
+                          {item?.extra?.amenities
+                            ?.wifi ? (
+                            <Wifi size={18} />
+                          ) : null}
 
-                      <div className="mt-3 flex min-h-5 items-center gap-3 text-gray-500">
-                        {item?.extra?.amenities
-                          ?.wifi ? (
-                          <Wifi size={18} />
-                        ) : null}
+                          {item?.extra?.amenities
+                            ?.extraBed ? (
+                            <BedDouble
+                              size={18}
+                            />
+                          ) : null}
 
-                        {item?.extra?.amenities
-                          ?.extraBed ? (
-                          <BedDouble
-                            size={18}
-                          />
-                        ) : null}
+                          {item?.extra?.amenities
+                            ?.tv ? (
+                            <Tv size={18} />
+                          ) : null}
 
-                        {item?.extra?.amenities
-                          ?.tv ? (
-                          <Tv size={18} />
-                        ) : null}
-
-                        {item?.extra?.amenities
-                          ?.breakfast ? (
-                          <Coffee size={18} />
-                        ) : null}
-                      </div>
+                          {item?.extra?.amenities
+                            ?.breakfast ? (
+                            <Coffee size={18} />
+                          ) : null}
+                        </div>
+                      )}
 
                       {isHotel && <div className="mt-3 text-sm">
                         <p>{item.roomType}{item.maxGuests ? ` · Up to ${item.maxGuests} guests` : ''}</p>
@@ -931,22 +944,7 @@ export default function ShopDetailClient({
                     <p>Deposit: 5,000 MMK. Your request reserves these dates pending review.</p>
                   </div>
                 )}
-                {/* AMENITIES */}
-
-                {!isSpa ? (
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {getAmenityList(
-                      activeBookingItem
-                    ).map((amenity, i) => (
-                      <span
-                        key={`${amenity.label}-${i}`}
-                        className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600"
-                      >
-                        {amenity.label}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
+                {!isSpa && <AmenityChips label="Room amenities" amenities={getAmenityList(activeBookingItem)} />}
 
                 <div className="space-y-3">
                   {/* NAME */}
@@ -1187,5 +1185,19 @@ export default function ShopDetailClient({
         />
       ) : null}
     </>
+  );
+}
+
+function AmenityChips({ label, amenities, centered }) {
+  if (amenities.length === 0) return null;
+
+  return (
+    <ul aria-label={label} className={`my-3 flex flex-wrap gap-2 ${centered ? "justify-center" : ""}`}>
+      {amenities.map(({ label }) => (
+        <li key={label} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700">
+          {label}
+        </li>
+      ))}
+    </ul>
   );
 }
