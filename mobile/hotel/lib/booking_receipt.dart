@@ -106,6 +106,7 @@ class _BookingReceiptState extends State<BookingReceipt> {
     final reference = _reference(order);
     final roomType = _roomType(order);
     final phone = _value(order, 'hotelPhone');
+    final customerName = _value(order, 'customerName').trim();
     final dateRange = checkIn != null && checkOut != null
         ? '${_dateLabel(checkIn)} → ${_dateLabel(checkOut)}' : 'Dates need review';
     final depositStatus = paid ? 'Paid' : order['paymentStatus'] == 'rejected' ? 'Rejected' : 'Awaiting verification';
@@ -142,6 +143,7 @@ class _BookingReceiptState extends State<BookingReceipt> {
                 const SizedBox(height: 12),
                 detail('ORD NO', reference.replaceFirst('MH-', 'MH - '), strong: true),
                 detail('Room type', roomType),
+                if (customerName.isNotEmpty) detail('Customer', customerName),
                 const Divider(height: 28),
                 detail('Stay duration', dateRange),
                 if (nights != null && nights > 0)
@@ -172,6 +174,7 @@ class _BookingReceiptState extends State<BookingReceipt> {
                         'Order: $reference',
                         'Hotel: ${_value(order, 'shopName', 'Hotel booking')}',
                         'Room: $roomType',
+                        if (customerName.isNotEmpty) 'Customer: $customerName',
                         'Stay: $dateRange',
                         'Status at export: $status',
                       ].join('\n'),
