@@ -46,16 +46,17 @@ class HotelApi {
   Future<void> _storageWrites = Future.value();
   Future<void>? _restoreJob;
   int _sessionVersion = 0;
+  int _profileRevision = 0;
   bool _disposed = false;
   final _catalogue = <String, _CachedCatalogue>{};
   String? _token;
   Json? user;
   bool get canUpload => storageKey.isNotEmpty;
 
-  Future<Json> _request(String path, {Json? body, bool authenticated = false}) async {
+  Future<Json> _request(String path, {Json? body, bool authenticated = false, String? method}) async {
     final requestVersion = _sessionVersion;
     final uri = origin.resolve(path);
-    final request = http.Request(body == null ? 'GET' : 'POST', uri)
+    final request = http.Request(method ?? (body == null ? 'GET' : 'POST'), uri)
       ..followRedirects = false
       ..headers['Accept'] = 'application/json';
     final sessionToken = _token;
@@ -140,6 +141,7 @@ class HotelApi {
       'id': id, 'role': 'customer',
       'name': account['name'] is String ? account['name'] : '',
       'email': account['email'] is String ? account['email'] : '',
+      if (account['profileImage'] is String) 'profileImage': account['profileImage'],
     };
   }
 
@@ -198,6 +200,7 @@ class HotelApi {
   Future<void> validateSession() async {
     if (_token == null || _disposed) return;
     final version = _sessionVersion;
+    final profileRevision = _profileRevision;
     try {
       final result = await _request('/api/auth/me', authenticated: true);
       if (_disposed || version != _sessionVersion) return;
@@ -205,12 +208,29 @@ class HotelApi {
       if (account == null) {
         await signOut();
       } else {
+        if (profileRevision != _profileRevision) {
+          account['profileImage'] = user?['profileImage'];
+        }
         user = account;
       }
     } on ApiError {
       // Unauthorized requests clear the session in _request. Network/server errors
       // retain the saved login so an offline startup does not force another sign-in.
     }
+  }
+
+  Future<void> updateProfilePhoto(String image) async {
+    final version = _sessionVersion;
+    final result = await _request('/api/auth/profile',
+      method: 'PATCH', authenticated: true, body: {'profileImage': image});
+    final account = _customerAccount(result['user']);
+    if (_disposed || version != _sessionVersion ||
+        account == null || account['id'] != user?['id'] ||
+        account['profileImage'] != image) {
+      throw const ApiError('Could not confirm your profile photo update.');
+    }
+    _profileRevision++;
+    user = account;
   }
 
   Future<void> registerCustomer({

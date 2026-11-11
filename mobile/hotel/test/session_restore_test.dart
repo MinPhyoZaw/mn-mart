@@ -162,4 +162,34 @@ void main() {
     expect(api.user, isNull);
     expect(await storage.read(key: HotelApi.sessionStorageKey), isNull);
   });
+
+  test('profile photo saves through shared auth and survives a stale session read', () async {
+    final token = tokenWithExpiry(const Duration(days: 1));
+    const photo = 'data:image/jpeg;base64,/9j/';
+    final pendingProfile = Completer<http.Response>();
+    final readingProfile = Completer<void>();
+    final api = HotelApi(client: MockClient((request) async {
+      if (request.url.path == '/api/auth/login') return loginResponse(token);
+      expect(request.headers['cookie'], 'token=$token');
+      if (request.url.path == '/api/auth/me') {
+        readingProfile.complete();
+        return pendingProfile.future;
+      }
+      expect(request.url.path, '/api/auth/profile');
+      expect(request.method, 'PATCH');
+      expect(jsonDecode(request.body), {'profileImage': photo});
+      return http.Response(jsonEncode({
+        'user': {...account, 'profileImage': photo},
+      }), 200);
+    }));
+    addTearDown(api.dispose);
+    await api.signIn('customer@example.test', 'test-password');
+    final validation = api.validateSession();
+    await readingProfile.future;
+    await api.updateProfilePhoto(photo);
+    pendingProfile.complete(http.Response(jsonEncode({'user': account}), 200));
+    await validation;
+    expect(api.user?['profileImage'], photo);
+  });
+
 }
