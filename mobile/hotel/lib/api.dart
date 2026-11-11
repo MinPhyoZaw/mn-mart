@@ -213,6 +213,18 @@ class HotelApi {
     }
   }
 
+  Future<void> registerCustomer({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    await _request('/api/auth/register', body: {
+      'name': name,
+      'email': email,
+      'password': password,
+    });
+  }
+
   Future<void> signIn(String email, String password) async {
     try {
       await restoreSession();

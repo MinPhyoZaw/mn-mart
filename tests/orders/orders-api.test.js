@@ -26,7 +26,7 @@ function route({ authorized = true, rows = [], rooms = [] } = {}) {
   return { GET: exports.GET, calls };
 }
 test('customer history remains owner-scoped and adds only the available shop name without creating Delivery records', async () => {
-  const { GET, calls } = route({ rows: [{ _id: 'order-a', orderId: 'ORD-A', shopId: 'shop-a', serviceType: 'shopping', orderStatus: 'confirmed' }, { _id: 'order-b', serviceType: 'hotel' }] });
+  const { GET, calls } = route({ rows: [{ _id: 'order-a', orderId: 'ORD-A', shopId: 'shop-a', serviceType: 'shopping', customerName: 'Shopping customer', orderStatus: 'confirmed' }, { _id: 'order-b', serviceType: 'hotel' }] });
   const response = await GET({ url: 'http://test/api/orders?page=2&limit=10&customerId=customer-b' });
   assert.equal(response.status, 200);
   assert.deepEqual(calls.roles, ['customer']);
@@ -40,6 +40,7 @@ test('customer history remains owner-scoped and adds only the available shop nam
   assert.equal(response.body.data[1].shopName, null);
   assert.ok(response.body.data.every((order) => order.delivery === null));
   assert.equal(response.body.data[0].shopId, undefined);
+  assert.equal(response.body.data[0].customerName, undefined);
 });
 test('unauthenticated customer history returns before accessing the database', async () => {
   const { GET, calls } = route({ authorized: false });
@@ -48,9 +49,9 @@ test('unauthenticated customer history returns before accessing the database', a
   assert.equal(calls.owner, undefined);
 });
 
-test('hotel receipts expose the hotel phone and preserve the booked room type', async () => {
+test('hotel receipts expose the booked customer name, hotel phone, and room type', async () => {
   const { GET, calls } = route({ rows: [
-    { _id: 'order-a', shopId: 'shop-a', serviceType: 'hotel', hotelReference: 'MH-0001', items: [{ itemId: 'room-a', name: 'Room 101' }], bookingDetails: { roomType: 'Single Room' } },
+    { _id: 'order-a', shopId: 'shop-a', serviceType: 'hotel', hotelReference: 'MH-0001', customerName: 'Hotel Guest', items: [{ itemId: 'room-a', name: 'Room 101' }], bookingDetails: { roomType: 'Single Room' } },
     { _id: 'order-b', shopId: 'shop-a', serviceType: 'hotel', items: [{ itemId: 'room-b', name: 'Room 102' }] },
   ], rooms: [{ _id: 'room-a', roomType: 'Renamed Double' }, { _id: 'room-b', roomType: 'Twin Room' }] });
   const response = await GET({ url: 'http://test/api/orders' });
@@ -60,4 +61,6 @@ test('hotel receipts expose the hotel phone and preserve the booked room type', 
   assert.equal(response.body.data[1].hotelRoomType, 'Twin Room');
   assert.equal(response.body.data[0].hotelPhone, '099999999');
   assert.equal(response.body.data[0].hotelReference, 'MH-0001');
+  assert.equal(response.body.data[0].customerName, 'Hotel Guest');
+  assert.equal(response.body.data[1].customerName, null);
 });

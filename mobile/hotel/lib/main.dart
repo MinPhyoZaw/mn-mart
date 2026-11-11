@@ -10,6 +10,7 @@ import 'hotel_account.dart';
 import 'hotel_details_header.dart';
 import 'hotel_room_widgets.dart';
 import 'splash_screen.dart';
+import 'hotel_sign_in.dart';
 
 void main() => runApp(const HotelApp());
 
@@ -102,6 +103,28 @@ class HotelApp extends StatefulWidget {
 class _HotelAppState extends State<HotelApp> {
   final api = HotelApi();
   bool splashFinished = false;
+  bool sessionReady = false;
+  String? startupError;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(restoreSession());
+  }
+
+  Future<void> restoreSession() async {
+    try {
+      await api.restoreSession();
+    } on ApiError catch (error) {
+      startupError = error.message;
+    } finally {
+      if (mounted) setState(() => sessionReady = true);
+    }
+  }
+
+  void refreshSessionScreen() {
+    if (mounted) setState(() => startupError = null);
+  }
 
   @override
   void dispose() {
@@ -117,18 +140,23 @@ class _HotelAppState extends State<HotelApp> {
       scaffoldBackgroundColor: const Color(0xfff7f6f1),
       inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
     ),
-    home: splashFinished
-        ? Home(api: api)
-        : HotelSplashScreen(
+    home: !splashFinished
+        ? HotelSplashScreen(
             onFinished: () {
               if (mounted) setState(() => splashFinished = true);
             },
-          ),
+          )
+        : !sessionReady
+            ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+            : api.user == null
+                ? SignIn(api: api, onSignedIn: refreshSessionScreen, initialError: startupError)
+                : Home(api: api, onSignedOut: refreshSessionScreen),
   );
 }
 
 class Home extends StatefulWidget {
-  const Home({super.key, required this.api});
+  const Home({super.key, required this.api, this.onSignedOut});
+  final VoidCallback? onSignedOut;
   final HotelApi api;
   @override
   State<Home> createState() => _HomeState();
@@ -183,6 +211,7 @@ class _HomeState extends State<Home> {
         sessionMessage = message;
       });
     }
+    if (mounted && message == null) widget.onSignedOut?.call();
   }
 
   void selectTab(int value) {
@@ -693,61 +722,6 @@ class _RoomsState extends State<Rooms> {
       ),
     );
   }
-}
-
-class SignIn extends StatefulWidget {
-  const SignIn({super.key, required this.api});
-  final HotelApi api;
-  @override
-  State<SignIn> createState() => _SignInState();
-}
-
-class _SignInState extends State<SignIn> {
-  final email = TextEditingController();
-  final password = TextEditingController();
-  bool busy = false;
-  String? error;
-
-  @override
-  void dispose() {
-    email.dispose();
-    password.dispose();
-    super.dispose();
-  }
-
-  Future<void> submit() async {
-    if (busy) return;
-    setState(() { busy = true; error = null; });
-    try {
-      await widget.api.signIn(email.text.trim(), password.text);
-      if (mounted) Navigator.of(context).pop(true);
-    } catch (e) {
-      if (mounted) setState(() {
-        busy = false;
-        error = e is ApiError ? e.message : 'Unable to sign in.';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !busy,
-    child: Scaffold(
-      appBar: AppBar(title: const Text('Sign in')),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
-        const Text('Use your existing MN-Mart customer account.'),
-        const SizedBox(height: 12),
-        TextField(controller: email, keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email], decoration: const InputDecoration(labelText: 'Email')),
-        const SizedBox(height: 12),
-        TextField(controller: password, obscureText: true,
-          autofillHints: const [AutofillHints.password], decoration: const InputDecoration(labelText: 'Password')),
-        if (error != null) Text(error!),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: busy ? null : submit, child: Text(busy ? 'Signing in…' : 'Sign in')),
-      ]),
-    ),
-  );
 }
 
 class BookingForm extends StatefulWidget {
