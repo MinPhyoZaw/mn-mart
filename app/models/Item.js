@@ -65,6 +65,8 @@ const itemSchema = new mongoose.Schema(
       default: null,
     },
 
+    images: { type: [String], default: undefined },
+
     type: {
       type: String,
       enum: [

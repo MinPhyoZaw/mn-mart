@@ -5,6 +5,8 @@ import { compressItemImageBlob } from "./ImageUtils";
 import { uploadImageToSupabaseStorage } from "../../lib/supabase";
 import { SHOPPING_PRODUCT_CATEGORIES } from "../../lib/shoppingCategories";
 
+import { MAX_ROOM_PHOTOS } from "../../lib/roomPhotos";
+
 const TYPE_MAP = {
   shopping: "product",
   spa: "service",
@@ -46,6 +48,7 @@ const INITIAL_FORM = {
   status: "active",
   driverPhone: "",
   image: "",
+  images: [],
   wholesaleTiers: [],
 };
 
@@ -604,20 +607,30 @@ export default function AddItemForm({
   }, [serviceType, form, routes, shopCategories]);
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length || uploadingImage || submitting) return;
+    const room = serviceType === "hotel";
+    if (room && files.length + form.images.length > MAX_ROOM_PHOTOS) {
+      setMessage?.("Choose up to 8 room photos in total.");
+      e.target.value = "";
+      return;
+    }
+    e.target.value = "";
 
     setUploadingImage(true);
     setMessage?.("Uploading image...");
 
     try {
-      const compressedImage = await compressItemImageBlob(file);
-      const imageUrl = await uploadImageToSupabaseStorage(compressedImage, {
-        folder: `items/${shop?._id || "general"}`,
-      });
-
-      setForm((p) => ({ ...p, image: imageUrl }));
-      setMessage?.("Image uploaded successfully. You can now create the item.");
+      for (const file of files) {
+        const compressedImage = await compressItemImageBlob(file);
+        const imageUrl = await uploadImageToSupabaseStorage(compressedImage, {
+          folder: `items/${shop?._id || "general"}`,
+        });
+        setForm((previous) => room
+          ? { ...previous, images: [...previous.images, imageUrl] }
+          : { ...previous, image: imageUrl });
+      }
+      setMessage?.(room ? "Room photos uploaded." : "Image uploaded successfully.");
     } catch (error) {
       setMessage?.(error?.message || "Failed to upload your image .");
       e.target.value = "";
@@ -651,6 +664,11 @@ export default function AddItemForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (uploadingImage || submitting) return;
+    if (serviceType === "hotel" && !form.images.length) {
+      setMessage?.("Upload at least one room photo.");
+      return;
+    }
     setSubmitting(true);
     const enteredName = (form.name || "").trim();
     const defaultNameByServiceType = {
@@ -677,6 +695,8 @@ export default function AddItemForm({
     };
 
     if (serviceType === "hotel") {
+      payload.images = form.images;
+      payload.image = form.images[0];
       payload.roomNumber = form.roomNumber;
       payload.roomType = form.roomType;
       payload.maxGuests = Number(form.maxGuests);
@@ -857,6 +877,49 @@ export default function AddItemForm({
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
               required
             />
+            {serviceType === "hotel" ? (
+              <fieldset disabled={uploadingImage || submitting} className="space-y-2">
+                <legend className="font-medium">Room photos · {form.images.length}/{MAX_ROOM_PHOTOS}</legend>
+                <p className="text-sm text-gray-600">Add the bed, bathroom, view, and other room details.</p>
+                <input
+                  type="file"
+                  aria-label="Upload room photos"
+                  accept="image/*"
+                  multiple
+                  disabled={form.images.length >= MAX_ROOM_PHOTOS}
+                  onChange={handleImageUpload}
+                  className="w-full rounded-lg border px-4 py-2"
+                />
+                <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {form.images.map((image, index) => (
+                    <li key={image} className="space-y-1 rounded-lg border p-2 text-sm">
+                      {/* Uploaded previews use the original storage URL. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={image} alt={`Room photo ${index + 1}`} className="aspect-video w-full rounded object-cover" />
+                      {index === 0 ? <span>Cover photo</span> : (
+                        <button type="button" className="text-green-700 underline" onClick={() =>
+                          setForm((p) => ({ ...p, images: [image, ...p.images.filter((url) => url !== image)] }))
+                        }>Set as cover</button>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {index > 1 && (
+                          <button type="button" className="underline" onClick={() =>
+                            setForm((p) => {
+                              const images = [...p.images];
+                              [images[index - 1], images[index]] = [images[index], images[index - 1]];
+                              return { ...p, images };
+                            })
+                          }>Move earlier</button>
+                        )}
+                        <button type="button" className="text-red-700 underline" onClick={() =>
+                          setForm((p) => ({ ...p, images: p.images.filter((url) => url !== image) }))
+                        }>Remove</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
+            ) : (
             <input
               type="file"
               accept="image/*"
@@ -864,6 +927,7 @@ export default function AddItemForm({
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
               required={!form.image}
             />
+            )}
             {dynamicFields}
           </>
         )}

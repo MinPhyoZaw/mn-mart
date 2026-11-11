@@ -1,3 +1,4 @@
+import { roomPhotos } from "../../../lib/roomPhotos";
 import { NextResponse } from "next/server";
 import connectDB from "../../../lib/mongodb";
 import Item from "../../../models/Item";
@@ -122,6 +123,12 @@ export async function PUT(req, { params }) {
 
     if (item.type === "room" && ["roomNumber", "roomType", "maxGuests"].some((key) => body[key] !== undefined)) {
       Object.assign(update, hotelRoomFields({ ...item, ...body }));
+    }
+    if (item.type === "room" && body.images !== undefined) {
+      Object.assign(update, roomPhotos(body.images));
+    } else if (item.type === "room" && body.image !== undefined && item.images?.length) {
+      const additional = item.images.slice(1).filter((image) => image !== body.image);
+      Object.assign(update, roomPhotos([body.image, ...additional]));
     }
     await Item.updateOne({ _id: id }, { $set: update }, { runValidators: true });
     const updated = await Item.findById(id).lean();

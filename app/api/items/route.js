@@ -1,3 +1,4 @@
+import { roomPhotos } from "../../lib/roomPhotos";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "../../lib/mongodb";
@@ -120,10 +121,9 @@ export async function POST(req) {
       if (targetShop.category !== "hotel") {
         return NextResponse.json({ success: false, message: "Rooms belong to hotel shops." }, { status: 400 });
       }
-      roomFields = hotelRoomFields(body);
+      roomFields = { ...hotelRoomFields(body), ...roomPhotos(body.images, body.image) };
     }
     const createdItem = await Item.create({
-      ...roomFields,
       shopId: body.shopId,
       shopCategoryId,
       name: body.name,
@@ -131,6 +131,7 @@ export async function POST(req) {
       description,
       wholesaleTiers: body.type === "product" ? wholesaleTiers : [],
       image: body.image,
+      ...roomFields,
       type: body.type,
       category: body.type === "product" ? normalizedCategory : undefined,
       tagName: normalizedTagName,
@@ -372,6 +373,7 @@ export async function GET(req) {
             "wholesaleTiers",
             "description",
             "image",
+            "images",
             "type",
             "category",
             "tagName",
