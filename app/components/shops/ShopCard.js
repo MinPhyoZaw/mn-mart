@@ -72,7 +72,7 @@ function HotelCard({ shop }) {
   const visibleAmenities = amenities.slice(0, 4);
 
   return (
-    <article className="relative isolate flex h-full w-full min-w-0 max-w-[380px] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm [font-family:'Noto_Sans_Myanmar',system-ui,sans-serif] motion-safe:transition-[transform,box-shadow] motion-safe:hover:-translate-y-0.5 hover:shadow-md">
+    <article className="relative isolate flex h-full w-full min-w-0 flex-col only:max-w-[400px] rounded-2xl border border-gray-200 bg-white shadow-sm [font-family:'Noto_Sans_Myanmar',system-ui,sans-serif] motion-safe:transition-[transform,box-shadow] motion-safe:hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden rounded-t-[15px] bg-gray-100">
         {image ? (
           <Image
@@ -80,7 +80,7 @@ function HotelCard({ shop }) {
             alt={shop.name}
             fill
             loading="lazy"
-            sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, min(380px, calc(100vw - 32px))"
+            sizes="(min-width: 1280px) 400px, (min-width: 1024px) calc((100vw - 80px) / 3), (min-width: 640px) calc((100vw - 56px) / 2), calc(100vw - 32px)"
             className="object-cover"
           />
         ) : (
