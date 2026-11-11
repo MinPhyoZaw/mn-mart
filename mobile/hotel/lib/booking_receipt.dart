@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 
+import 'package:qr_flutter/qr_flutter.dart';
+
 import 'api.dart';
 
 String _value(Json data, String key, [String fallback = '']) =>
@@ -35,16 +37,18 @@ class BookingReceipt extends StatefulWidget {
 
 class _BookingReceiptState extends State<BookingReceipt> {
   final receiptKey = GlobalKey();
+  final qrKey = GlobalKey();
   bool saving = false;
 
-  Future<void> download() async {
+  Future<void> download({bool qrOnly = false}) async {
     if (saving) return;
     setState(() => saving = true);
+    final label = qrOnly ? 'QR code' : 'receipt';
     ui.Image? image;
     try {
       await WidgetsBinding.instance.endOfFrame;
       if (!mounted) return;
-      final boundary = receiptKey.currentContext?.findRenderObject();
+      final boundary = (qrOnly ? qrKey : receiptKey).currentContext?.findRenderObject();
       if (boundary is! RenderRepaintBoundary) throw StateError('Receipt is not ready.');
       image = await boundary.toImage(pixelRatio: 3);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -54,16 +58,16 @@ class _BookingReceiptState extends State<BookingReceipt> {
       final safeName = reference.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '-');
       final saved = await FlutterFileDialog.saveFile(params: SaveFileDialogParams(
         data: bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
-        fileName: '$safeName-receipt.png',
+        fileName: '$safeName-${qrOnly ? 'qr' : 'receipt'}.png',
         mimeTypesFilter: const ['image/png'],
       ));
       if (mounted && saved != null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Receipt saved.')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label saved.')));
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save the receipt. Please try again.')),
+          SnackBar(content: Text('Could not save the $label. Please try again.')),
         );
       }
     } finally {
@@ -93,15 +97,14 @@ class _BookingReceiptState extends State<BookingReceipt> {
     final total = _amount(order['totalAmount']);
     const deposit = 5000;
     final paid = order['paymentStatus'] == 'paid';
-    final rejected = order['orderStatus'] == 'rejected' || order['vendorStatus'] == 'rejected' ||
-        order['paymentStatus'] == 'rejected';
-    final confirmed = !rejected && order['orderStatus'] == 'confirmed' && order['vendorStatus'] == 'accepted';
-    final status = rejected ? 'Rejected' : confirmed ? 'Confirmed' : 'Pending';
+    final status = _bookingStatus(order);
+    final rejected = status == 'Rejected';
+    final confirmed = status == 'Confirmed';
     final statusIcon = rejected ? Icons.cancel_outlined : confirmed ? Icons.verified_rounded : Icons.schedule_rounded;
-    final statusColor = rejected ? const Color(0xffa52d32) : confirmed ? const Color(0xff205846) : const Color(0xff895b08);
-    final statusBackground = rejected ? const Color(0xffffeded) : confirmed ? const Color(0xffe8f4ed) : const Color(0xfffff3d7);
-    final reference = _value(order, 'hotelReference', _value(order, 'orderId', 'Preparing reference'));
-    final roomType = _value(order, 'hotelRoomType', _value(details, 'roomType', 'Room details unavailable'));
+    final statusColor = _statusColor(status);
+    final statusBackground = statusColor.withAlpha(22);
+    final reference = _reference(order);
+    final roomType = _roomType(order);
     final phone = _value(order, 'hotelPhone');
     final dateRange = checkIn != null && checkOut != null
         ? '${_dateLabel(checkIn)} → ${_dateLabel(checkOut)}' : 'Dates need review';
@@ -160,6 +163,26 @@ class _BookingReceiptState extends State<BookingReceipt> {
                 const Divider(height: 28),
                 detail('Hotel phone', phone.isEmpty ? 'Not provided' : phone),
                 const SizedBox(height: 8),
+                Align(
+                  child: RepaintBoundary(
+                    key: qrKey,
+                    child: QrImageView(
+                      data: [
+                        'MN Mart Hotel booking',
+                        'Order: $reference',
+                        'Hotel: ${_value(order, 'shopName', 'Hotel booking')}',
+                        'Room: $roomType',
+                        'Stay: $dateRange',
+                        'Status at export: $status',
+                      ].join('\n'),
+                      size: 208,
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.all(16),
+                      semanticsLabel: 'QR code with the booking summary',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text('Booking receipt · $status', textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 11, color: Color(0xff626e67))),
               ]),
@@ -168,13 +191,137 @@ class _BookingReceiptState extends State<BookingReceipt> {
         ),
         const SizedBox(height: 10),
         OutlinedButton.icon(
-          onPressed: saving ? null : download,
+          onPressed: saving ? null : () => download(),
           icon: saving ? const SizedBox(width: 18, height: 18,
             child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.download_outlined),
-          label: Text(saving ? 'Preparing receipt…' : 'Download receipt'),
+          label: Text(saving ? 'Preparing download…' : 'Download receipt'),
+          style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: saving ? null : () => download(qrOnly: true),
+          icon: const Icon(Icons.qr_code),
+          label: const Text('Download QR only'),
           style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
         ),
       ]),
     );
   }
+}
+
+
+String _reference(Json order) =>
+    _value(order, 'hotelReference', _value(order, 'orderId', 'Preparing reference'));
+
+String _roomType(Json order) {
+  final details = order['bookingDetails'];
+  return _value(order, 'hotelRoomType',
+    details is Json ? _value(details, 'roomType', 'Room details unavailable')
+        : 'Room details unavailable');
+}
+
+String _bookingStatus(Json order) {
+  if (order['orderStatus'] == 'rejected' || order['vendorStatus'] == 'rejected' ||
+      order['paymentStatus'] == 'rejected') {
+    return 'Rejected';
+  }
+  if (order['orderStatus'] == 'confirmed' && order['vendorStatus'] == 'accepted') {
+    return 'Confirmed';
+  }
+  return 'Pending';
+}
+
+Color _statusColor(String status) => switch (status) {
+  'Rejected' => const Color(0xffa52d32),
+  'Confirmed' => const Color(0xff205846),
+  _ => const Color(0xff895b08),
+};
+
+class BookingOrderCard extends StatelessWidget {
+  const BookingOrderCard({super.key, required this.order});
+
+  final Json order;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _bookingStatus(order);
+    final color = _statusColor(status);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: CustomPaint(
+        foregroundPainter: const _DottedOrderBorder(),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(_reference(order).replaceFirst('MH-', 'MH - '),
+                      style: Theme.of(context).textTheme.labelLarge),
+                    DecoratedBox(
+                      decoration: BoxDecoration(color: color.withAlpha(22),
+                        borderRadius: BorderRadius.circular(20)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        child: Text(status, style: TextStyle(color: color)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(_value(order, 'shopName', 'Hotel booking'),
+                  style: Theme.of(context).textTheme.titleMedium),
+                Text(_roomType(order), style: Theme.of(context).textTheme.bodySmall),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute(builder: (_) => Scaffold(
+                        appBar: AppBar(title: const Text('Booking details')),
+                        body: SafeArea(
+                          child: ListView(
+                            padding: const EdgeInsets.all(16),
+                            children: [BookingReceipt(order: order)],
+                          ),
+                        ),
+                      )),
+                    ),
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text('Show details'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DottedOrderBorder extends CustomPainter {
+  const _DottedOrderBorder();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final outline = Path()..addRRect(RRect.fromRectAndRadius(
+      (Offset.zero & size).deflate(1), const Radius.circular(15),
+    ));
+    final paint = Paint()..color = const Color(0xff76978a);
+    for (final edge in outline.computeMetrics()) {
+      for (var distance = 0.0; distance < edge.length; distance += 5) {
+        final point = edge.getTangentForOffset(distance);
+        if (point != null) canvas.drawCircle(point.position, 0.9, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DottedOrderBorder oldDelegate) => false;
 }

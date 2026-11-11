@@ -51,6 +51,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(api.orderCalls, 1);
     expect(find.text('MH - 0001'), findsOneWidget);
+    expect(find.text('Download receipt'), findsNothing);
+    await tester.tap(find.text('Show details'));
+    await tester.pumpAndSettle();
+    expect(find.text('Booking details'), findsOneWidget);
+    expect(find.text('Download receipt'), findsOneWidget);
+    expect(find.text('Download QR only'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Explore'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Bookings'));
