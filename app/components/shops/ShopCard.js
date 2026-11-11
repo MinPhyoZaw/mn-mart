@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BedDouble } from "lucide-react";
+import { HOTEL_AMENITIES, HOTEL_AMENITY_KEYS } from "../../lib/hotelAmenities";
 import { getItemRoute } from "../../lib/getItemRoute";
 
 export default function ShopCard({ shop, isTransportation, ctaLabel }) {
@@ -67,6 +68,8 @@ function HotelCard({ shop }) {
   const image = shop.image?.trim();
   const address = shop.address?.trim();
   const description = shop.description?.trim();
+  const amenities = HOTEL_AMENITY_KEYS.filter((key) => shop.hotelAmenities?.includes(key));
+  const visibleAmenities = amenities.slice(0, 4);
 
   return (
     <article className="relative isolate flex h-full w-full min-w-0 max-w-[380px] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm [font-family:'Noto_Sans_Myanmar',system-ui,sans-serif] motion-safe:transition-[transform,box-shadow] motion-safe:hover:-translate-y-0.5 hover:shadow-md">
@@ -99,6 +102,19 @@ function HotelCard({ shop }) {
             </p>
           )}
         </div>
+
+        {amenities.length > 0 && (
+          <ul aria-label="Hotel amenities" className="flex flex-wrap gap-1.5 text-xs text-gray-700">
+            {visibleAmenities.map((key) => (
+              <li key={key} className="rounded-full bg-gray-100 px-2.5 py-1">{HOTEL_AMENITIES[key]}</li>
+            ))}
+            {amenities.length > visibleAmenities.length && (
+              <li className="rounded-full bg-gray-100 px-2.5 py-1">
+                +{amenities.length - visibleAmenities.length}
+              </li>
+            )}
+          </ul>
+        )}
 
         <div className="mt-auto flex justify-end">
           <Link

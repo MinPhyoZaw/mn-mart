@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Package, Plus, CheckCircle, Tags } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import HotelAmenitiesForm from "../components/vendor/HotelAmenitiesForm";
 
 const AddItemForm = dynamic(() => import("../components/vendor/AddItemForm"), { ssr: false });
 const OrdersPanel = dynamic(() => import("../components/vendor/OrdersPanel"), { ssr: false });
@@ -144,7 +145,7 @@ export default function VendorDashboardClient() {
       }
 
       const updatedShop = data.data.shop;
-      setShop(updatedShop);
+      setShop((current) => ({ ...current, name: updatedShop.name }));
       setShopName(updatedShop.name);
       setShopNameStatus({
         type: "success",
@@ -207,7 +208,16 @@ export default function VendorDashboardClient() {
           ) : null}
         </form>
 
-        <ShopImageManager shop={shop} onShopUpdated={setShop} />
+        {shop.category === "hotel" && (
+          <HotelAmenitiesForm
+            initialAmenities={shop.hotelAmenities}
+            onSaved={(hotelAmenities) => setShop((current) => ({ ...current, hotelAmenities }))}
+          />
+        )}
+        <ShopImageManager
+          shop={shop}
+          onShopUpdated={(updatedShop) => setShop((current) => ({ ...current, image: updatedShop.image }))}
+        />
 
         {message && (
           <div className="mb-4 flex items-start gap-3 rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">

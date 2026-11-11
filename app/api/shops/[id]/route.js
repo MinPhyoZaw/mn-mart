@@ -79,6 +79,7 @@ export async function GET(req, { params }) {
       "category",
       "phone",
       "address",
+      "hotelAmenities",
       "description",
       "image",
       "vendorId",
