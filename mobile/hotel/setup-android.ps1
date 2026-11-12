@@ -8,6 +8,8 @@ function Update-HotelManifest([string]$ManifestPath) {
     $namespace = 'http://schemas.android.com/apk/res/android'
     $application = $document.manifest.application
     $null = $application.SetAttribute('allowBackup', $namespace, 'false')
+    $null = $application.SetAttribute('icon', $namespace, '@mipmap/ic_hotel_launcher')
+    $null = $application.SetAttribute('roundIcon', $namespace, '@mipmap/ic_hotel_launcher')
     if ($application.GetAttribute('label', $namespace) -eq 'hotel') {
         $null = $application.SetAttribute('label', $namespace, 'Manaw Mart Hotel')
     }
@@ -32,16 +34,27 @@ function Update-HotelManifest([string]$ManifestPath) {
     }
 }
 
+function Update-HotelAndroid([string]$AndroidPath) {
+    $main = Join-Path $AndroidPath 'app/src/main'
+    foreach ($density in @('mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi')) {
+        $resourceDirectory = Join-Path $main "res/mipmap-$density"
+        $null = New-Item -ItemType Directory -Force -Path $resourceDirectory
+        $icon = Join-Path $project "assets/android-launcher/mipmap-$density/ic_hotel_launcher.png"
+        Copy-Item -Force -LiteralPath $icon -Destination $resourceDirectory
+    }
+    Update-HotelManifest (Join-Path $main 'AndroidManifest.xml')
+}
+
 if (Test-Path $destination) {
-    Update-HotelManifest (Join-Path $destination 'app/src/main/AndroidManifest.xml')
-    Write-Output 'Updated Android settings for secure login storage.'
+    Update-HotelAndroid $destination
+    Write-Output 'Updated the hotel launcher icon and secure login settings.'
     exit 0
 }
 $staging = Join-Path ([System.IO.Path]::GetTempPath()) ('mn-hotel-' + [guid]::NewGuid().ToString('N'))
 try {
     & $Flutter create --no-pub --platforms=android --org store.mn_mart --project-name hotel $staging
     if ($LASTEXITCODE -ne 0) { throw 'flutter create failed' }
-    Update-HotelManifest (Join-Path $staging 'android/app/src/main/AndroidManifest.xml')
+    Update-HotelAndroid (Join-Path $staging 'android')
     Move-Item (Join-Path $staging 'android') $destination
 } finally {
     if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
