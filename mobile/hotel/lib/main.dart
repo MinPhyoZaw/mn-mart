@@ -134,6 +134,7 @@ class _HotelAppState extends State<HotelApp> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
     title: 'Manaw Mart Hotel',
     theme: ThemeData(
       colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff205846)),

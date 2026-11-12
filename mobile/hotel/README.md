@@ -15,7 +15,7 @@ $flutter = "C:\Users\ASUS\development-flutter\flutter\bin\flutter.bat"
 & $flutter run -d 5TV449IFKZYPSWFE
 ```
 
-Run the setup script to generate the native Android project, or to update its secure login storage settings when the Android folder already exists. You can browse the live catalog and sign in with the command above.
+Run the setup script to generate the native Android project, or to update the launcher icon and secure login storage settings when the Android folder already exists. Rebuild and reinstall the app to see the new icon. You can browse the live catalog and sign in with the command above.
 
 For receipt uploads, create `hotel-local.json` in this folder with the public Supabase anon or publishable key from the MN-Mart deployment. Use the production Supabase URL and receipt bucket if they differ from the defaults. Keep privileged keys out of the app.
 
