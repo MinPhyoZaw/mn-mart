@@ -1,12 +1,48 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, UserRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import SupportThread from "./SupportThread";
 import { chatRequest, useChatPolling } from "./supportChatClient";
 
 const endpoint = "/api/admin/support";
+
+function ConversationCard({ conversation, active, onSelect }) {
+  const { name, latest, updatedAt, unread } = conversation;
+  const hasUnread = unread > 0;
+  const updated = new Date(updatedAt);
+  const today = updated.toDateString() === new Date().toDateString();
+  const timestamp = updated.toLocaleString([], today
+    ? { hour: "numeric", minute: "2-digit" }
+    : { month: "short", day: "numeric" });
+
+  return (
+    <button type="button" onClick={onSelect} aria-pressed={active}
+      className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition-colors
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700
+        ${active ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40"}`}>
+      <span className={`grid size-10 shrink-0 place-items-center rounded-xl
+        ${hasUnread || active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+        <UserRound size={18} aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className={`truncate text-sm text-slate-900 ${hasUnread ? "font-bold" : "font-semibold"}`}>{name}</span>
+          <time dateTime={updatedAt} className="shrink-0 whitespace-nowrap text-xs text-slate-500">{timestamp}</time>
+        </span>
+        <span className="mt-1 flex min-h-6 items-center justify-between gap-2">
+          <span className={`truncate text-sm ${hasUnread ? "font-medium text-slate-800" : "text-slate-600"}`}>{latest}</span>
+          {hasUnread && (
+            <span className="inline-flex min-h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-emerald-700 px-2 text-xs font-semibold text-white tabular-nums">
+              {unread}<span className="sr-only">{unread === 1 ? " unread message" : " unread messages"}</span>
+            </span>
+          )}
+        </span>
+      </span>
+    </button>
+  );
+}
 
 function SupportInbox() {
   const [selected, setSelected] = useState(null);
@@ -31,27 +67,17 @@ function SupportInbox() {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <h2 className="border-b border-slate-100 px-5 py-4 text-lg font-semibold text-slate-900">Support Inbox</h2>
       <div className="grid min-w-0 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <div className={`min-w-0 lg:block lg:border-r lg:border-slate-100 ${selected ? "hidden" : ""}`}>
+        <div className={`min-w-0 bg-slate-50/80 lg:block lg:border-r lg:border-slate-100 ${selected ? "hidden" : ""}`}>
           {error && <p role="alert" className="p-4 text-sm text-red-700">{error}</p>}
           {!current && !error && <p className="p-4 text-sm text-slate-500">Loading conversations…</p>}
           {current?.conversations.length === 0 && (
-            <p className="p-4 text-sm text-slate-500">No conversations on this page.</p>
+            <p className="p-4 text-sm text-slate-500">{page === 1 ? "No support conversations yet." : "No conversations on this page."}</p>
           )}
-          <ul className="max-h-[29rem] divide-y divide-slate-100 overflow-y-auto">
+          <ul aria-label="Support conversations" className="max-h-[29rem] space-y-2.5 overflow-y-auto p-3 empty:p-0">
             {current?.conversations.map((conversation) => (
               <li key={conversation._id}>
-                <button type="button" onClick={() => setSelected(conversation)}
-                  aria-pressed={selected?._id === conversation._id}
-                  className="block w-full px-4 py-3 text-left hover:bg-slate-50 aria-pressed:bg-emerald-50">
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-semibold text-slate-900">{conversation.name}</span>
-                    {conversation.unread > 0 && (
-                      <span aria-label={`${conversation.unread} unread messages`}
-                        className="rounded-full bg-emerald-700 px-2 py-0.5 text-xs text-white">{conversation.unread}</span>
-                    )}
-                  </span>
-                  <span className="mt-1 block truncate text-sm text-slate-600">{conversation.latest}</span>
-                </button>
+                <ConversationCard conversation={conversation} active={selected?._id === conversation._id}
+                  onSelect={() => setSelected(conversation)} />
               </li>
             ))}
           </ul>
