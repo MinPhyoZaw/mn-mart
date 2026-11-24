@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "./components/NavBar";
 import MobileBottomBar from "./components/MobileBottomBar";
 import CartDrawer from "./components/CartDrawer";
+import SupportChatLauncher from "./components/SupportChatLauncher";
 import SplashVideo from "./components/SplashVideo";
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationsProvider } from "./context/NotificationsContext";
@@ -109,6 +110,7 @@ export default function RootLayout({
 
               <MobileBottomBar />
               <CartDrawer />
+              <SupportChatLauncher />
             </CartProvider>
           </NotificationsProvider>
         </AuthProvider>

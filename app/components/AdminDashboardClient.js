@@ -5,6 +5,7 @@ import {
   BellIcon,
   ChartBarSquareIcon,
   ClipboardDocumentListIcon,
+  ChatBubbleLeftRightIcon,
   CurrencyDollarIcon,
   ShieldCheckIcon,
   UserGroupIcon,
@@ -16,6 +17,7 @@ import AdminUserRoles from "./AdminUserRoles";
 import AdminShoppingCommission from "./AdminShoppingCommission";
 import AdminRiderApplications from "./AdminRiderApplications";
 import AdminDeliveries from "./AdminDeliveries";
+import AdminSupportInbox from "./AdminSupportInbox";
 import { useNotifications } from "../context/NotificationsContext";
 
 export default function AdminDashboardClient({
@@ -39,6 +41,7 @@ export default function AdminDashboardClient({
   const menuItems = useMemo(
     () => [
       { id: "orders", label: "Order List", icon: ClipboardDocumentListIcon },
+      { id: "support", label: "Support Inbox", icon: ChatBubbleLeftRightIcon },
       { id: "requests", label: "Vendor Request", icon: UserGroupIcon },
       { id: "riders", label: "Rider Applications", icon: TruckIcon },
       { id: "deliveries", label: "Deliveries", icon: TruckIcon },
@@ -103,6 +106,8 @@ export default function AdminDashboardClient({
           </section>
 
           {activeScreen === "orders" && <AdminOrderManager />}
+
+          {activeScreen === "support" && <AdminSupportInbox />}
 
           {activeScreen === "requests" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
