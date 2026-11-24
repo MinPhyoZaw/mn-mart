@@ -110,7 +110,7 @@ export default function InstallAppButton() {
         type="button"
         onClick={handleInstall}
         className="
-          fixed bottom-24 right-4 z-50
+          fixed bottom-24 left-4 z-50 sm:right-4 sm:left-auto
           flex items-center gap-2
           rounded-full
           bg-green-600
